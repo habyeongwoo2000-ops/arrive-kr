@@ -435,6 +435,14 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .st-tools { position: absolute; top: 14px; left: 50%; z-index: 600; transform: translateX(calc(-50% + 206px)); display: flex; gap: 8px; }
 .st-tools button { height: 38px; padding: 0 16px; border: 0; border-radius: 19px; background: #fff; box-shadow: var(--sh); font-size: 13px; font-weight: 500; }
 .st-tools button:hover { background: var(--bg-2); }
+.st-tools .st-shop.is-on { background: #fff4e5; color: #b06000; box-shadow: var(--sh), inset 0 0 0 2px #f9ab00; }
+.st-tools .st-phone.is-on { background: #e8f0fe; color: #174ea6; box-shadow: var(--sh), inset 0 0 0 2px #4285f4; }
+.lf-phone span { border-color: #4285f4 !important; }
+.lf-foreign span { background: #e8f0fe; border-width: 3px; }
+.st-tools .st-food.is-on { background: #fce8e6; color: #c5221f; box-shadow: var(--sh), inset 0 0 0 2px #ea4335; }
+.st-tools button:disabled { opacity: .75; cursor: default; font-weight: 400; color: var(--ink-2); }
+.lf-food span { border-color: #ea4335 !important; }
+.lf-shop span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 2px solid #f9ab00; box-shadow: 0 1px 4px rgba(0,0,0,.3); font-size: 15px; }
 .lf-pin { position: relative; }
 .lf-pin svg { width: 28px; height: 40px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); transition: transform .2s; transform-origin: 50% 100%; }
 .lf-pin.is-on svg { transform: scale(1.35); }

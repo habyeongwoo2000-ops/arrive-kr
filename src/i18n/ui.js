@@ -4,6 +4,11 @@ export const LANGS = ['ko', 'en', 'vi', 'id', 'km', 'ne'];
 export const LANG_NAMES = { ko: '한국어', en: 'English', vi: 'Tiếng Việt', id: 'Bahasa Indonesia', km: 'ខ្មែរ', ne: 'नेपाली' };
 
 const ko = {
+  foodBtn: '고향 음식 (지구본에서 나라 고르기)', foodOf: '{c} 음식 {n}곳', foodNone: '원주에서 {c} 음식점을 아직 못 찾았어요', foodPick: '지구본에서 내 나라를 고르면 그 나라 음식점만 보여요', foodNative: '그 나라 사람이 운영한다는 후기가 있어요.', foodNote: '영업시간은 전화나 카카오맵으로 확인하세요.',
+  phoneForeign: '매장이 직접 "외국인 개통 가능"이라고 알린 곳이에요.',
+  phonesBtn: '선불폰 매장', phoneNote: '외국인 전용 매장은 아니에요. 외국인등록증이 없으면 여권을 꼭 가져가고, 내 이름으로 개통하세요.',
+  shopUnsure: '등록 정보가 적어요. 꼭 확인하고 가세요.',
+  shopsBtn: '외국인 마트', kakaoMap: '카카오맵', shopNote: '영업시간·파는 물건은 전화나 카카오맵으로 확인하세요',
   ctryMore: '{c} 사람이 더 챙길 것', ctryPick: '지구본에서 내 나라를 고르면, 그 나라 사람이 한국에서 더 챙길 일이 여기에 나와요.', ctryNone: '이 나라 정부가 따로 요구하는 일은 아직 확인하지 못했어요. 대사관이나 송출기관에 물어보세요.', retL: '귀국비용보험', npsL: '국민연금',
   todoBtn: '한국 도착 후 할 일',
   tabTodo: '도착 후 할 일', tabFind: '지원 찾기', tabFindGo: '나에게 맞는 원주·강원 지원 찾기', todoIntro: '인천에 내린 뒤 해야 할 일을 순서대로 모았어요. 기한은 입국 예정일 기준입니다.', arriveBtn: '한국 도착 후 할 일 {n}개', arriveSub: '원주 정착에서 보기',
@@ -30,6 +35,11 @@ const ko = {
   tutorFor: '{country} 출신 근로자를 위한 설명', note: '이 서비스는 법률 판단을 하지 않습니다. 회차마다 바뀌니 꼭 송출기관 공지와 하이코리아에서 확인하세요.'
 };
 const en = {
+  foodBtn: 'Home food (pick your country on the globe)', foodOf: '{c} food · {n}', foodNone: 'No {c} restaurant found in Wonju yet', foodPick: 'Pick your country on the globe to see its restaurants', foodNative: 'Reviews say it is run by people from that country.', foodNote: 'Check opening hours by phone or on KakaoMap.',
+  phoneForeign: 'This shop itself says it activates lines for foreigners.',
+  phonesBtn: 'Prepaid phone shops', phoneNote: 'Not foreigner-only shops. Bring your passport if you have no ARC yet, and open the line in your own name.',
+  shopUnsure: 'Little information listed — check before you go.',
+  shopsBtn: 'Foreign food shops', kakaoMap: 'KakaoMap', shopNote: 'Check hours and products by phone or on KakaoMap',
   ctryMore: 'Extra for people from {c}', ctryPick: 'Pick your country on the globe to see what people from it need to do extra in Korea.', ctryNone: 'We have not confirmed extra duties from this government yet. Ask your embassy or sending agency.', retL: 'Return-cost insurance', npsL: 'National Pension',
   todoBtn: 'After arrival to-do',
   tabTodo: 'After arrival', tabFind: 'Find support', tabFindGo: 'Find support in Wonju & Gangwon for you', todoIntro: 'What to do after landing, in order. Deadlines count from your entry date.', arriveBtn: '{n} things to do after arrival', arriveSub: 'open in Settle in Wonju',
@@ -56,6 +66,11 @@ const en = {
   tutorFor: 'Explained for workers from {country}', note: 'This service gives no legal judgments. Rules change each round, so always check your sending agency’s notice and HiKorea.'
 };
 const vi = {
+  foodBtn: 'Món quê (chọn nước trên quả địa cầu)', foodOf: 'Món {c} · {n}', foodNone: 'Chưa tìm thấy quán {c} ở Wonju', foodPick: 'Chọn nước của bạn để xem quán ăn quê nhà', foodNative: 'Theo đánh giá, quán do người nước đó mở.', foodNote: 'Hỏi giờ mở cửa qua điện thoại hoặc KakaoMap.',
+  phoneForeign: 'Cửa hàng tự thông báo có mở sim cho người nước ngoài.',
+  phonesBtn: 'Cửa hàng sim trả trước', phoneNote: 'Không phải cửa hàng riêng cho người nước ngoài. Chưa có ARC thì mang hộ chiếu, đăng ký đứng tên bạn.',
+  shopUnsure: 'Ít thông tin — hãy kiểm tra trước khi đi.',
+  shopsBtn: 'Chợ đồ nước ngoài', kakaoMap: 'KakaoMap', shopNote: 'Hỏi giờ mở cửa, mặt hàng qua điện thoại hoặc KakaoMap',
   ctryMore: 'Người {c} cần làm thêm', ctryPick: 'Chọn nước của bạn trên quả địa cầu để xem việc cần làm thêm.', ctryNone: 'Chưa xác nhận yêu cầu riêng của nước này. Hỏi đại sứ quán hoặc cơ quan phái cử.', retL: 'Bảo hiểm chi phí về nước', npsL: 'Lương hưu quốc gia',
   todoBtn: 'Việc cần làm khi đến',
   tabTodo: 'Việc sau khi đến', tabFind: 'Tìm hỗ trợ', tabFindGo: 'Tìm hỗ trợ ở Wonju và Gangwon', todoIntro: 'Những việc cần làm sau khi hạ cánh, theo thứ tự. Thời hạn tính từ ngày nhập cảnh.', arriveBtn: '{n} việc cần làm sau khi đến', arriveSub: 'xem trong Định cư tại Wonju',
@@ -82,6 +97,11 @@ const vi = {
   tutorFor: 'Giải thích cho lao động từ {country}', note: 'Dịch vụ không đưa ra phán quyết pháp lý. Mỗi đợt có thể thay đổi, hãy kiểm tra thông báo và HiKorea.'
 };
 const id = {
+  foodBtn: 'Makanan kampung (pilih negara di globe)', foodOf: 'Makanan {c} · {n}', foodNone: 'Belum ada restoran {c} di Wonju', foodPick: 'Pilih negara Anda untuk melihat restorannya', foodNative: 'Menurut ulasan, dikelola orang dari negara itu.', foodNote: 'Cek jam buka lewat telepon atau KakaoMap.',
+  phoneForeign: 'Toko ini sendiri menyatakan melayani orang asing.',
+  phonesBtn: 'Toko ponsel prabayar', phoneNote: 'Bukan toko khusus orang asing. Bawa paspor jika belum punya ARC, dan daftarkan atas nama sendiri.',
+  shopUnsure: 'Info sedikit — cek dulu sebelum pergi.',
+  shopsBtn: 'Toko makanan asing', kakaoMap: 'KakaoMap', shopNote: 'Cek jam buka dan barang lewat telepon atau KakaoMap',
   ctryMore: 'Tambahan untuk warga {c}', ctryPick: 'Pilih negara Anda di globe untuk melihat tugas tambahan.', ctryNone: 'Kewajiban tambahan dari negara ini belum dikonfirmasi. Tanyakan kedutaan atau lembaga pengirim.', retL: 'Asuransi biaya pulang', npsL: 'Pensiun Nasional',
   todoBtn: 'Tugas setelah tiba',
   tabTodo: 'Setelah tiba', tabFind: 'Cari bantuan', tabFindGo: 'Cari bantuan di Wonju & Gangwon', todoIntro: 'Hal yang harus dilakukan setelah mendarat, berurutan. Batas waktu dihitung dari tanggal masuk.', arriveBtn: '{n} hal setelah tiba', arriveSub: 'buka di Menetap di Wonju',
@@ -108,6 +128,11 @@ const id = {
   tutorFor: 'Penjelasan untuk pekerja dari {country}', note: 'Layanan ini tidak memberi keputusan hukum. Aturan bisa berubah, selalu cek pengumuman lembaga dan HiKorea.'
 };
 const km = {
+  foodBtn: 'ម្ហូបស្រុកកំណើត (ជ្រើសប្រទេស)', foodOf: 'ម្ហូប {c} · {n}', foodNone: 'មិនទាន់រកឃើញភោជនីយដ្ឋាន {c} នៅ Wonju', foodPick: 'ជ្រើសប្រទេសរបស់អ្នក ដើម្បីមើលភោជនីយដ្ឋាន', foodNative: 'តាមការវាយតម្លៃ ម្ចាស់ជាជនជាតិប្រទេសនោះ។', foodNote: 'សូមពិនិត្យម៉ោងបើកតាមទូរស័ព្ទ ឬ KakaoMap។',
+  phoneForeign: 'ហាងនេះប្រកាសថាបើកលេខឱ្យជនបរទេស។',
+  phonesBtn: 'ហាងទូរស័ព្ទបង់មុន', phoneNote: 'មិនមែនហាងសម្រាប់តែជនបរទេសទេ។ បើគ្មាន ARC យកលិខិតឆ្លងដែនទៅ ហើយបើកក្នុងឈ្មោះខ្លួនឯង។',
+  shopUnsure: 'ព័ត៌មានតិច — សូមពិនិត្យមុនទៅ។',
+  shopsBtn: 'ហាងម្ហូបបរទេស', kakaoMap: 'KakaoMap', shopNote: 'សូមពិនិត្យម៉ោងបើក និងទំនិញតាមទូរស័ព្ទ ឬ KakaoMap',
   ctryMore: 'បន្ថែមសម្រាប់ប្រជាជន {c}', ctryPick: 'ជ្រើសប្រទេសរបស់អ្នកនៅលើភពផែនដី ដើម្បីមើលកិច្ចការបន្ថែម។', ctryNone: 'មិនទាន់បញ្ជាក់កាតព្វកិច្ចបន្ថែមពីប្រទេសនេះទេ។ សូមសួរស្ថានទូត ឬស្ថាប័នបញ្ជូន។', retL: 'ធានារ៉ាប់រងថ្លៃត្រឡប់', npsL: 'សោធននិវត្តន៍ជាតិ',
   todoBtn: 'កិច្ចការក្រោយមកដល់',
   tabTodo: 'ក្រោយមកដល់', tabFind: 'ស្វែងរកជំនួយ', tabFindGo: 'ស្វែងរកជំនួយនៅ Wonju និង Gangwon', todoIntro: 'កិច្ចការត្រូវធ្វើក្រោយចុះចត តាមលំដាប់។ កាលកំណត់គិតពីថ្ងៃចូល។', arriveBtn: 'កិច្ចការ {n} ក្រោយមកដល់', arriveSub: 'មើលក្នុងការតាំងលំនៅ Wonju',
@@ -134,6 +159,11 @@ const km = {
   tutorFor: 'ពន្យល់សម្រាប់កម្មករមកពី {country}', note: 'សេវានេះមិនវិនិច្ឆ័យផ្លូវច្បាប់។ សូមពិនិត្យសេចក្តីជូនដំណឹង និង HiKorea ជានិច្ច។'
 };
 const ne = {
+  foodBtn: 'घरको खाना (ग्लोबमा देश छान्नुहोस्)', foodOf: '{c} खाना · {n}', foodNone: 'वोन्जुमा {c} रेस्टुरेन्ट अझै भेटिएन', foodPick: 'रेस्टुरेन्ट हेर्न आफ्नो देश छान्नुहोस्', foodNative: 'समीक्षाअनुसार त्यही देशका मानिसले चलाउँछन्।', foodNote: 'खुल्ने समय फोन वा KakaoMap मा हेर्नुहोस्।',
+  phoneForeign: 'यो पसलले विदेशीलाई लाइन खोलिदिने भनेको छ।',
+  phonesBtn: 'प्रिपेड फोन पसल', phoneNote: 'विदेशीका लागि मात्र पसल होइन। ARC छैन भने राहदानी लैजानुहोस्, आफ्नै नाममा खोल्नुहोस्।',
+  shopUnsure: 'जानकारी कम छ — जानुअघि जाँच्नुहोस्।',
+  shopsBtn: 'विदेशी खाद्य पसल', kakaoMap: 'KakaoMap', shopNote: 'खुल्ने समय र सामान फोन वा KakaoMap मा हेर्नुहोस्',
   ctryMore: '{c} का मानिसले थप गर्नुपर्ने', ctryPick: 'थप काम हेर्न ग्लोबमा आफ्नो देश छान्नुहोस्।', ctryNone: 'यस देशको थप दायित्व अझै पुष्टि भएको छैन। दूतावास वा पठाउने निकायलाई सोध्नुहोस्।', retL: 'फिर्ती खर्च बीमा', npsL: 'राष्ट्रिय पेन्सन',
   todoBtn: 'आइपुगेपछिका काम',
   tabTodo: 'आइपुगेपछि', tabFind: 'सहायता खोज्नुहोस्', tabFindGo: 'वोन्जु र गाङवोनमा सहायता खोज्नुहोस्', todoIntro: 'अवतरणपछि गर्नुपर्ने काम क्रमैसँग। म्याद प्रवेश मितिबाट गनिन्छ।', arriveBtn: 'आइपुगेपछि गर्ने {n} काम', arriveSub: 'वोन्जु बसोबासमा हेर्नुहोस्',

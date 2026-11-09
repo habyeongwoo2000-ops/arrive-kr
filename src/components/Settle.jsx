@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { PLACES, TOWNS, NEEDS, SCOPE, STATS, SOURCES, WONJU, recommend } from '../data/wonju.js';
+import { SHOPS, PHONES, FOODS, PLACES, TOWNS, NEEDS, SCOPE, STATS, SOURCES, WONJU, recommend } from '../data/wonju.js';
 import { VISAS, byCode } from '../data/visas.js';
 import { LEGS } from '../data/route.js';
 import { CheckItem } from './RoutePanel.jsx';
@@ -38,6 +38,12 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const map = useRef(null);
   const layer = useRef(null);
   const card = useRef(null);
+  const shopLayer = useRef(null);
+  const [shops, setShops] = useState(true);
+  const [phones, setPhones] = useState(true);
+  const [foods, setFoods] = useState(true);
+  /* 고향 음식점: 지구본에서 고른 나라의 음식점만 */
+  const myFoods = country ? FOODS.filter((f) => f.c.includes(country.a2)) : [];
   /* 탭을 바꾸면 새 탭의 맨 위부터 보여 줍니다 */
   useEffect(() => { if (card.current) card.current.scrollTop = 0; }, [tab]);
 
@@ -55,6 +61,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(m);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
+    shopLayer.current = L.layerGroup().addTo(m);
     map.current = m;
     // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
     const tm = setTimeout(() => { m.invalidateSize(); m.panBy(innerWidth > 760 ? [-200, 0] : [0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
@@ -81,6 +88,39 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     });
   }, [recs, hi, K]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* 외국인 식료품점(🛒)·선불폰 매장(📱) 핀 (각각 켜고 끄기) */
+  useEffect(() => {
+    const lg = shopLayer.current; if (!lg) return;
+    lg.clearLayers();
+    const list = [...(shops ? SHOPS.map((x) => ({ ...x, ic: '🛒', cls: 'lf-shop', note: t.shopNote })) : []),
+                  ...(phones ? PHONES.map((x) => ({ ...x, ic: '📱', cls: 'lf-shop lf-phone' + (x.foreign ? ' lf-foreign' : ''), note: (x.foreign ? '🌏 ' + t.phoneForeign + '<br>' : '') + t.phoneNote })) : []),
+                  ...(foods ? myFoods.map((x) => ({ ...x, ic: '🍜', cls: 'lf-shop lf-food', note: (x.native ? '🏠 ' + t.foodNative + '<br>' : '') + t.foodNote })) : [])];
+    list.forEach((sh) => {
+      const c = sh[K];
+      L.marker([sh.lat, sh.lng], { icon: L.divIcon({ className: sh.cls, html: '<span>' + sh.ic + '</span>', iconSize: [30, 30], iconAnchor: [15, 15] }), title: c.t }).addTo(lg)
+        .bindPopup(`<b>${sh.ic} ${c.t}</b><br>${c.what}<br><small>${c.addr}</small><br>${sh.tel ? `<a href="tel:${sh.tel.replace(/[^0-9]/g, '')}">☎ ${sh.tel}</a> · ` : ''}<a href="${sh.url}" target="_blank" rel="noopener noreferrer">${t.kakaoMap} ↗</a><br><small>${sh.unsure ? '⚠ ' + t.shopUnsure + '<br>' : ''}${sh.note}</small>`);
+    });
+  }, [shops, phones, foods, country, K]); // eslint-disable-line react-hooks/exhaustive-deps
+  const showShops = () => {
+    if (shops) { setShops(false); return; }
+    setShops(true);
+    map.current && map.current.flyToBounds(L.latLngBounds(SHOPS.filter((x) => x.town === 'wonju').map((x) => [x.lat, x.lng])).pad(0.3), { ...pad(), duration: 0.9 });
+  };
+  const showPhonesOn = () => {
+    setPhones(true);
+    map.current && map.current.flyToBounds(L.latLngBounds(PHONES.map((x) => [x.lat, x.lng])).pad(0.3), { ...pad(), duration: 0.9 });
+  };
+  const showPhones = () => {
+    if (phones) { setPhones(false); return; }
+    setPhones(true);
+    map.current && map.current.flyToBounds(L.latLngBounds(PHONES.map((x) => [x.lat, x.lng])).pad(0.3), { ...pad(), duration: 0.9 });
+  };
+  const showFoods = () => {
+    if (!myFoods.length) return;
+    if (foods) { setFoods(false); return; }
+    setFoods(true);
+    map.current && map.current.flyToBounds(L.latLngBounds(myFoods.map((x) => [x.lat, x.lng])).pad(0.3), { ...pad(), duration: 0.9, maxZoom: 15 });
+  };
   const flyPlace = (k) => { const pl = PLACES[k]; if (pl && map.current) map.current.flyTo([pl.lat, pl.lng], 15, { duration: 0.9 }); };
   const flyTo = (p) => {
     setHi(p.id);
@@ -128,7 +168,9 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
                   const pk = pinOf(it.id);
                   return (
                     <CheckItem key={it.id} it={it} lang={lang} entry={entry} today={today} checked={!!checks[it.id]} toggle={toggle}
-                               extraBtn={pk && PLACES[pk] ? <button type="button" className="st-pin" title={PLACES[pk][K]} onClick={() => flyPlace(pk)}>📍 {t.onMap}</button> : null} />
+                               extraBtn={it.id === 'sim' || it.id.endsWith('-sim')
+                                 ? <button type="button" className="st-pin" title={t.phonesBtn} onClick={showPhonesOn}>📱 {t.onMap}</button>
+                                 : pk && PLACES[pk] ? <button type="button" className="st-pin" title={PLACES[pk][K]} onClick={() => flyPlace(pk)}>📍 {t.onMap}</button> : null} />
                   );
                 })}
               </ul>
@@ -205,6 +247,12 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
 
       <div className="st-tools">
         <button type="button" onClick={home}>📍 {t.toWonju}</button>
+        <button type="button" className={'st-shop' + (shops ? ' is-on' : '')} aria-pressed={shops} onClick={showShops}>🛒 {t.shopsBtn}</button>
+        <button type="button" className={'st-shop st-phone' + (phones ? ' is-on' : '')} aria-pressed={phones} onClick={showPhones}>📱 {t.phonesBtn}</button>
+        <button type="button" className={'st-shop st-food' + (foods && myFoods.length ? ' is-on' : '')} aria-pressed={foods && myFoods.length > 0} disabled={!myFoods.length}
+                title={!country ? t.foodPick : !myFoods.length ? fill(t.foodNone, { c: countryLabel }) : ''} onClick={showFoods}>
+          🍜 {!country ? t.foodBtn : myFoods.length ? fill(t.foodOf, { c: countryLabel, n: myFoods.length }) : fill(t.foodNone, { c: countryLabel })}
+        </button>
         <button type="button" onClick={allGW}>🗺 {t.allGW}</button>
       </div>
     </div>
