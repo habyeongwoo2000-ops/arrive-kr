@@ -69,9 +69,17 @@ export default function App() {
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
   const [view, setView] = useState('globe');      // globe | settle
+  const [settleTab, setSettleTab] = useState('todo'); // todo | find
   const [landed, setLanded] = useState(false);
   const api = useRef(null);
   const flight = useRef(null);
+  const shakeTimer = useRef(0);
+  /* "알겠어요" — 흔들림과 멈춤을 바로 끝내고 비행을 이어 갑니다 */
+  function endTurb() {
+    clearTimeout(shakeTimer.current);
+    setTurb(null); setShake(false);
+    if (flight.current) flight.current.pauseUntil = 0;
+  }
 
   const setLang = (l) => { setLangS(l); set('lang', l); };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
@@ -99,7 +107,12 @@ export default function App() {
   FEATURES.forEach((f) => { f.properties.label = labelOf(f); });
   const vObj = byCode[visa] || byCode['E-9'];
   const eps = visa === 'E-9';
-  const legs = eps ? (country ? LEGS : GENERAL) : vObj.legs;
+  const allLegs = eps ? (country ? LEGS : GENERAL) : vObj.legs;
+  /* "한국 도착 후"는 지구본 경로가 아니라 원주 정착 화면의 "도착 후 할 일" 탭에서 봅니다 */
+  const legs = useMemo(() => allLegs.filter((l) => l.key !== 'arrive'), [allLegs]);
+  /* 원주 정착 화면과 같은 기준: E-9는 상세 목록, 다른 비자는 그 비자의 도착 후 목록 */
+  const arriveLeg = (eps ? LEGS : vObj.legs).find((l) => l.key === 'arrive');
+  const arriveSum = arriveLeg ? { total: arriveLeg.items.length, done: arriveLeg.items.filter((i) => checks[i.id]).length } : null;
   const extra = eps && country ? (country.extra[lang === 'ko' ? 'ko' : 'en'] || []) : [];
   const start = sel && !isKorea ? (country ? country.city : (([lng, lat]) => [lat, lng])(geoCentroid(sel))) : null;
   const route = useMemo(() => (start ? buildPath(start) : null), [sel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -163,7 +176,8 @@ export default function App() {
         if (tb && st.t >= tb.at) {
           st.nextTurb++; st.pauseUntil = now + 2600 + tb.sev * 300;
           setTurb(tb); setShake(true);
-          setTimeout(() => setShake(false), 2600 + tb.sev * 300);
+          clearTimeout(shakeTimer.current);
+          shakeTimer.current = setTimeout(() => setShake(false), 2600 + tb.sev * 300);
         }
       }
       if (st.t >= 1) {
@@ -183,7 +197,7 @@ export default function App() {
     choose(from);
     setTimeout(() => fly(), 2100);
   }
-  function openSettle() { stopFlight(); setLanded(false); setView('settle'); api.current && api.current.pause(); }
+  function openSettle(tab = 'todo') { stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); api.current && api.current.pause(); }
   function closeSettle() { setView('globe'); api.current && api.current.resume(); }
   /* QR로 들어오면 그 나라를 골라 둡니다 */
   useEffect(() => {
@@ -243,14 +257,21 @@ export default function App() {
                         info={!eps ? (vObj.inKorea ? t.inKorea : '') : !country ? t.notE9 : country.newly ? t.newCountry : ''}
                         entry={entry} setEntry={setEntry} checks={checks} toggle={toggle}
                         activeLeg={activeLeg} onLeg={(i) => { setActiveLeg(i); const l = legs[i]; const p = route.at(l.at); setFocus({ lat: p.lat, lng: p.lng, altitude: 1.2 }); }}
-                        flying={flying} onFly={fly} />
+                        flying={flying} onFly={fly}
+                        arrive={arriveSum}
+                        onArrive={() => openSettle('todo')} />
           </div>
         )}
       </aside>
 
       {/* 오른쪽 위: 원주 정착 · 언어 · 계정 */}
       <div className="top-r">
-        {view === 'globe' && <button type="button" className="wj-chip" onClick={openSettle}><span aria-hidden="true">📍</span>{t.settleBtn}</button>}
+        {view === 'globe' && arriveSum && (
+          <button type="button" className="wj-chip todo-chip" onClick={() => openSettle('todo')} aria-label={t.todoBtn} title={t.todoBtn}>
+            <span aria-hidden="true">✅</span><span className="chip-t">{t.todoBtn}</span><em>{arriveSum.done}/{arriveSum.total}</em>
+          </button>
+        )}
+        {view === 'globe' && <button type="button" className="wj-chip" onClick={() => openSettle('find')}><span aria-hidden="true">📍</span>{t.settleBtn}</button>}
         <select className="lang" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
           {LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
         </select>
@@ -280,7 +301,7 @@ export default function App() {
         <div className={'turb-card sev' + turb.sev} role="alert">
           <span className="turb-ic" aria-hidden="true">⚠</span>
           <div><small>{t.turb}</small><b>{tx(turb.t, lang)}</b><p>{tx(turb.d, lang)}</p></div>
-          <button type="button" className="btn-t" onClick={() => setTurb(null)}>{t.turbOk}</button>
+          <button type="button" className="btn-t" onClick={endTurb}>{t.turbOk}</button>
         </div>
       )}
 
@@ -289,12 +310,14 @@ export default function App() {
         <div className="land-card" role="status">
           <span className="land-ic" aria-hidden="true">🛬</span>
           <div><b>{t.landed}</b><p>ICN → WJU · {t.toWonjuMove}</p></div>
-          <button type="button" className="btn-p" onClick={openSettle}>{t.startSettle} →</button>
+          <button type="button" className="btn-p" onClick={() => openSettle('todo')}>{t.startSettle} →</button>
           <button type="button" className="icon" aria-label={t.close} onClick={() => setLanded(false)}>✕</button>
         </div>
       )}
 
-      {view === 'settle' && <Settle lang={lang} visa={visa} name={pax} onBack={closeSettle} />}
+      {view === 'settle' && <Settle lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
+                                        checks={checks} toggle={toggle} entry={entry}
+                                        country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} />}
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}
                       init={{ name: pax, from: sel && !isKorea ? sel : null, visa, entry }}

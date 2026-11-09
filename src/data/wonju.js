@@ -22,6 +22,7 @@ export const PLACES = {
   cityhall: { lat: 37.3422, lng: 127.9202, exact: true, ko: '원주시청', en: 'Wonju City Hall' },
   terminal: { lat: 37.3466, lng: 127.9332, exact: false, ko: '원주종합버스터미널 (공항버스 도착)', en: 'Wonju Bus Terminal (airport bus)' },
   munmak: { lat: 37.3120, lng: 127.8160, exact: false, ko: '문막읍 일대', en: 'Munmak-eup area' },
+  hana: { lat: 37.3270, lng: 127.9790, exact: false, ko: '하나은행 원주혁신도시지점', en: 'Hana Bank Wonju Innovation City branch' },
   nhis: { lat: 37.3245, lng: 127.9838, exact: false, ko: '국민건강보험공단 본사 (혁신도시)', en: 'NHIS headquarters (Innovation City)' },
   sangji: { lat: 37.3696, lng: 127.9300, exact: false, ko: '상지대학교', en: 'Sangji University' },
   yonsei: { lat: 37.2810, lng: 127.9020, exact: false, ko: '연세대 미래캠퍼스', en: 'Yonsei Univ. Mirae Campus' },
@@ -172,6 +173,11 @@ export const PROGRAMS = [
     en: { t: 'Jeongseon home Korean lessons & EMS support', what: 'One-to-one Korean lessons at home and help with international express mail to your family.', when: 'Year-round', who: 'Foreign residents in Jeongseon' },
     tel: '', org: '정선군', src: 'P26' },
 
+  { id: 'w-hana', scope: 'wonju', town: 'wonju', place: 'hana', visas: ['*'], needs: ['life', 'work'],
+    ko: { t: '외국인 일요일 은행 (하나은행 원주혁신도시지점)', what: '평일에 일하는 외국인을 위해 일요일에 문을 엽니다. 계좌 개설, 한도제한계좌 해제, 해외송금을 상담합니다. 외국인등록증과 근로계약서(또는 재직증명서)를 가져가세요.', when: '매월 둘째·넷째 일요일 10:00~16:00 (방문 전 전화 확인)', who: '원주 외국인 근로자' },
+    en: { t: 'Sunday bank for foreigners (Hana Bank, Wonju Innovation City)', what: 'Open on Sundays for foreigners who work on weekdays: open an account, lift the transaction limit, send money home. Bring your ARC and labor contract (or employment certificate).', when: '2nd & 4th Sundays, 10:00–16:00 (call before visiting)', who: 'Foreign workers in Wonju' },
+    tel: '1588-1111', org: '하나은행', src: 'NEWS' },
+
   /* ───────── 전국 ───────── */
   { id: 'k-1345', scope: 'national', town: '*', place: null, visas: ['*'], needs: ['stay', 'life'],
     ko: { t: '외국인종합안내센터 1345', what: '체류·비자·생활 민원을 여러 언어로 안내합니다.', when: '평일 (언어별 시간 확인)', who: '모든 외국인' },
@@ -184,7 +190,11 @@ export const PROGRAMS = [
   { id: 'k-labor', scope: 'national', town: '*', place: null, visas: ['E-9', 'H-2', 'E-8', '*'], needs: ['work', 'safety'],
     ko: { t: '외국인력상담센터', what: '임금 체불·사업장 변경·근로계약 문제를 모국어로 상담합니다.', when: '평일', who: '외국인 근로자·사업주' },
     en: { t: 'Foreign Workforce Counseling Center', what: 'Help in your language with unpaid wages, job changes and contracts.', when: 'Weekdays', who: 'Foreign workers & employers' },
-    tel: '1644-0644', org: '고용노동부', src: 'MOEL' },
+    tel: '1577-0071', org: '고용노동부 (17개 언어)', src: 'MOEL' },
+  { id: 'k-region', scope: 'national', town: '*', place: null, visas: ['E-9'], needs: ['work', 'stay'], hot: true,
+    ko: { t: 'E-9 사업장 변경 — 경북·강원 권역 안에서만', what: '2023년 9월 이후 입국자는 같은 권역 안에서만 일터를 옮길 수 있습니다. 원주는 경북·강원 권역입니다. 계약이 끝나면 1개월 안에 고용센터에 신청하고, 3개월 안에 새 일터를 찾아야 합니다(3년에 3번까지).', when: '계약 종료 후 1개월 안 신청', who: 'E-9 근로자' },
+    en: { t: 'E-9 job change — only within Gyeongbuk-Gangwon', what: 'Workers who entered from Sept 2023 can change jobs only within their region; Wonju is in the Gyeongbuk-Gangwon region. Apply at the job center within 1 month after the job ends and find a new one within 3 months (up to 3 changes in 3 years).', when: 'Apply within 1 month after the job ends', who: 'E-9 workers' },
+    tel: '1350', org: '고용노동부 · 원주고용센터', src: 'MOEL' },
   { id: 'k-danuri', scope: 'national', town: '*', place: null, visas: ['F-6', '*'], needs: ['family', 'safety'],
     ko: { t: '다누리콜센터', what: '다문화가족·이주여성을 위한 생활·위기 상담과 통역(여러 언어).', when: '24시간', who: '다문화가족·이주여성' },
     en: { t: 'Danuri Helpline', what: 'Life and crisis counseling with interpreters for multicultural families and migrant women.', when: '24 hours', who: 'Multicultural families & migrant women' },
@@ -203,7 +213,8 @@ export const SOURCES = {
   MOJ: '법무부 출입국·외국인정책본부',
   MOEL: '고용노동부',
   MOGEF: '성평등가족부 다누리',
-  KLAC: '대한법률구조공단'
+  KLAC: '대한법률구조공단',
+  NEWS: '언론 보도 (2025.12~2026.4) — 방문 전 확인'
 };
 
 /* 맞춤 추천 — 점수와 "왜 추천했는지" 이유를 함께 돌려줍니다. */

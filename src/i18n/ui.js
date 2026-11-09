@@ -4,6 +4,10 @@ export const LANGS = ['ko', 'en', 'vi', 'id', 'km', 'ne'];
 export const LANG_NAMES = { ko: '한국어', en: 'English', vi: 'Tiếng Việt', id: 'Bahasa Indonesia', km: 'ខ្មែរ', ne: 'नेपाली' };
 
 const ko = {
+  ctryMore: '{c} 사람이 더 챙길 것', ctryPick: '지구본에서 내 나라를 고르면, 그 나라 사람이 한국에서 더 챙길 일이 여기에 나와요.', ctryNone: '이 나라 정부가 따로 요구하는 일은 아직 확인하지 못했어요. 대사관이나 송출기관에 물어보세요.', retL: '귀국비용보험', npsL: '국민연금',
+  todoBtn: '한국 도착 후 할 일',
+  tabTodo: '도착 후 할 일', tabFind: '지원 찾기', tabFindGo: '나에게 맞는 원주·강원 지원 찾기', todoIntro: '인천에 내린 뒤 해야 할 일을 순서대로 모았어요. 기한은 입국 예정일 기준입니다.', arriveBtn: '한국 도착 후 할 일 {n}개', arriveSub: '원주 정착에서 보기',
+  costL: '공식 비용', exitNone: '이 단계의 자세한 서류·비용은 아직 확인하지 못했어요. 송출기관 공지에서 확인하세요.', lvNote: '언론·정리 글 기준 — 송출기관 공지로 다시 확인하세요.',
   app: 'ArriveKR', tag: '외국인근로자 한국 입국 준비',
   search: '출발할 나라 검색', hint: '지구본에서 출발할 나라를 누르세요', noResult: '결과 없음',
   sat: '위성', map: '지도', from: '출발', to: '도착 · 대한민국 인천국제공항',
@@ -15,7 +19,7 @@ const ko = {
   agency: '송출기관', fee: '응시료', source: '확인 자료', checked: '확인일 2026-11-08',
   lvl: { official: '공지 원문 확인', summary: '공지 정리 글로 확인', check: '송출기관만 확인 — 공지 확인 필요' },
   extraNone: '이 나라의 이번 회차 추가 서류는 송출기관 공지에서 확인하세요.',
-  done: '완료', progress: '{done}/{total} 완료', newCountry: '2026년 새 송출국 — 첫 시험 공지를 기다리는 중',
+  done: '완료', progress: '{done}/{total} 완료', newCountry: '2026년 새 송출국 — 아직 시험 접수 전이에요. 입국은 2028년쯤 예상돼요.',
   signIn: '로그인', signUp: '계정 만들기', uid: '아이디', pw: '비밀번호', pw2: '비밀번호 확인', signOut: '로그아웃',
   hello: '{id} 님', localNote: '계정과 체크 기록은 이 브라우저에만 저장됩니다(데모). 비밀번호는 암호화해 저장합니다.',
   eId: '아이디는 영문·숫자 4~20자', ePw: '비밀번호는 8자 이상', eMatch: '비밀번호가 서로 다릅니다', eExists: '이미 있는 아이디입니다', eWrong: '아이디 또는 비밀번호가 틀립니다',
@@ -26,6 +30,10 @@ const ko = {
   tutorFor: '{country} 출신 근로자를 위한 설명', note: '이 서비스는 법률 판단을 하지 않습니다. 회차마다 바뀌니 꼭 송출기관 공지와 하이코리아에서 확인하세요.'
 };
 const en = {
+  ctryMore: 'Extra for people from {c}', ctryPick: 'Pick your country on the globe to see what people from it need to do extra in Korea.', ctryNone: 'We have not confirmed extra duties from this government yet. Ask your embassy or sending agency.', retL: 'Return-cost insurance', npsL: 'National Pension',
+  todoBtn: 'After arrival to-do',
+  tabTodo: 'After arrival', tabFind: 'Find support', tabFindGo: 'Find support in Wonju & Gangwon for you', todoIntro: 'What to do after landing, in order. Deadlines count from your entry date.', arriveBtn: '{n} things to do after arrival', arriveSub: 'open in Settle in Wonju',
+  costL: 'Official cost', exitNone: 'Details for this step are not confirmed yet. Check your sending agency notice.', lvNote: 'From news or summaries — confirm with your sending agency notice.',
   app: 'ArriveKR', tag: 'Arrival planner for foreign workers coming to Korea',
   search: 'Search your country', hint: 'Tap the country you leave from', noResult: 'No results',
   sat: 'Satellite', map: 'Map', from: 'From', to: 'To · Incheon International Airport, Korea',
@@ -37,7 +45,7 @@ const en = {
   agency: 'Sending agency', fee: 'Test fee', source: 'Checked source', checked: 'Checked 2026-11-08',
   lvl: { official: 'Official notice checked', summary: 'Checked via a notice summary', check: 'Agency only — check the notice' },
   extraNone: 'Check this round’s extra documents in your sending agency’s notice.',
-  done: 'Done', progress: '{done}/{total} done', newCountry: 'New sending country in 2026 — waiting for the first test notice',
+  done: 'Done', progress: '{done}/{total} done', newCountry: 'New sending country in 2026 — no test registration yet. Arrivals are expected around 2028.',
   signIn: 'Sign in', signUp: 'Create account', uid: 'ID', pw: 'Password', pw2: 'Confirm password', signOut: 'Sign out',
   hello: 'Hi, {id}', localNote: 'Your account and checklist are saved only in this browser (demo). Passwords are stored hashed.',
   eId: 'ID: 4–20 letters or numbers', ePw: 'Password: 8+ characters', eMatch: 'Passwords do not match', eExists: 'That ID already exists', eWrong: 'Wrong ID or password',
@@ -48,6 +56,10 @@ const en = {
   tutorFor: 'Explained for workers from {country}', note: 'This service gives no legal judgments. Rules change each round, so always check your sending agency’s notice and HiKorea.'
 };
 const vi = {
+  ctryMore: 'Người {c} cần làm thêm', ctryPick: 'Chọn nước của bạn trên quả địa cầu để xem việc cần làm thêm.', ctryNone: 'Chưa xác nhận yêu cầu riêng của nước này. Hỏi đại sứ quán hoặc cơ quan phái cử.', retL: 'Bảo hiểm chi phí về nước', npsL: 'Lương hưu quốc gia',
+  todoBtn: 'Việc cần làm khi đến',
+  tabTodo: 'Việc sau khi đến', tabFind: 'Tìm hỗ trợ', tabFindGo: 'Tìm hỗ trợ ở Wonju và Gangwon', todoIntro: 'Những việc cần làm sau khi hạ cánh, theo thứ tự. Thời hạn tính từ ngày nhập cảnh.', arriveBtn: '{n} việc cần làm sau khi đến', arriveSub: 'xem trong Định cư tại Wonju',
+  costL: 'Chi phí chính thức', exitNone: 'Chưa xác nhận chi tiết bước này. Hãy xem thông báo của cơ quan phái cử.', lvNote: 'Theo báo chí/bản tóm tắt — hãy kiểm tra lại thông báo chính thức.',
   tag: 'Chuẩn bị nhập cảnh cho lao động nước ngoài đến Hàn Quốc',
   search: 'Tìm quốc gia của bạn', hint: 'Chạm vào quốc gia bạn xuất phát', noResult: 'Không có kết quả',
   sat: 'Vệ tinh', map: 'Bản đồ', from: 'Từ', to: 'Đến · Sân bay quốc tế Incheon, Hàn Quốc',
@@ -70,6 +82,10 @@ const vi = {
   tutorFor: 'Giải thích cho lao động từ {country}', note: 'Dịch vụ không đưa ra phán quyết pháp lý. Mỗi đợt có thể thay đổi, hãy kiểm tra thông báo và HiKorea.'
 };
 const id = {
+  ctryMore: 'Tambahan untuk warga {c}', ctryPick: 'Pilih negara Anda di globe untuk melihat tugas tambahan.', ctryNone: 'Kewajiban tambahan dari negara ini belum dikonfirmasi. Tanyakan kedutaan atau lembaga pengirim.', retL: 'Asuransi biaya pulang', npsL: 'Pensiun Nasional',
+  todoBtn: 'Tugas setelah tiba',
+  tabTodo: 'Setelah tiba', tabFind: 'Cari bantuan', tabFindGo: 'Cari bantuan di Wonju & Gangwon', todoIntro: 'Hal yang harus dilakukan setelah mendarat, berurutan. Batas waktu dihitung dari tanggal masuk.', arriveBtn: '{n} hal setelah tiba', arriveSub: 'buka di Menetap di Wonju',
+  costL: 'Biaya resmi', exitNone: 'Detail langkah ini belum dikonfirmasi. Cek pengumuman lembaga pengirim.', lvNote: 'Dari berita/ringkasan — cek lagi pengumuman resmi.',
   tag: 'Persiapan masuk Korea untuk pekerja asing',
   search: 'Cari negara Anda', hint: 'Ketuk negara keberangkatan Anda', noResult: 'Tidak ada hasil',
   sat: 'Satelit', map: 'Peta', from: 'Dari', to: 'Ke · Bandara Internasional Incheon, Korea',
@@ -92,6 +108,10 @@ const id = {
   tutorFor: 'Penjelasan untuk pekerja dari {country}', note: 'Layanan ini tidak memberi keputusan hukum. Aturan bisa berubah, selalu cek pengumuman lembaga dan HiKorea.'
 };
 const km = {
+  ctryMore: 'បន្ថែមសម្រាប់ប្រជាជន {c}', ctryPick: 'ជ្រើសប្រទេសរបស់អ្នកនៅលើភពផែនដី ដើម្បីមើលកិច្ចការបន្ថែម។', ctryNone: 'មិនទាន់បញ្ជាក់កាតព្វកិច្ចបន្ថែមពីប្រទេសនេះទេ។ សូមសួរស្ថានទូត ឬស្ថាប័នបញ្ជូន។', retL: 'ធានារ៉ាប់រងថ្លៃត្រឡប់', npsL: 'សោធននិវត្តន៍ជាតិ',
+  todoBtn: 'កិច្ចការក្រោយមកដល់',
+  tabTodo: 'ក្រោយមកដល់', tabFind: 'ស្វែងរកជំនួយ', tabFindGo: 'ស្វែងរកជំនួយនៅ Wonju និង Gangwon', todoIntro: 'កិច្ចការត្រូវធ្វើក្រោយចុះចត តាមលំដាប់។ កាលកំណត់គិតពីថ្ងៃចូល។', arriveBtn: 'កិច្ចការ {n} ក្រោយមកដល់', arriveSub: 'មើលក្នុងការតាំងលំនៅ Wonju',
+  costL: 'ថ្លៃផ្លូវការ', exitNone: 'ព័ត៌មានលម្អិតនៃជំហាននេះមិនទាន់បញ្ជាក់។ សូមពិនិត្យសេចក្តីជូនដំណឹងរបស់ស្ថាប័ន។', lvNote: 'ពីព័ត៌មាន ឬសេចក្តីសង្ខេប — សូមពិនិត្យសេចក្តីជូនដំណឹងផ្លូវការម្តងទៀត។',
   tag: 'ការត្រៀមចូលកូរ៉េសម្រាប់កម្មករបរទេស',
   search: 'ស្វែងរកប្រទេសរបស់អ្នក', hint: 'ចុចលើប្រទេសដែលអ្នកចេញដំណើរ', noResult: 'គ្មានលទ្ធផល',
   sat: 'ផ្កាយរណប', map: 'ផែនទី', from: 'ពី', to: 'ទៅ · អាកាសយានដ្ឋានអន្តរជាតិអ៊ីនឆន',
@@ -114,6 +134,10 @@ const km = {
   tutorFor: 'ពន្យល់សម្រាប់កម្មករមកពី {country}', note: 'សេវានេះមិនវិនិច្ឆ័យផ្លូវច្បាប់។ សូមពិនិត្យសេចក្តីជូនដំណឹង និង HiKorea ជានិច្ច។'
 };
 const ne = {
+  ctryMore: '{c} का मानिसले थप गर्नुपर्ने', ctryPick: 'थप काम हेर्न ग्लोबमा आफ्नो देश छान्नुहोस्।', ctryNone: 'यस देशको थप दायित्व अझै पुष्टि भएको छैन। दूतावास वा पठाउने निकायलाई सोध्नुहोस्।', retL: 'फिर्ती खर्च बीमा', npsL: 'राष्ट्रिय पेन्सन',
+  todoBtn: 'आइपुगेपछिका काम',
+  tabTodo: 'आइपुगेपछि', tabFind: 'सहायता खोज्नुहोस्', tabFindGo: 'वोन्जु र गाङवोनमा सहायता खोज्नुहोस्', todoIntro: 'अवतरणपछि गर्नुपर्ने काम क्रमैसँग। म्याद प्रवेश मितिबाट गनिन्छ।', arriveBtn: 'आइपुगेपछि गर्ने {n} काम', arriveSub: 'वोन्जु बसोबासमा हेर्नुहोस्',
+  costL: 'आधिकारिक खर्च', exitNone: 'यो चरणको विवरण अझै पुष्टि भएको छैन। पठाउने निकायको सूचना हेर्नुहोस्।', lvNote: 'समाचार/सारांशबाट — आधिकारिक सूचनामा फेरि जाँच्नुहोस्।',
   tag: 'कोरिया आउने विदेशी कामदारका लागि प्रवेश तयारी',
   search: 'आफ्नो देश खोज्नुहोस्', hint: 'प्रस्थान गर्ने देश थिच्नुहोस्', noResult: 'नतिजा छैन',
   sat: 'स्याटेलाइट', map: 'नक्सा', from: 'बाट', to: 'सम्म · इन्छन अन्तर्राष्ट्रिय विमानस्थल, कोरिया',

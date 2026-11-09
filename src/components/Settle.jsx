@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { PLACES, TOWNS, NEEDS, SCOPE, STATS, SOURCES, WONJU, recommend } from '../data/wonju.js';
-import { VISAS } from '../data/visas.js';
+import { VISAS, byCode } from '../data/visas.js';
+import { LEGS } from '../data/route.js';
+import { CheckItem } from './RoutePanel.jsx';
 import { ui, fill } from '../i18n/ui.js';
 
 const CAT = { stay: '#1a73e8', work: '#e37400', health: '#d93025', korean: '#9334e6', family: '#c2185b', child: '#c2185b', life: '#188038', safety: '#f9ab00', culture: '#00897b', study: '#5f6368' };
@@ -18,7 +20,13 @@ function pinIcon(color, label, on) {
   });
 }
 
-export default function Settle({ lang, visa: visa0, name, onBack }) {
+/* 도착 후 할 일 → 지도 핀 (원주에서 그 일을 하는 곳) */
+const TODO_PIN = { arc: 'cityhall', bank: 'hana', unlimit: 'hana', remit: 'hana' };
+const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : null);
+
+const flagOf = (a2) => (a2 ? String.fromCodePoint(...[...a2.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0))) : '');
+
+export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, checks, toggle, entry, country, countryLabel }) {
   const t = ui(lang);
   const K = lang === 'ko' ? 'ko' : 'en';
   const [visa, setVisa] = useState(visa0 || 'E-9');
@@ -29,7 +37,14 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
   const host = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
+  const card = useRef(null);
+  /* 탭을 바꾸면 새 탭의 맨 위부터 보여 줍니다 */
+  useEffect(() => { if (card.current) card.current.scrollTop = 0; }, [tab]);
 
+  const todo = ((visa === 'E-9' ? LEGS : (byCode[visa] || {}).legs) || []).find((l) => l.key === 'arrive');
+  const todoItems = todo ? todo.items : [];
+  const todoDone = todoItems.filter((i) => checks[i.id]).length;
+  const today = new Date();
   const recs = useMemo(() => recommend({ visa, town, needs, family }), [visa, town, needs, family]);
   const groups = ['wonju', 'near', 'gangwon', 'national'].map((s) => ({ s, rows: recs.filter((r) => r.p.scope === s) })).filter((g) => g.rows.length);
 
@@ -41,8 +56,9 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
     L.control.zoom({ position: 'bottomright' }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
-    setTimeout(() => { m.invalidateSize(); m.panBy(innerWidth > 760 ? [-200, 0] : [0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
-    return () => m.remove();
+    // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
+    const tm = setTimeout(() => { m.invalidateSize(); m.panBy(innerWidth > 760 ? [-200, 0] : [0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
+    return () => { clearTimeout(tm); m.remove(); };
   }, []);
 
   /* 핀 — 추천된 사업이 있는 장소만 */
@@ -65,6 +81,7 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
     });
   }, [recs, hi, K]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const flyPlace = (k) => { const pl = PLACES[k]; if (pl && map.current) map.current.flyTo([pl.lat, pl.lng], 15, { duration: 0.9 }); };
   const flyTo = (p) => {
     setHi(p.id);
     const pl = p.place && PLACES[p.place]; if (!pl || !map.current) return;
@@ -90,13 +107,51 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
       <div className="lf" ref={host} />
 
       <aside className="side st-side">
-        <div className="card st-card">
+        <div className="card st-card" ref={card}>
           <div className="st-top">
             <button type="button" className="icon" onClick={onBack} aria-label={t.toGlobe} title={t.toGlobe}>←</button>
             <div><b>{t.settleT}</b><small>{t.settleSub}</small></div>
           </div>
           {name && <p className="st-hello">✈ {name.toUpperCase()} · {visa}</p>}
 
+          <div className="st-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={tab === 'todo'} onClick={() => setTab('todo')}>✅ {t.tabTodo}<span>{todoDone}/{todoItems.length}</span></button>
+            <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>📍 {t.tabFind}</button>
+          </div>
+
+          {tab === 'todo' && (
+            <div className="st-todo">
+              <p className="st-todo-intro">{t.todoIntro}</p>
+              <div className="st-prog"><i style={{ width: (todoItems.length ? Math.round((todoDone / todoItems.length) * 100) : 0) + '%' }} /></div>
+              <ul className="items">
+                {todoItems.map((it) => {
+                  const pk = pinOf(it.id);
+                  return (
+                    <CheckItem key={it.id} it={it} lang={lang} entry={entry} today={today} checked={!!checks[it.id]} toggle={toggle}
+                               extraBtn={pk && PLACES[pk] ? <button type="button" className="st-pin" title={PLACES[pk][K]} onClick={() => flyPlace(pk)}>📍 {t.onMap}</button> : null} />
+                  );
+                })}
+              </ul>
+              {visa === 'E-9' && (country ? (
+                <section className="st-country">
+                  <h3>{flagOf(country.a2)} {fill(t.ctryMore, { c: countryLabel })}</h3>
+                  {(country.ret || country.nps) && (
+                    <dl className="rp-meta">
+                      {country.ret && <div><dt>{t.retL}</dt><dd>{country.ret[K]}</dd></div>}
+                      {country.nps && <div><dt>{t.npsL}</dt><dd>{country.nps[K]}</dd></div>}
+                    </dl>
+                  )}
+                  {country.stay && country.stay[K].length
+                    ? <ul className="extra">{country.stay[K].map((x, i) => <li key={i}>{x}</li>)}</ul>
+                    : <p className="extra-none">{t.ctryNone}</p>}
+                  {country.stayLv === 'summary' && <p className="extra-none">{t.lvNote}</p>}
+                </section>
+              ) : <p className="st-country-pick">🌏 {t.ctryPick}</p>)}
+              <button type="button" className="st-next" onClick={() => setTab('find')}>📍 {t.tabFindGo} →</button>
+            </div>
+          )}
+
+          {tab === 'find' && <>
           <div className="st-stats">
             {STATS.map((s, i) => <div key={i}><b>{s.n}</b><span>{s[K]}</span></div>)}
           </div>
@@ -143,6 +198,7 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
               })}
             </section>
           ))}
+          </>}
           <p className="rp-note">{t.checkedOn}</p>
         </div>
       </aside>

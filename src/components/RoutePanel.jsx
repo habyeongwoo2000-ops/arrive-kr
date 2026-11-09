@@ -16,13 +16,16 @@ export function fuelOf(item, entry, today) {
   return { kind: 'before', date: iso(due), left, ratio, st };
 }
 
-export default function RoutePanel({ lang, country, fromLabel, legs, extra, entry, setEntry, checks, toggle, activeLeg, onLeg, flying, onFly, info }) {
+export default function RoutePanel({ lang, country, fromLabel, legs, extra, entry, setEntry, checks, toggle, activeLeg, onLeg, flying, onFly, info, arrive, onArrive }) {
   const t = ui(lang);
   const today = new Date();
   const all = legs.flatMap((l) => l.items);
   const done = all.filter((i) => checks[i.id]).length;
   const pending = all.filter((i) => !checks[i.id] && i.after === undefined).map((i) => fuelOf(i, entry, today));
   const sum = { ok: pending.filter((f) => f.st === 'ok').length, low: pending.filter((f) => f.st === 'low').length, out: pending.filter((f) => f.st === 'out').length };
+  const K = lang === 'ko' ? 'ko' : 'en';
+  /* 체크 항목에 붙는 나라별 목록: true = 접수 서류(extra), 'check' = 경찰·검진, 'exit' = 출국 허가 */
+  const listOf = (k) => (k === true ? extra || [] : country && country[k] ? country[k][K] || [] : []);
   const tank = pending.length ? pending.reduce((a, f) => a + f.ratio, 0) / pending.length : 1;
 
   return (
@@ -37,6 +40,7 @@ export default function RoutePanel({ lang, country, fromLabel, legs, extra, entr
         <dl className="rp-meta">
           <div><dt>{t.agency}</dt><dd>{country.site ? <a href={country.site} target="_blank" rel="noopener noreferrer">{country.agency}</a> : country.agency}</dd></div>
           <div><dt>{t.fee}</dt><dd>{country.fee}</dd></div>
+          {country.cost && <div><dt>{t.costL}</dt><dd>{country.cost[K]}</dd></div>}
           <div className={'lvl lvl-' + country.level}><dt>{t.source}</dt><dd>{t.lvl[country.level]} · {t.checked}</dd></div>
         </dl>
       )}
@@ -69,39 +73,60 @@ export default function RoutePanel({ lang, country, fromLabel, legs, extra, entr
               <small>{l.items.filter((i) => checks[i.id]).length}/{l.items.length}</small>
             </button>
             <ul className="items">
-              {l.items.map((it) => {
-                const f = fuelOf(it, entry, today);
-                const ok = !!checks[it.id];
-                return (
-                  <li key={it.id} className={'item' + (ok ? ' is-done' : '')}>
-                    <label className="item-h">
-                      <input type="checkbox" checked={ok} onChange={() => toggle(it.id)} />
-                      <span>
-                        <b>{tx(it.t, lang)}</b>
-                        <em>{tx(it.d, lang)}</em>
-                        {it.country && (
-                          extra && extra.length
-                            ? <ul className="extra">{extra.map((x, i) => <li key={i}>{x}</li>)}</ul>
-                            : <span className="extra-none">{t.extraNone}</span>
-                        )}
-                      </span>
-                    </label>
-                    {f.kind === 'before' ? (
-                      <div className={'gauge ' + (ok ? 'ok' : f.st)}>
-                        <div className="gauge-bar"><i style={{ width: (ok ? 100 : Math.round(f.ratio * 100)) + '%' }} /></div>
-                        <span>{ok ? '✓ ' + t.done : fill(t.due, { date: f.date }) + (f.left >= 0 ? ' · ' + fill(t.dleft, { n: f.left }) : ' · ' + t.fOut)}</span>
-                      </div>
-                    ) : (
-                      <div className="gauge after"><span>⏱ {it.after ? fill(t.after, { n: it.after }) + (f.date ? ' · ' + f.date : '') : t.afterAny}</span></div>
-                    )}
-                  </li>
-                );
-              })}
+              {l.items.map((it) => (
+                <CheckItem key={it.id} it={it} lang={lang} entry={entry} today={today} checked={!!checks[it.id]} toggle={toggle}
+                           list={it.country ? listOf(it.country) : null} country={country} />
+              ))}
             </ul>
           </li>
         ))}
       </ol>
+      {arrive && (
+        <button type="button" className="rp-arrive" onClick={onArrive}>
+          <span className="rp-arrive-ic" aria-hidden="true">🛬</span>
+          <span><b>{fill(t.arriveBtn, { n: arrive.total })}</b><small>{fill(t.progress, { done: arrive.done, total: arrive.total })} · {t.arriveSub}</small></span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
       <p className="rp-note">{t.note}</p>
     </div>
+  );
+}
+
+/* 체크 항목 하나 — 경로 패널과 원주 정착 "도착 후 할 일" 탭이 함께 씁니다. */
+export function CheckItem({ it, lang, entry, today, checked: ok, toggle, list, country, extraBtn }) {
+  const t = ui(lang);
+  const K = lang === 'ko' ? 'ko' : 'en';
+  const f = fuelOf(it, entry, today);
+  return (
+    <li className={'item' + (ok ? ' is-done' : '')}>
+      <label className="item-h">
+        <input type="checkbox" checked={ok} onChange={() => toggle(it.id)} />
+        <span>
+          <b>{tx(it.t, lang)}</b>
+          <em>{tx(it.d, lang)}</em>
+          {list && (!list.length
+            ? <span className="extra-none">{it.country === true ? t.extraNone : t.exitNone}</span>
+            : (
+              <>
+                <ul className="extra">{list.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                {it.country === 'exit' && country && country.cost && <span className="extra-cost">💰 {t.costL}: {country.cost[K]}</span>}
+                {it.country !== true && country && country.lv === 'summary' && <span className="extra-none">{t.lvNote}</span>}
+              </>
+            ))}
+        </span>
+      </label>
+      {f.kind === 'before' ? (
+        <div className={'gauge ' + (ok ? 'ok' : f.st)}>
+          <div className="gauge-bar"><i style={{ width: (ok ? 100 : Math.round(f.ratio * 100)) + '%' }} /></div>
+          <span>{ok ? '✓ ' + t.done : fill(t.due, { date: f.date }) + (f.left >= 0 ? ' · ' + fill(t.dleft, { n: f.left }) : ' · ' + t.fOut)}</span>
+        </div>
+      ) : (
+        <div className="gauge after">
+          <span>⏱ {it.after ? fill(t.after, { n: it.after }) + (f.date ? ' · ' + f.date : '') : t.afterAny}</span>
+          {extraBtn}
+        </div>
+      )}
+    </li>
   );
 }
