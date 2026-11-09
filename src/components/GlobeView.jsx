@@ -29,6 +29,7 @@ function markEl(d, onMark) {
   el.className = 'g-mark g-' + d.kind + (d.active ? ' is-on' : '') + (d.done ? ' is-done' : '');
   if (d.kind === 'leg') el.innerHTML = `<span class="g-dot">${d.n}</span><span class="g-lbl">${d.label}</span>`;
   else if (d.kind === 'turb') el.innerHTML = '<span class="g-turb" title="' + d.label.replace(/"/g, '&quot;') + '">!</span>';
+  else if (d.kind === 'wonju') el.innerHTML = `<span class="g-wj"><svg viewBox="0 0 28 40"><path d="M14 0C6.3 0 0 6.2 0 13.9 0 24.3 14 40 14 40s14-15.7 14-26.1C28 6.2 21.7 0 14 0z"/><circle cx="14" cy="14" r="5.2" fill="#fff"/></svg></span><span class="g-lbl">${d.label}</span>`;
   else el.innerHTML = `<span class="g-pin"></span><span class="g-lbl">${d.label}</span>`;
   el.style.pointerEvents = 'auto';
   el.style.cursor = 'pointer';
@@ -36,7 +37,7 @@ function markEl(d, onMark) {
   return el;
 }
 
-export default function GlobeView({ features, selected, hoverable, mode, path, marks, focus, onPick, onMark, apiRef }) {
+export default function GlobeView({ features, selected, hoverable, mode, paths, marks, focus, onPick, onMark, apiRef }) {
   const host = useRef(null);
   const g = useRef(null);
   const cb = useRef({});
@@ -58,8 +59,8 @@ export default function GlobeView({ features, selected, hoverable, mode, path, m
       .onPolygonClick((f) => cb.current.onPick && cb.current.onPick(f))
       .onPolygonHover((f) => { hover.current = f; paint(); el.style.cursor = f ? 'pointer' : 'grab'; })
       .pathPoints((d) => d.pts).pathPointLat((p) => p[0]).pathPointLng((p) => p[1]).pathPointAlt((p) => p[2])
-      .pathColor(() => ['rgba(255,255,255,0.95)', 'rgba(138,180,248,1)'])
-      .pathStroke(2.2).pathDashLength(0.06).pathDashGap(0.02).pathDashAnimateTime(9000).pathTransitionDuration(0)
+      .pathColor((d) => (d.kind === 'ground' ? ['rgba(251,188,4,1)', 'rgba(234,67,53,1)'] : ['rgba(255,255,255,0.95)', 'rgba(138,180,248,1)']))
+      .pathStroke((d) => (d.kind === 'ground' ? 3 : 2.2)).pathDashLength(0.06).pathDashGap(0.02).pathDashAnimateTime(9000).pathTransitionDuration(0)
       .htmlElement((d) => markEl(d, (m) => cb.current.onMark && cb.current.onMark(m)))
       .htmlLat((d) => d.lat).htmlLng((d) => d.lng).htmlAltitude((d) => d.alt || 0)
       .htmlTransitionDuration(0);
@@ -79,6 +80,8 @@ export default function GlobeView({ features, selected, hoverable, mode, path, m
         const pe = el.querySelector('.g-plane'); if (pe) pe.style.setProperty('--hd', (p.heading || 0) + 'deg');
       },
       look(pov, ms = 0) { globe.controls().autoRotate = false; globe.pointOfView(pov, ms); },
+      pause() { globe.pauseAnimation(); },
+      resume() { globe.resumeAnimation(); },
       zoom(f) { const v = globe.pointOfView(); globe.controls().autoRotate = false; globe.pointOfView({ ...v, altitude: Math.min(4, Math.max(0.35, v.altitude * f)) }, 400); }
     };
 
@@ -124,7 +127,7 @@ export default function GlobeView({ features, selected, hoverable, mode, path, m
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 경로 · 표시 */
-  useEffect(() => { if (g.current) g.current.pathsData(path ? [{ pts: path }] : []); }, [path]);
+  useEffect(() => { if (g.current) g.current.pathsData(paths || []); }, [paths]);
   useEffect(() => {
     if (!g.current) return;
     marksRef.current = marks || [];

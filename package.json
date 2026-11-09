@@ -5,14 +5,23 @@
   "description": "외국인근로자 한국 입국 준비 체크리스트 — 지구본 경로 안내",
   "license": "MIT",
   "type": "module",
-  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "d3-geo": "3.1.1",
     "globe.gl": "2.46.2",
+    "leaflet": "1.9.4",
+    "qrcode": "1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "topojson-client": "3.1.0",
     "world-atlas": "2.0.2"
   },
-  "devDependencies": { "@vitejs/plugin-react": "4.3.4", "vite": "5.4.11" }
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.11"
+  }
 }

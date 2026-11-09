@@ -136,6 +136,41 @@ const ne = {
   tutorFor: '{country} का कामदारका लागि व्याख्या', note: 'यो सेवाले कानुनी निर्णय दिँदैन। सधैं पठाउने निकायको सूचना र HiKorea हेर्नुहोस्।'
 };
 
+/* 탑승권 · 원주 정착 문구 */
+const X = {
+  ko: { bpTitle: '탑승권', passenger: '승객 성명', namePh: '이름 (여권과 같게)', fromL: '출발', toL: '도착', flight: '편명', date: '날짜', boarding: '탑승 시각', gate: '게이트', seat: '좌석', klass: '체류자격',
+    board: '탑승하기', skip: '지구본만 둘러볼게요', pickCountry: '출발 국가 검색', pickVisa: '체류자격(비자)을 고르세요', finalDest: '최종 목적지', stayL: '체류', inKoreaV: '국내에서 바꾸는 자격',
+    bpNote: '이 탑승권은 입국 준비 체크리스트를 여는 열쇠예요 · 실제 항공권이 아닙니다', boarded: '탑승 확인', needFrom: '출발 국가를 먼저 골라 주세요',
+    settleT: '원주 정착 지원', settleSub: '외국인주민 맞춤 공공지원 추천 · 원주 → 강원 → 전국', myVisa: '내 체류자격', myTown: '사는 곳', myNeeds: '필요한 것 (여러 개)', withFamily: '가족과 함께 살아요',
+    results: '맞춤 지원 {n}건', rWonju: '원주 거주자 대상', rGangwon: '강원 도민 대상', rTown: '우리 동네 사업', rVisa: '{v} 대상', rFresh: '2026 신규', call: '전화', site: '누리집', onMap: '지도', approx: '대략 위치',
+    allGW: '강원 전체', toWonju: '원주', toGlobe: '지구본으로', landed: '인천 도착!', toWonjuMove: '공항버스로 원주까지 약 2시간', startSettle: '원주 정착 시작', srcL: '자료',
+    checkedOn: '확인일 2026-11-09 · 기간·대상이 바뀔 수 있으니 신청 전 기관에 꼭 확인하세요', newB: '신규', whenL: '기간', whoL: '대상', settleBtn: '원주 정착 지원', needCheck: '확인 필요',
+    none: '조건에 맞는 사업이 없어요. 필요한 것을 바꿔 보세요.', inKorea: '이 자격은 보통 한국 안에서 바꿉니다 — 경로는 준비 순서 참고용이에요.', to: '도착 · 인천국제공항 → 원주', ticket: '탑승권' },
+  en: { bpTitle: 'Boarding pass', passenger: 'Passenger name', namePh: 'Name (as in passport)', fromL: 'From', toL: 'To', flight: 'Flight', date: 'Date', boarding: 'Boarding', gate: 'Gate', seat: 'Seat', klass: 'Visa class',
+    board: 'Board now', skip: 'Just explore the globe', pickCountry: 'Search departure country', pickVisa: 'Choose your visa type', finalDest: 'Final destination', stayL: 'Stay', inKoreaV: 'Changed inside Korea',
+    bpNote: 'This pass opens your arrival checklist · Not a travel document', boarded: 'Boarded', needFrom: 'Choose your departure country first',
+    settleT: 'Settle in Wonju', settleSub: 'Public support picked for you · Wonju → Gangwon → Korea', myVisa: 'My visa', myTown: 'Where I live', myNeeds: 'What I need (choose any)', withFamily: 'I live with family',
+    results: '{n} programs for you', rWonju: 'For Wonju residents', rGangwon: 'For Gangwon residents', rTown: 'In your town', rVisa: 'For {v}', rFresh: 'New in 2026', call: 'Call', site: 'Website', onMap: 'Map', approx: 'approx. location',
+    allGW: 'All Gangwon', toWonju: 'Wonju', toGlobe: 'Back to globe', landed: 'Landed at Incheon!', toWonjuMove: 'About 2 hours to Wonju by airport bus', startSettle: 'Start settling in Wonju', srcL: 'Source',
+    checkedOn: 'Checked 2026-11-09 · Dates and eligibility change — confirm with the office before applying', newB: 'NEW', whenL: 'When', whoL: 'Who', settleBtn: 'Settle in Wonju', needCheck: 'check',
+    none: 'Nothing matches yet. Try other needs.', inKorea: 'This status is usually obtained inside Korea — the route shows the order of steps.', to: 'To · Incheon Airport → Wonju', ticket: 'Pass' },
+  vi: { bpTitle: 'Thẻ lên máy bay', passenger: 'Họ tên hành khách', namePh: 'Tên (như hộ chiếu)', fromL: 'Từ', toL: 'Đến', flight: 'Chuyến bay', date: 'Ngày', boarding: 'Giờ lên', gate: 'Cửa', seat: 'Ghế', klass: 'Loại visa',
+    board: 'Lên máy bay', skip: 'Chỉ xem quả địa cầu', pickCountry: 'Tìm nước xuất phát', pickVisa: 'Chọn loại visa', finalDest: 'Điểm đến cuối', stayL: 'Lưu trú', bpNote: 'Thẻ này mở danh sách chuẩn bị · Không phải vé máy bay', boarded: 'Đã lên', needFrom: 'Hãy chọn nước xuất phát',
+    settleT: 'Định cư tại Wonju', settleSub: 'Hỗ trợ công phù hợp · Wonju → Gangwon → Hàn Quốc', myVisa: 'Visa của tôi', myTown: 'Nơi ở', myNeeds: 'Tôi cần', withFamily: 'Sống cùng gia đình', results: '{n} chương trình cho bạn',
+    call: 'Gọi', site: 'Trang web', onMap: 'Bản đồ', toGlobe: 'Về quả địa cầu', landed: 'Đã đến Incheon!', startSettle: 'Bắt đầu định cư tại Wonju', settleBtn: 'Định cư tại Wonju', to: 'Đến · Sân bay Incheon → Wonju' },
+  id: { bpTitle: 'Boarding pass', passenger: 'Nama penumpang', namePh: 'Nama (sesuai paspor)', fromL: 'Dari', toL: 'Ke', flight: 'Penerbangan', date: 'Tanggal', boarding: 'Boarding', gate: 'Gerbang', seat: 'Kursi', klass: 'Jenis visa',
+    board: 'Naik pesawat', skip: 'Lihat globe saja', pickCountry: 'Cari negara asal', pickVisa: 'Pilih jenis visa', finalDest: 'Tujuan akhir', stayL: 'Masa tinggal', bpNote: 'Pass ini membuka daftar persiapan · Bukan tiket', boarded: 'Sudah naik', needFrom: 'Pilih negara asal dulu',
+    settleT: 'Menetap di Wonju', settleSub: 'Dukungan publik untuk Anda · Wonju → Gangwon → Korea', myVisa: 'Visa saya', myTown: 'Tempat tinggal', myNeeds: 'Yang saya perlukan', withFamily: 'Tinggal dengan keluarga', results: '{n} program untuk Anda',
+    call: 'Telepon', site: 'Situs', onMap: 'Peta', toGlobe: 'Kembali ke globe', landed: 'Tiba di Incheon!', startSettle: 'Mulai menetap di Wonju', settleBtn: 'Menetap di Wonju', to: 'Ke · Bandara Incheon → Wonju' },
+  km: { bpTitle: 'ប័ណ្ណឡើងយន្តហោះ', passenger: 'ឈ្មោះអ្នកដំណើរ', namePh: 'ឈ្មោះ (ដូចលិខិតឆ្លងដែន)', fromL: 'ពី', toL: 'ទៅ', flight: 'ជើងហោះហើរ', date: 'កាលបរិច្ឆេទ', boarding: 'ឡើង', gate: 'ច្រក', seat: 'កៅអី', klass: 'ប្រភេទទិដ្ឋាការ',
+    board: 'ឡើងយន្តហោះ', skip: 'មើលភពផែនដីតែប៉ុណ្ណោះ', pickCountry: 'ស្វែងរកប្រទេសចេញដំណើរ', pickVisa: 'ជ្រើសប្រភេទទិដ្ឋាការ', finalDest: 'គោលដៅចុងក្រោយ', bpNote: 'ប័ណ្ណនេះបើកបញ្ជីត្រៀម · មិនមែនសំបុត្រពិត', boarded: 'បានឡើង',
+    settleT: 'តាំងលំនៅនៅ Wonju', myVisa: 'ទិដ្ឋាការរបស់ខ្ញុំ', myTown: 'កន្លែងរស់នៅ', myNeeds: 'អ្វីដែលខ្ញុំត្រូវការ', results: 'កម្មវិធី {n} សម្រាប់អ្នក', call: 'ហៅ', toGlobe: 'ត្រឡប់ទៅភពផែនដី', landed: 'មកដល់ Incheon!', startSettle: 'ចាប់ផ្តើមតាំងលំនៅ Wonju', settleBtn: 'តាំងលំនៅ Wonju' },
+  ne: { bpTitle: 'बोर्डिङ पास', passenger: 'यात्रीको नाम', namePh: 'नाम (राहदानीजस्तै)', fromL: 'बाट', toL: 'सम्म', flight: 'उडान', date: 'मिति', boarding: 'बोर्डिङ', gate: 'गेट', seat: 'सिट', klass: 'भिसा प्रकार',
+    board: 'चढ्नुहोस्', skip: 'ग्लोब मात्र हेर्छु', pickCountry: 'प्रस्थान देश खोज्नुहोस्', pickVisa: 'भिसा प्रकार छान्नुहोस्', finalDest: 'अन्तिम गन्तव्य', bpNote: 'यो पासले तयारी सूची खोल्छ · वास्तविक टिकट होइन', boarded: 'चढियो',
+    settleT: 'वोन्जुमा बसोबास', myVisa: 'मेरो भिसा', myTown: 'बस्ने ठाउँ', myNeeds: 'मलाई चाहिने', results: 'तपाईंका लागि {n} कार्यक्रम', call: 'फोन', toGlobe: 'ग्लोबमा फर्कनुहोस्', landed: 'इन्छन आइपुग्यो!', startSettle: 'वोन्जुमा बसोबास सुरु', settleBtn: 'वोन्जुमा बसोबास' }
+};
+Object.assign(ko, X.ko); Object.assign(en, X.en); Object.assign(vi, X.vi); Object.assign(id, X.id); Object.assign(km, X.km); Object.assign(ne, X.ne);
+
 const ALL = { ko, en, vi, id, km, ne };
 export const ui = (lang) => (lang === 'en' ? en : { ...en, ...(ALL[lang] || {}), lvl: { ...en.lvl, ...((ALL[lang] || {}).lvl || {}) } });
 export const fill = (s, v) => String(s || '').replace(/\{(\w+)\}/g, (m, k) => (v && v[k] !== undefined ? v[k] : m));
