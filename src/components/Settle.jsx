@@ -36,8 +36,8 @@ export default function Settle({ lang, visa: visa0, name, onBack }) {
   /* 지도 만들기 */
   useEffect(() => {
     const m = L.map(host.current, { zoomControl: false, attributionControl: true }).setView([WONJU.lat, WONJU.lng], 12);
-    // 구글 지도와 비슷한 색감의 CARTO Voyager 타일 (OpenStreetMap 데이터)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd', attribution: '© OpenStreetMap contributors © CARTO' }).addTo(m);
+    // OpenStreetMap 기본 타일 (API 키 필요 없음)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(m);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     map.current = m;
