@@ -5,9 +5,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { VISAS, byCode, IATA, NUM2A2 } from '../data/visas.js';
+import { byCode, IATA, NUM2A2 } from '../data/visas.js';
 import { byIso } from '../data/countries.js';
-import { ui, tx } from '../i18n/ui.js';
+import { ui } from '../i18n/ui.js';
+import Passport from './Passport.jsx';
 
 const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -41,7 +42,6 @@ function Bars({ seed, h = 54 }) {
 
 export default function BoardingPass({ lang, features, labelOf, init, onBoard, onSkip }) {
   const t = ui(lang);
-  const L = lang === 'ko' ? 'ko' : 'en';
   const [name, setName] = useState(init.name || '');
   const [from, setFrom] = useState(init.from || null);   // feature
   const [visa, setVisa] = useState(init.visa || 'E-9');
@@ -202,21 +202,8 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
           </div>
         )}
 
-        {/* ───── 비자 고르기 ───── */}
-        <div className="vs">
-          <p className="vs-h">{t.pickVisa}</p>
-          <div className="vs-grid" role="radiogroup" aria-label={t.pickVisa}>
-            {VISAS.map((x) => (
-              <button type="button" key={x.code} role="radio" aria-checked={visa === x.code} className={'vs-c' + (visa === x.code ? ' is-on' : '')}
-                      style={{ '--vc': x.color }} onClick={() => setVisa(x.code)}>
-                <b>{x.code}</b>
-                <span>{tx(x.name, lang)}</span>
-                <em>{x.who[L]}</em>
-                <small>{t.stayL} · {x.stay[L]}{x.inKorea ? ' · ' + t.inKoreaV : ''}</small>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* ───── 비자 고르기: 여권 ───── */}
+        <Passport lang={lang} visa={visa} onPick={setVisa} />
 
         <div className="bp-act">
           {warn && <p className="bp-warn" role="alert">{warn}</p>}
