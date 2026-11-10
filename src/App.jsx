@@ -61,6 +61,14 @@ export default function App() {
   const t = ui(lang);
   const n = nav(lang);
   const [fold, setFold] = useState(false);          // PC: 왼쪽 패널 접기
+  /* PC: 왼쪽 패널 너비 — 오른쪽 가장자리를 끌어서 조절 (300~560px, 이 기기에 기억) */
+  const PW_MIN = 300, PW_MAX = 560, PW_DEF = 360;
+  const [panelW, setPanelW] = useState(() => { try { const v = +localStorage.getItem('ui.panelW'); return v ? Math.min(PW_MAX, Math.max(PW_MIN, v)) : PW_DEF; } catch (e) { return PW_DEF; } });
+  const rz = useRef(null);
+  const savePW = (v) => { try { localStorage.setItem('ui.panelW', String(Math.round(v))); } catch (e) { /* 무시 */ } };
+  const rzDown = (e) => { e.preventDefault(); rz.current = { x: e.clientX, w: panelW }; e.currentTarget.setPointerCapture(e.pointerId); document.body.classList.add('is-rz'); };
+  const rzMove = (e) => { if (rz.current) setPanelW(Math.min(PW_MAX, Math.max(PW_MIN, rz.current.w + e.clientX - rz.current.x))); };
+  const rzUp = () => { if (!rz.current) return; rz.current = null; document.body.classList.remove('is-rz'); setPanelW((v) => { savePW(v); return v; }); };
   const [planGo, setPlanGo] = useState(0);         // 메뉴 '30일 일정' → 정착 화면에서 바로 AI 일정 시작
   const [mode, setMode] = useState('sat');
   const [sel, setSel] = useState(null);           // world-atlas feature
@@ -254,7 +262,7 @@ export default function App() {
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
-    <div className={'app mode-' + mode + ' view-' + view + (fold ? ' is-fold' : '')}>
+    <div className={'app mode-' + mode + ' view-' + view + (fold ? ' is-fold' : '')} style={{ '--pw': panelW + 'px' }}>
       {/* 맨 왼쪽 메뉴 (네이버 지도식 세로 메뉴) */}
       <nav className="rail" aria-label="Menu">
         <button type="button" className="rail-logo" onClick={goRoute} aria-label="ArriveKR"><Icon n="globe" size={22} /><b>ArriveKR</b></button>
@@ -279,6 +287,10 @@ export default function App() {
           )}
         </div>
       </nav>
+      <div className="side-rz" role="separator" aria-orientation="vertical" aria-valuemin={PW_MIN} aria-valuemax={PW_MAX} aria-valuenow={panelW}
+           title={lang === 'ko' ? '끌어서 너비 조절 · 두 번 누르면 기본 크기' : 'Drag to resize · double-click to reset'}
+           onPointerDown={rzDown} onPointerMove={rzMove} onPointerUp={rzUp} onPointerCancel={rzUp}
+           onDoubleClick={() => { setPanelW(PW_DEF); savePW(PW_DEF); }} />
       <button type="button" className="fold" onClick={() => setFold((f) => !f)} aria-label={fold ? n.unfold : n.fold} title={fold ? n.unfold : n.fold}>
         <Icon n={fold ? 'next' : 'back'} size={16} />
       </button>

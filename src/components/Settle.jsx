@@ -14,6 +14,13 @@ import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
 import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
+import HomePicker, { hs } from './HomePicker.jsx';
+import { distances, distText, reverse, roadPath } from '../lib/route.js';
+
+const HOME_KEY = 'arrive.home';
+const loadHome = () => { try { const h = JSON.parse(localStorage.getItem(HOME_KEY)); return h && isFinite(h.lat) && isFinite(h.lng) ? h : null; } catch (e) { return null; } };
+const saveHome = (h) => { try { h ? localStorage.setItem(HOME_KEY, JSON.stringify(h)) : localStorage.removeItem(HOME_KEY); } catch (e) { /* 저장 안 돼도 화면은 그대로 */ } };
+const homeIcon = () => L.divIcon({ className: 'poi lf-home', html: `<span class="poi-ic" style="--c:#03c75a"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5"/></svg></span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
 
 /* 지도 위 장소 아이콘 (Leaflet divIcon 은 HTML 문자열이라 SVG 를 글자로 둡니다) */
 const G = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -54,6 +61,15 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const [family, setFamily] = useState(visa0 === 'F-6');
   const [hi, setHi] = useState(null);
   const [plan, setPlan] = useState(0);   // 0 = 닫힘, 숫자 = 새로 만들 때마다 증가 (AI 30일 일정)
+  const h = hs(lang);
+  const [home, setHomeS] = useState(loadHome);     // { lat, lng, label }
+  const [dist, setDist] = useState({});            // 장소 키 → { m, s, est }
+  const [near, setNear] = useState(false);         // 가까운 순
+  const [picking, setPicking] = useState(false);   // 지도에서 집 고르는 중
+  const [routeTo, setRouteTo] = useState(null);    // 집 → 이 장소 길 보기
+  const pickRef = useRef(null);
+  const homeLayer = useRef(null);
+  const setHome = (v) => { setHomeS(v); saveHome(v); };
   const host = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -75,7 +91,11 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const todoDone = todoItems.filter((i) => checks[i.id]).length;
   const today = new Date();
   const recs = useMemo(() => recommend({ visa, town, needs, family }), [visa, town, needs, family]);
-  const groups = ['wonju', 'near', 'gangwon', 'national'].map((s) => ({ s, rows: recs.filter((r) => r.p.scope === s) })).filter((g) => g.rows.length);
+  const far = (r) => (r.p.place && dist[r.p.place] ? dist[r.p.place].m : Infinity);
+  const groups = ['wonju', 'near', 'gangwon', 'national'].map((s) => {
+    const rows = recs.filter((r) => r.p.scope === s);
+    return { s, rows: near && home ? [...rows].sort((a, b) => far(a) - far(b)) : rows };
+  }).filter((g) => g.rows.length);
 
   /* 지도 만들기 */
   useEffect(() => {
@@ -87,12 +107,62 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     layer.current = L.layerGroup().addTo(m);
     shopLayer.current = L.layerGroup().addTo(m);
     map.current = m;
-    m.on('click', () => { setLow(true); setMoreOpen(false); }); // 지도 빈 곳을 누르면 패널 내리기 (핀을 누를 땐 그대로)
+    homeLayer.current = L.layerGroup().addTo(m);
+    m.on('click', (e) => { if (pickRef.current) { pickRef.current(e.latlng); return; } setLow(true); setMoreOpen(false); }); // 지도 빈 곳을 누르면 패널 내리기 (핀을 누를 땐 그대로)
     const ro = new ResizeObserver(() => m.invalidateSize()); ro.observe(host.current); // 왼쪽 패널을 접고 펼 때 지도 크기 맞추기
     // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
     const tm = setTimeout(() => { m.invalidateSize(); if (innerWidth <= 760) m.panBy([0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
     return () => { alive = false; clearTimeout(tm); ro.disconnect(); m.remove(); };
   }, []);
+
+  /* 집: 지도 표시(끌어서 옮기기) + 모든 장소까지 거리 */
+  useEffect(() => {
+    const lg = homeLayer.current; if (!lg) return;
+    lg.clearLayers(); setRouteTo(null);
+    if (!home) { setDist({}); return; }
+    const mk = L.marker([home.lat, home.lng], { icon: homeIcon(), draggable: true, zIndexOffset: 1500, title: h.homeL }).addTo(lg);
+    mk.bindTooltip(h.homeL, { direction: 'top', offset: [0, -16], className: 'home-tip' });
+    mk.on('dragend', async () => { const p = mk.getLatLng(); setHome({ lat: p.lat, lng: p.lng, label: (await reverse(p.lat, p.lng, lang)) || h.picked }); });
+    let ok = true;
+    distances(home, PLACES).then((d) => { if (ok) setDist(d); });
+    return () => { ok = false; };
+  }, [home && home.lat, home && home.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* 집 → 장소 길 보기 */
+  useEffect(() => {
+    const lg = homeLayer.current; if (!lg || !home || !routeTo) return;
+    const pl = PLACES[routeTo]; if (!pl) return;
+    let ok = true; const g = L.layerGroup().addTo(lg);
+    roadPath(home, pl).then((path) => {
+      if (!ok) return;
+      L.polyline(path, { color: '#fff', weight: 9, opacity: 1, interactive: false }).addTo(g);
+      L.polyline(path, { color: '#03c75a', weight: 5, opacity: 1, interactive: false }).addTo(g);
+      map.current.flyToBounds(L.latLngBounds(path), { ...pad(), maxZoom: 15, duration: 0.8 });
+    });
+    return () => { ok = false; g.remove(); };
+  }, [routeTo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* 지도에서 집 고르기 */
+  const startPick = () => {
+    setPicking(true); setLow(true);
+    pickRef.current = async (ll) => {
+      pickRef.current = null; setPicking(false); setLow(false);
+      setHome({ lat: ll.lat, lng: ll.lng, label: h.picked });
+      const label = await reverse(ll.lat, ll.lng, lang);
+      if (label) setHome({ lat: ll.lat, lng: ll.lng, label });
+    };
+  };
+  const cancelPick = () => { pickRef.current = null; setPicking(false); };
+  const locate = () => {
+    if (!navigator.geolocation) { alert(h.locFail); return; }
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      const p = { lat: coords.latitude, lng: coords.longitude };
+      setHome({ ...p, label: h.here });
+      map.current && map.current.flyTo([p.lat, p.lng], 14, { duration: 0.8 });
+      const label = await reverse(p.lat, p.lng, lang); if (label) setHome({ ...p, label });
+    }, () => alert(h.locFail), { enableHighAccuracy: true, timeout: 10000 });
+  };
+  const setHomeFly = (v) => { setHome(v); map.current && map.current.flyTo([v.lat, v.lng], 14, { duration: 0.8 }); };
 
   /* 핀 — 추천된 사업이 있는 장소만 */
   useEffect(() => {
@@ -110,10 +180,10 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
       const color = CAT[ps[0].needs[0]] || '#1a73e8';
       const gl = ps[0].needs[0] === 'health' ? 'health' : 'gov';
       const mk = L.marker([pl.lat, pl.lng], { icon: pinIcon(color, pl[K].split(' (')[0] + (ps.length > 1 ? ' ' + ps.length : ''), on, gl), zIndexOffset: on ? 1000 : 0 }).addTo(lg);
-      mk.bindPopup(`<div class="pop"><b class="pop-t">${pl[K]}</b>${pl.exact ? '' : `<span class="pop-a">${t.approx}</span>`}<ul>${ps.map((p) => `<li>${p[K].t}</li>`).join('')}</ul></div>`);
+      mk.bindPopup(`<div class="pop"><b class="pop-t">${pl[K]}</b>${pl.exact ? '' : `<span class="pop-a">${t.approx}</span>`}${dist[k] ? `<span class="pop-d">${h.fromHome} ${distText(dist[k], lang)}</span>` : ''}<ul>${ps.map((p) => `<li>${p[K].t}</li>`).join('')}</ul></div>`);
       mk.on('click', () => { setLow(false); setHi(ps[0].id); const el = document.getElementById('pg-' + ps[0].id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
     });
-  }, [recs, hi, K]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [recs, hi, K, dist]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 외국인 식료품점(🛒)·선불폰 매장(📱) 핀 (각각 켜고 끄기) */
   useEffect(() => {
@@ -156,7 +226,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   };
   const allGW = () => map.current && map.current.flyToBounds(L.latLngBounds(Object.values(PLACES).map((p) => [p.lat, p.lng])).pad(0.1), { ...pad(), duration: 1 });
   const pad = () => (innerWidth > 760 ? { paddingTopLeft: [40, 80], paddingBottomRight: [60, 30] } : { paddingBottomRight: [0, innerHeight * 0.55] });
-  const home = () => map.current && map.current.flyToBounds(L.latLngBounds([[37.30, 127.80], [37.38, 128.0]]), { ...pad(), duration: 0.9 });
+  const goWonju = () => map.current && map.current.flyToBounds(L.latLngBounds([[37.30, 127.80], [37.38, 128.0]]), { ...pad(), duration: 0.9 });
   /* 왼쪽 메뉴의 '30일 일정' → 바로 AI 일정 시작 */
   useEffect(() => { if (planGo > 0 && map.current) { setLow(true); setPlan((x) => x + 1); } }, [planGo]); // eslint-disable-line react-hooks/exhaustive-deps
   const tog = (n) => setNeeds((a) => (a.includes(n) ? a.filter((x) => x !== n) : [...a, n]));
@@ -172,7 +242,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   };
 
   return (
-    <div className={'settle' + (low ? ' is-low' : '') + (plan ? ' is-plan' : '')}>
+    <div className={'settle' + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '')}>
       <div className="lf" ref={host} />
 
       <aside ref={sideEl} className={'side st-side' + (low ? ' is-low' : '')} onClick={() => { if (low && !justDragged.current) setLow(false); }}>
@@ -224,6 +294,8 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
           )}
 
           {tab === 'find' && <>
+          <HomePicker lang={lang} home={home} onSet={setHomeFly} onClear={() => setHome(null)} onPickMap={startPick} onLocate={locate} near={near} setNear={setNear} />
+
           <div className="st-stats">
             {STATS.map((s, i) => <div key={i}><b>{s.n}</b><span>{s[K]}</span></div>)}
           </div>
@@ -260,6 +332,10 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
                       <div><dt>{t.whoL}</dt><dd>{c.who}</dd></div>
                       <div><dt>{t.whenL}</dt><dd>{c.when}</dd></div>
                     </dl>
+                    {home && p.place && dist[p.place] && (
+                      <div className="pg-dist"><Icon n="life" size={14} /><span>{h.fromHome} <b>{distText(dist[p.place], lang)}</b></span>
+                        <button type="button" className={routeTo === p.place ? 'is-on' : ''} onClick={(e) => { e.stopPropagation(); setHi(p.id); setRouteTo((x) => (x === p.place ? null : p.place)); }}><Icon n="route" size={14} />{h.route}</button></div>
+                    )}
                     <ul className="pg-why">{why.map((w) => whyLabel(w) && <li key={w}>{whyLabel(w)}</li>)}</ul>
                     <div className="pg-act">
                       {p.tel && <a href={'tel:' + p.tel.replace(/[^0-9]/g, '')} onClick={(e) => e.stopPropagation()}><Icon n="call" size={15} />{p.tel}</a>}
@@ -279,7 +355,14 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
 
       {plan > 0 && map.current && (
         <Plan key={plan} map={map.current} lang={lang} visa={visa} needs={needs} family={family} entry={entry || new Date()}
-              name={name} country={countryLabel || ''} onClose={() => setPlan(0)} />
+              name={name} country={countryLabel || ''} home={home} dist={dist} onClose={() => setPlan(0)} />
+      )}
+
+      {picking && (
+        <div className="pick-bar" role="status" onClick={(e) => e.stopPropagation()}>
+          <Icon n="pin" size={18} /><b>{h.pickT}</b>
+          <button type="button" onClick={cancelPick}>{h.cancel}</button>
+        </div>
       )}
 
       {/* 지도 위 카테고리 칩 (네이버 지도처럼 흰 알약 + 색 아이콘, 넘치면 … 더보기) */}
@@ -294,7 +377,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
           <button type="button" className="cat cat-dots" aria-label={n.more} aria-expanded={moreOpen} onClick={() => setMoreOpen((o) => !o)}><span /><span /><span /></button>
           {moreOpen && (
             <div className="cat-menu" role="menu">
-              <button type="button" role="menuitem" onClick={() => { home(); setMoreOpen(false); }}><Icon n="pin" size={18} style={{ color: '#03c75a' }} />{n.wonjuL}</button>
+              <button type="button" role="menuitem" onClick={() => { goWonju(); setMoreOpen(false); }}><Icon n="pin" size={18} style={{ color: '#03c75a' }} />{n.wonjuL}</button>
               <button type="button" role="menuitem" onClick={() => { allGW(); setMoreOpen(false); }}><Icon n="globe" size={18} style={{ color: '#2c7ff7' }} />{n.gwL}</button>
               <button type="button" role="menuitem" onClick={() => { flyPlace('terminal'); setMoreOpen(false); }}><Icon n="bus" size={18} style={{ color: '#3d3d3d' }} />{n.terminalL}</button>
               <button type="button" role="menuitem" onClick={() => { flyPlace('cityhall'); setMoreOpen(false); }}><Icon n="culture" size={18} style={{ color: '#1a73e8' }} />{PLACES.cityhall[K]}</button>

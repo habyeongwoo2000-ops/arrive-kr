@@ -8,6 +8,7 @@ import { PLACES } from '../data/wonju.js';
 import { ui, fill } from '../i18n/ui.js';
 import './plan.css';
 import Icon from './Icon.jsx';
+import { roadPath, distText } from '../lib/route.js';
 const ICON = { '🚌': 'bus', '🎓': 'study', '☎': 'call', '🏢': 'culture', '🌾': 'work', '🚍': 'bus', '가': 'ko', '🏥': 'health', '👪': 'family', '🪪': 'stay', '🦺': 'safety', '🎉': 'culture', '✅': 'check' };
 
 /* 이 기능의 문구 — ui.js 를 건드리지 않도록 여기에 둡니다 (없는 언어는 영어) */
@@ -32,24 +33,13 @@ export function PlanButton({ lang, onClick }) {
 const KIND = { move: '#202124', duty: '#e37400', call: '#9334e6', visit: '#1a73e8', goal: '#188038' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* 두 장소 사이 실제 길 (OSRM 공개 경로 서버, 키 없음) — 4초 안에 못 받으면 직선 */
-const ROUTES = {};
-async function roadPath(a, b) {
-  const key = [a.lat, a.lng, b.lat, b.lng].map((v) => v.toFixed(5)).join(',');
-  if (ROUTES[key]) return ROUTES[key];
-  try {
-    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 4000);
-    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`, { signal: ac.signal });
-    clearTimeout(tm);
-    const d = await r.json();
-    const c = d.routes[0].geometry.coordinates.map(([x, y]) => L.latLng(y, x));
-    if (c.length < 2) throw new Error('short');
-    ROUTES[key] = [a, ...c, b];
-  } catch (e) { ROUTES[key] = [a, b]; }
-  return ROUTES[key];
-}
+/* 아래 일정 패널 높이 — 위쪽 손잡이를 끌어서 바꾸고, 이 기기에 기억합니다 */
+const DOCK_KEY = 'ui.dockH';
+const dockMax = () => Math.round(innerHeight * (innerWidth > 760 ? 0.72 : 0.8));
+const DOCK_MIN = 96;
+const loadDock = () => { try { const v = +localStorage.getItem(DOCK_KEY); return v ? Math.min(dockMax(), Math.max(DOCK_MIN, v)) : (innerWidth > 760 ? 228 : 210); } catch (e) { return 228; } };
 
-export default function Plan({ map, lang, visa, needs, family, entry, name, country, onClose }) {
+export default function Plan({ map, lang, visa, needs, family, entry, name, country, home, dist = {}, onClose }) {
   const t = { ...ui(lang), ...words(lang) };
   const K = lang === 'ko' ? 'ko' : 'en';
   const steps = useMemo(() => buildPlan({ visa, needs, family, entry }), [visa, needs, family, entry]);
@@ -61,6 +51,25 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   const run = useRef(0);
   const lg = useRef(null);
   const strip = useRef(null);
+  const [dockH, setDockH] = useState(loadDock);
+  const drag = useRef(null);
+  const onGrip = (e) => {
+    e.preventDefault();
+    drag.current = { y: e.clientY, h: dockH };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    document.body.classList.add('is-rz-v');
+  };
+  const onGripMove = (e) => {
+    if (!drag.current) return;
+    setDockH(Math.min(dockMax(), Math.max(DOCK_MIN, drag.current.h + (drag.current.y - e.clientY))));
+  };
+  const onGripUp = () => {
+    if (!drag.current) return;
+    drag.current = null; document.body.classList.remove('is-rz-v');
+    setDockH((v) => { try { localStorage.setItem(DOCK_KEY, String(Math.round(v))); } catch (e) { /* 무시 */ } return v; });
+  };
+  /* 손잡이를 두 번 누르면 접기 ↔ 기본 크기 */
+  const toggleDock = () => setDockH((v) => { const n = v > DOCK_MIN + 20 ? DOCK_MIN : 228; try { localStorage.setItem(DOCK_KEY, String(n)); } catch (e) { /* 무시 */ } return n; });
 
   /* 1) AI에게 설명 받기 + "생각하는 장면" (최소 2.4초) */
   useEffect(() => {
@@ -178,7 +187,9 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   }
 
   return (
-    <div className="pl-dock">
+    <div className={'pl-dock' + (dockH < 150 ? ' is-mini' : '')} style={{ height: dockH }}>
+      <div className="pl-grip" role="separator" aria-orientation="horizontal" aria-label="resize" title={lang === 'ko' ? '끌어서 크기 조절 · 두 번 눌러 접기' : 'Drag to resize · double-click to fold'}
+           onPointerDown={onGrip} onPointerMove={onGripMove} onPointerUp={onGripUp} onPointerCancel={onGripUp} onDoubleClick={toggleDock}><i /></div>
       <div className="pl-h">
         <div className="pl-ttl">
           <b>{t.planT}</b>
@@ -189,7 +200,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
           <button type="button" className="x" aria-label={t.close} onClick={onClose}><Icon n="close" size={16} /></button>
         </div>
       </div>
-      <p className="pl-intro">{(ai && ai.intro) || (name ? fill(t.planHello, { name: name.toUpperCase() }) : t.planHello0)}</p>
+      {(() => { const intro = (ai && ai.intro) || (name ? fill(t.planHello, { name: name.toUpperCase() }) : t.planHello0); return <p className="pl-intro" title={intro}>{intro}</p>; })()}
 
       {/* 30일 띠 */}
       <div className="pl-rib" aria-hidden="true">
@@ -213,6 +224,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
               {tip && <small className="pl-c-fact">{s.n[K]}</small>}
               <footer>
                 {pl && <span><Icon n="pin" size={13} />{pl[K].split(' (')[0]}{pl.exact ? '' : ' · ' + t.approx}</span>}
+                {home && dist[s.place] && <span className="pl-c-d"><Icon n="life" size={13} />{distText(dist[s.place], lang)}</span>}
                 {s.tel && <a href={'tel:' + s.tel.replace(/[^0-9]/g, '')} onClick={(e) => e.stopPropagation()}><Icon n="call" size={13} />{s.tel}</a>}
                 {s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><Icon n="link" size={13} />{t.site}</a>}
               </footer>
@@ -220,7 +232,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
           );
         })}
       </div>
-      <p className="pl-note">{t.planNote}</p>
+      <p className="pl-note" title={t.planNote}>{t.planNote}</p>
     </div>
   );
 }
