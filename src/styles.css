@@ -382,17 +382,19 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .cat-menu button:hover { background: var(--hover); }
 
 /* 지도 위 장소 아이콘 — 색 원 + 흰 그림, 이름은 테두리 글씨 */
-.poi { position: relative; }
+.poi { overflow: visible; }  /* 위치는 Leaflet 이 정함 (relative 로 바꾸면 핀이 밀립니다) */
 .poi-ic { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); transition: transform .15s; }
 .poi-ic svg { width: 15px; height: 15px; }
-.poi-lb { position: absolute; left: 32px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 800 12.5px var(--f); letter-spacing: -.02em; color: var(--c); text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
+.poi-lb { position: absolute; left: 50%; top: 31px; transform: translateX(-50%); white-space: nowrap; text-align: center; font: 800 12.5px var(--f); letter-spacing: -.02em; color: var(--c); text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
 .lf-pin .poi-ic { width: 32px; height: 32px; border-radius: 9px; } .lf-pin .poi-ic svg { width: 17px; height: 17px; }
-.lf-pin .poi-lb { left: 36px; font-size: 13px; color: var(--ink); }
+.lf-pin .poi-lb { top: 35px; font-size: 13px; color: var(--ink); }
 .poi.is-on .poi-ic { transform: scale(1.25); box-shadow: 0 0 0 4px rgba(52,120,246,.25), 0 1px 4px rgba(0,0,0,.35); }
 .lf-shop .poi-lb { display: none; }
 .leaflet-marker-icon.lf-shop:hover .poi-lb { display: block; }
 .lf-foreign .poi-ic { box-shadow: 0 0 0 2px #4a6cf7, 0 1px 4px rgba(0,0,0,.35); }
-.leaflet-container { font-family: var(--f); }
+.leaflet-container { font-family: var(--f); background: #f4f3f0; }
+.osm-soft { filter: saturate(.45) brightness(1.07) contrast(.93); }
+.leaflet-gl-layer { z-index: 1; }
 .leaflet-popup-content-wrapper { border-radius: 8px; box-shadow: var(--sh-l); }
 .leaflet-popup-content { margin: 14px 16px; font: 13px/1.5 var(--f); }
 .pop { display: grid; gap: 2px; min-width: 180px; }

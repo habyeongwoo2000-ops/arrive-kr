@@ -32,6 +32,23 @@ export function PlanButton({ lang, onClick }) {
 const KIND = { move: '#202124', duty: '#e37400', call: '#9334e6', visit: '#1a73e8', goal: '#188038' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* 두 장소 사이 실제 길 (OSRM 공개 경로 서버, 키 없음) — 4초 안에 못 받으면 직선 */
+const ROUTES = {};
+async function roadPath(a, b) {
+  const key = [a.lat, a.lng, b.lat, b.lng].map((v) => v.toFixed(5)).join(',');
+  if (ROUTES[key]) return ROUTES[key];
+  try {
+    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 4000);
+    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`, { signal: ac.signal });
+    clearTimeout(tm);
+    const d = await r.json();
+    const c = d.routes[0].geometry.coordinates.map(([x, y]) => L.latLng(y, x));
+    if (c.length < 2) throw new Error('short');
+    ROUTES[key] = [a, ...c, b];
+  } catch (e) { ROUTES[key] = [a, b]; }
+  return ROUTES[key];
+}
+
 export default function Plan({ map, lang, visa, needs, family, entry, name, country, onClose }) {
   const t = { ...ui(lang), ...words(lang) };
   const K = lang === 'ko' ? 'ko' : 'en';
@@ -72,49 +89,72 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
     const c = map.unproject(map.project([lat, lng], z).add(off), z);
     map.flyTo(c, z, { duration: 0.8 });
   }
+  /* 도크에 가리지 않게 지도 여백 */
+  const dockPad = () => {
+    const d = document.querySelector('.pl-dock'); const h = (d ? d.offsetHeight : 300) + 28;
+    return innerWidth > 760 ? { paddingTopLeft: [70, 90], paddingBottomRight: [90, h] } : { paddingTopLeft: [30, 70], paddingBottomRight: [30, h] };
+  };
+  /* 지도가 다 움직인 뒤에 선을 그려야 선이 밀리지 않습니다 */
+  const settled = () => new Promise((res) => { let t = 0; const f = () => { clearTimeout(t); map.off('moveend', f); res(); }; map.on('moveend', f); t = setTimeout(f, 1500); });
+
   async function play() {
     if (!map) return;
     const my = ++run.current;
     if (lg.current) lg.current.remove();
     const g = L.layerGroup().addTo(map); lg.current = g;
-    const casing = L.polyline([], { color: '#fff', weight: 9, opacity: 0.95, lineCap: 'round' }).addTo(g);
-    const line = L.polyline([], { color: '#1a73e8', weight: 5, opacity: 1, lineCap: 'round', className: 'pl-line' }).addTo(g);
-    const me = L.marker([PLACES.terminal.lat, PLACES.terminal.lng], { icon: L.divIcon({ className: 'pl-me', html: '<i></i>', iconSize: [22, 22], iconAnchor: [11, 11] }), zIndexOffset: 2000 }).addTo(g);
+    const casing = L.polyline([], { color: '#ffffff', weight: 10, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g);
+    const line = L.polyline([], { color: '#2b6ff4', weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g);
+    const me = L.marker([PLACES.terminal.lat, PLACES.terminal.lng], { icon: L.divIcon({ className: 'pl-me', html: '<i></i>', iconSize: [22, 22], iconAnchor: [11, 11] }), zIndexOffset: 2000, interactive: false }).addTo(g);
     const byPlace = {};
-    let prev = null;
     setPlaying(true);
+
+    /* 장소 사이 실제 길을 한꺼번에 받아 둡니다 (실패하면 직선) */
+    const pts = steps.map((s) => (s.place && PLACES[s.place] ? L.latLng(PLACES[s.place].lat, PLACES[s.place].lng) : null));
+    const segs = {}; const jobs = []; let last = null;
+    pts.forEach((p, i) => { if (!p) return; if (last && !last.equals(p)) { const a = last; jobs.push(roadPath(a, p).then((r) => { segs[i] = r; })); } last = p; });
+    await Promise.all(jobs);
+    if (run.current !== my) return;
+
+    let prev = null;
     for (let i = 0; i < steps.length; i++) {
       if (run.current !== my) return;
       const s = steps[i];
       setActive(i);
       const card = strip.current && strip.current.children[i];
       if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      const pl = s.place && PLACES[s.place];
-      if (pl) {
-        const to = L.latLng(pl.lat, pl.lng);
-        focus(pl.lat, pl.lng, 13);
+      const to = pts[i];
+      if (to) {
         if (prev && !prev.equals(to)) {
-          for (let k = 1; k <= 24; k++) {        // 선을 조금씩 그려 나가기
+          const path = segs[i] || [prev, to];
+          map.flyToBounds(L.latLngBounds(path), { ...dockPad(), maxZoom: 15, duration: 0.8 });
+          await settled();
+          const step = Math.max(1, Math.ceil(path.length / 45));       // 길 따라 조금씩 그리기 (약 0.9초)
+          for (let k = 1; k < path.length; k += step) {
             if (run.current !== my) return;
-            const p = L.latLng(prev.lat + (to.lat - prev.lat) * k / 24, prev.lng + (to.lng - prev.lng) * k / 24);
-            casing.addLatLng(p); line.addLatLng(p); me.setLatLng(p);
-            await sleep(28);
+            for (let q = Math.max(1, k - step + 1); q <= k; q++) { casing.addLatLng(path[q]); line.addLatLng(path[q]); }
+            me.setLatLng(path[k]);
+            await sleep(20);
           }
-        } else { casing.addLatLng(to); line.addLatLng(to); me.setLatLng(to); }
+          const end = path[path.length - 1];
+          casing.addLatLng(end); line.addLatLng(end); me.setLatLng(end);
+        } else {
+          if (!prev) { map.flyTo(to, 15, { duration: 0.8 }); await settled(); map.panBy([0, Math.round(dockPad().paddingBottomRight[1] / 2)], { animate: false }); }
+          casing.addLatLng(to); line.addLatLng(to); me.setLatLng(to);
+        }
         prev = to;
         const lbl = 'D+' + s.day;
         const ex = byPlace[s.place];
         if (ex) { ex.days.push(lbl); ex.m.setIcon(dayIcon(ex.days.join(' · '), KIND[s.kind], true)); }
-        else byPlace[s.place] = { days: [lbl], m: L.marker(to, { icon: dayIcon(lbl, KIND[s.kind], true), zIndexOffset: 1000 }).addTo(g) };
-        await sleep(950);
+        else byPlace[s.place] = { days: [lbl], m: L.marker(to, { icon: dayIcon(lbl, KIND[s.kind], true), zIndexOffset: 1000, interactive: false }).addTo(g) };
+        await sleep(800);
       } else {
-        await sleep(1300);                      // 장소 없는 일(전화·교육)은 카드만 강조
+        await sleep(1200);                      // 장소 없는 일(전화·교육)은 카드만 강조
       }
     }
     if (run.current !== my) return;
     setPlaying(false);
-    const pts = Object.keys(byPlace).map((k) => [PLACES[k].lat, PLACES[k].lng]);
-    if (pts.length > 1) map.flyToBounds(L.latLngBounds(pts).pad(0.35), { duration: 1, ...(innerWidth > 760 ? { paddingTopLeft: [40, 80], paddingBottomRight: [40, 300] } : { paddingBottomRight: [0, innerHeight * 0.45] }) });
+    const all = line.getLatLngs();
+    if (all.length > 1) map.flyToBounds(L.latLngBounds(all), { ...dockPad(), maxZoom: 15, duration: 1 });
   }
   const stop = () => { run.current++; setPlaying(false); };
   const jump = (i) => {

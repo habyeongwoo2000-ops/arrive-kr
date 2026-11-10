@@ -12,6 +12,7 @@ import { CheckItem } from './RoutePanel.jsx';
 import { ui, fill } from '../i18n/ui.js';
 import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
+import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
 
 /* 지도 위 장소 아이콘 (Leaflet divIcon 은 HTML 문자열이라 SVG 를 글자로 둡니다) */
@@ -78,9 +79,10 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
 
   /* 지도 만들기 */
   useEffect(() => {
-    const m = L.map(host.current, { zoomControl: false, attributionControl: true }).setView([WONJU.lat, WONJU.lng], 12);
-    // OpenStreetMap 기본 타일 (API 키 필요 없음)
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(m);
+    const m = L.map(host.current, { zoomControl: false, attributionControl: true, maxZoom: 18 }).setView([WONJU.lat, WONJU.lng], 12);
+    // 바탕 지도: 국내 지도 서비스처럼 밝은 벡터 지도 (안 되면 OpenStreetMap 그림 지도)
+    let alive = true;
+    addBase(m, () => alive);
     L.control.zoom({ position: 'bottomright' }).addTo(m);
     layer.current = L.layerGroup().addTo(m);
     shopLayer.current = L.layerGroup().addTo(m);
@@ -89,7 +91,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     const ro = new ResizeObserver(() => m.invalidateSize()); ro.observe(host.current); // 왼쪽 패널을 접고 펼 때 지도 크기 맞추기
     // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
     const tm = setTimeout(() => { m.invalidateSize(); if (innerWidth <= 760) m.panBy([0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
-    return () => { clearTimeout(tm); ro.disconnect(); m.remove(); };
+    return () => { alive = false; clearTimeout(tm); ro.disconnect(); m.remove(); };
   }, []);
 
   /* 핀 — 추천된 사업이 있는 장소만 */
