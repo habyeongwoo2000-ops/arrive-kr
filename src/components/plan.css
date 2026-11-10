@@ -1,0 +1,76 @@
+/* ═════════ 나의 원주 정착 30일 ═════════ */
+.ai-plan { position: relative; display: flex; align-items: center; gap: 12px; width: calc(100% - 28px); margin: 14px 14px 0; padding: 14px 16px; border: 0; border-radius: 14px; color: #fff; text-align: start; overflow: hidden;
+  background: linear-gradient(110deg, #4285f4, #9b72cb 45%, #d96570 75%, #f2a65a); background-size: 200% 100%; animation: aishift 6s ease-in-out infinite; box-shadow: 0 6px 18px rgba(155,114,203,.35); }
+@keyframes aishift { 50% { background-position: 100% 0; } }
+.ai-plan::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); transform: translateX(-100%); animation: sheen 3.2s ease-in-out infinite; }
+@keyframes sheen { 60%, 100% { transform: translateX(100%); } }
+.ai-plan:hover { transform: translateY(-1px); }
+.ai-spark { font-size: 24px; animation: spin 4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-plan b { display: block; font-size: 15px; } .ai-plan small { font-size: 12px; opacity: .92; }
+.ai-plan > span:nth-child(2) { flex: 1; min-width: 0; }
+.ai-plan > i { font-style: normal; font-size: 20px; }
+.settle.is-plan .lf-pin { opacity: .35; }
+
+/* AI가 생각하는 장면 */
+.pl-think { position: absolute; left: calc(50% + 206px); top: 50%; z-index: 700; transform: translate(-50%, -50%); width: min(420px, calc(100vw - 32px)); padding: 26px 26px 20px; border-radius: 20px; background: rgba(255,255,255,.96); box-shadow: 0 20px 60px rgba(32,33,36,.28); text-align: center; animation: up .3s ease-out; backdrop-filter: blur(8px); }
+.pl-think > b { display: block; margin: 14px 0 12px; font-size: 17px; }
+.pl-think ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; text-align: start; }
+.pl-think li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-3); transition: color .3s; }
+.pl-think li span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #dadce0; font-size: 12px; font-weight: 700; flex: none; }
+.pl-think li.now { color: var(--ink); } .pl-think li.now span { border-color: #9b72cb; border-top-color: transparent; animation: spin .8s linear infinite; }
+.pl-think li.ok { color: var(--ink); } .pl-think li.ok span { border-color: #34a853; background: #34a853; color: #fff; }
+.pl-orb { position: relative; width: 64px; height: 64px; margin: 0 auto; }
+.pl-orb i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, #4285f4, #9b72cb, #d96570, #f2a65a, #4285f4); filter: blur(2px); animation: spin 2.4s linear infinite; }
+.pl-orb i:nth-child(2) { inset: 8px; background: #fff; filter: none; animation: none; }
+.pl-orb i:nth-child(3) { inset: 18px; background: conic-gradient(from 90deg, #4285f4, #d96570, #4285f4); animation: spin 1.2s linear infinite reverse; filter: blur(1px); }
+
+/* 지도 위 표시 */
+.pl-line { stroke-dasharray: 12 10; animation: dash 1s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -22; } }
+.pl-me i { position: absolute; inset: 4px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(26,115,232,.5); animation: me 1.6s infinite; }
+@keyframes me { 70% { box-shadow: 0 0 0 16px rgba(26,115,232,0); } 100% { box-shadow: 0 0 0 0 rgba(26,115,232,0); } }
+.pl-mk span { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 14px)); padding: 4px 10px; border-radius: 12px; background: var(--c); color: #fff; font: 700 12px 'Roboto Mono', monospace; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.3); animation: pop .4s cubic-bezier(.3,1.6,.5,1); }
+.pl-mk span::after { content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: var(--c); }
+@keyframes pop { from { transform: translate(-50%, calc(-100% - 14px)) scale(0); } }
+
+/* 아래 일정 도크 */
+.pl-dock { position: absolute; left: 424px; right: 14px; bottom: 14px; z-index: 650; padding: 14px 0 10px; border-radius: 18px; background: rgba(255,255,255,.97); box-shadow: var(--sh-l); animation: up .35s ease-out; backdrop-filter: blur(8px); }
+.pl-h { display: flex; align-items: center; gap: 10px; padding: 0 16px; }
+.pl-ttl { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .pl-ttl b { font-size: 17px; }
+.pl-badge { padding: 3px 10px; border-radius: 12px; background: var(--bg-2); color: var(--ink-2); font-size: 11.5px; font-weight: 500; }
+.pl-badge.ai { color: #fff; background: linear-gradient(100deg, #4285f4, #9b72cb, #d96570); }
+.pl-ctl { display: flex; gap: 6px; }
+.pl-ctl button { height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 17px; background: #fff; font-size: 13px; font-weight: 500; color: var(--blue); }
+.pl-ctl button.x { width: 34px; padding: 0; color: var(--ink-2); }
+.pl-intro { margin: 6px 16px 0; font-size: 13.5px; color: var(--ink-2); }
+.pl-rib { position: relative; height: 26px; margin: 10px 36px 4px; }
+.pl-rib-bar { position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 2px; background: #e8eaed; }
+.pl-rib-bar i { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #4285f4, #9b72cb); transition: width .6s ease; }
+.pl-dot { position: absolute; top: 6px; width: 14px; height: 14px; margin-left: -7px; padding: 0; border: 3px solid #fff; border-radius: 50%; background: #dadce0; box-shadow: 0 0 0 1px #dadce0; transition: background .3s, transform .3s; }
+.pl-dot.done { background: var(--c); box-shadow: none; }
+.pl-dot.is-on { background: var(--c); transform: scale(1.45); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent); }
+.pl-rib-l, .pl-rib-r { position: absolute; top: 22px; font: 500 10px 'Roboto Mono', monospace; color: var(--ink-3); } .pl-rib-l { left: -4px; } .pl-rib-r { right: -10px; }
+.pl-cards { display: flex; gap: 10px; overflow-x: auto; padding: 10px 16px 6px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.pl-c { --c: #1a73e8; flex: 0 0 246px; scroll-snap-align: center; display: flex; flex-direction: column; gap: 6px; padding: 12px 12px 10px; border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 12px; background: #fff; cursor: pointer; opacity: .62; transition: opacity .3s, transform .3s, box-shadow .3s; }
+.pl-c.done { opacity: .85; } .pl-c.is-on { opacity: 1; transform: translateY(-4px); box-shadow: 0 8px 20px rgba(32,33,36,.18); }
+.pl-c header { display: flex; align-items: baseline; justify-content: space-between; }
+.pl-c header b { font: 700 15px 'Roboto Mono', monospace; color: var(--c); } .pl-c header span { font-size: 12px; color: var(--ink-2); }
+.pl-c-t { display: flex; align-items: flex-start; gap: 8px; }
+.pl-c-t i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--c) 12%, #fff); font-style: normal; font-size: 15px; font-weight: 700; color: var(--c); flex: none; }
+.pl-c h4 { margin: 4px 0 0; font-size: 14px; font-weight: 500; line-height: 1.35; }
+.pl-c p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+.pl-c-fact { font-size: 11px; color: var(--ink-3); line-height: 1.4; }
+.pl-c footer { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: auto; padding-top: 4px; font-size: 11.5px; color: var(--ink-2); }
+.pl-c footer a { color: var(--blue); font-weight: 500; }
+.pl-note { margin: 2px 16px 0; font-size: 10.5px; color: var(--ink-3); }
+
+@media (max-width: 760px) {
+  .settle.is-plan .st-side { display: none; }
+  .pl-dock { left: 8px; right: 8px; bottom: 8px; }
+  .pl-think { left: 50%; }
+  .pl-c { flex-basis: 78%; }
+  .pl-rib { margin: 10px 26px 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .ai-plan, .ai-plan::after, .ai-spark, .pl-line, .pl-me i { animation: none !important; } }
+.settle.is-plan .leaflet-control-zoom { display: none; }

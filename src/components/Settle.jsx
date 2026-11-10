@@ -10,6 +10,7 @@ import { VISAS, byCode } from '../data/visas.js';
 import { LEGS } from '../data/route.js';
 import { CheckItem } from './RoutePanel.jsx';
 import { ui, fill } from '../i18n/ui.js';
+import Plan, { PlanButton } from './Plan.jsx';
 
 const CAT = { stay: '#1a73e8', work: '#e37400', health: '#d93025', korean: '#9334e6', family: '#c2185b', child: '#c2185b', life: '#188038', safety: '#f9ab00', culture: '#00897b', study: '#5f6368' };
 
@@ -35,6 +36,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const [needs, setNeeds] = useState(['stay', 'health', 'korean']);
   const [family, setFamily] = useState(visa0 === 'F-6');
   const [hi, setHi] = useState(null);
+  const [plan, setPlan] = useState(0);   // 0 = 닫힘, 숫자 = 새로 만들 때마다 증가 (AI 30일 일정)
   const host = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -148,7 +150,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   };
 
   return (
-    <div className={'settle' + (low ? ' is-low' : '')}>
+    <div className={'settle' + (low ? ' is-low' : '') + (plan ? ' is-plan' : '')}>
       <div className="lf" ref={host} />
 
       <aside ref={sideEl} className={'side st-side' + (low ? ' is-low' : '')} onClick={() => { if (low && !justDragged.current) setLow(false); }}>
@@ -215,6 +217,8 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
             <label className="st-fam"><input type="checkbox" checked={family} onChange={(e) => setFamily(e.target.checked)} /> {t.withFamily}</label>
           </div>
 
+          <PlanButton lang={lang} onClick={(e) => { e.stopPropagation(); setLow(true); setPlan((n) => n + 1); }} />
+
           <p className="st-count">{fill(t.results, { n: recs.length })}</p>
           {!recs.length && <p className="st-none">{t.none}</p>}
 
@@ -250,6 +254,11 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
           <p className="rp-note">{t.checkedOn}</p>
         </div>
       </aside>
+
+      {plan > 0 && map.current && (
+        <Plan key={plan} map={map.current} lang={lang} visa={visa} needs={needs} family={family} entry={entry || new Date()}
+              name={name} country={countryLabel || ''} onClose={() => setPlan(0)} />
+      )}
 
       <div className="st-tools">
         <button type="button" onClick={home}>📍 {t.toWonju}</button>
