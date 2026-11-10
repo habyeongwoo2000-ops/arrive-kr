@@ -88,3 +88,19 @@ body.is-rz-v, body.is-rz-v * { cursor: ns-resize !important; user-select: none !
   .pl-rib { margin: 10px 26px 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .pl-me i, .pl-orb i { animation: none !important; } }
+
+/* 30일 일정 출발 기준 — 버스터미널 / 내 집 */
+.pb-base { display: grid; gap: 8px; padding: 16px 20px 4px; border-top: 8px solid var(--band); }
+.pb-base > span { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.pb-seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 8px; background: var(--band); }
+.pb-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 36px; border: 0; border-radius: 6px; background: none; font-size: 14px; font-weight: 600; color: var(--ink-3); }
+.pb-seg button[aria-checked="true"] { background: #fff; color: var(--green-t); font-weight: 800; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.pb-base small { font-size: 12.5px; line-height: 1.45; color: var(--ink-3); }
+.pb-base small.warn { color: var(--orange); font-weight: 700; }
+.pb-base + .ai-plan { border-top: 0; }
+.pl-base { display: flex; flex: none; padding: 2px; border-radius: 6px; background: var(--band); }
+.pl-base button { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 8px; border: 0; border-radius: 4px; background: none; font-size: 12px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.pl-base button[aria-checked="true"] { background: #fff; color: var(--green-t); font-weight: 800; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.pl-sum { font-size: 12px; font-weight: 700; color: var(--green-t); white-space: nowrap; }
+.pl-c footer .pl-c-lv { color: var(--orange); font-weight: 700; }
+@media (max-width: 760px) { .pl-sum { display: none; } .pl-base button { padding: 0 6px; } }

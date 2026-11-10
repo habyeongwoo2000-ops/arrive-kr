@@ -68,8 +68,16 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const [picking, setPicking] = useState(false);   // 지도에서 집 고르는 중
   const [routeTo, setRouteTo] = useState(null);    // 집 → 이 장소 길 보기
   const pickRef = useRef(null);
+  const [planBase, setPlanBase] = useState(null);  // 30일 일정 출발 기준: 'arrive'(버스터미널) | 'home'(내 집) — 정하지 않으면 집이 있을 때 집
+  const [askHome, setAskHome] = useState(false);   // '내 집'을 골랐는데 집 주소가 없을 때 안내
+  const base = home && planBase !== 'arrive' ? 'home' : 'arrive';
+  const wantHome = () => {
+    setAskHome(true); setLow(false);
+    if (card.current) card.current.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => { const i = document.querySelector('.hp-box input'); if (i) i.focus(); }, 350);
+  };
   const homeLayer = useRef(null);
-  const setHome = (v) => { setHomeS(v); saveHome(v); };
+  const setHome = (v) => { setHomeS(v); saveHome(v); if (v && askHome) { setAskHome(false); setPlanBase('home'); } };
   const host = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -311,6 +319,14 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
             <label className="st-fam"><input type="checkbox" checked={family} onChange={(e) => setFamily(e.target.checked)} /> {t.withFamily}</label>
           </div>
 
+          <div className="pb-base">
+            <span>{h.baseL}</span>
+            <div className="pb-seg" role="radiogroup" aria-label={h.baseL}>
+              <button type="button" role="radio" aria-checked={base === 'arrive'} onClick={() => { setAskHome(false); setPlanBase('arrive'); }}><Icon n="bus" size={15} />{h.baseArrive}</button>
+              <button type="button" role="radio" aria-checked={base === 'home'} onClick={() => (home ? setPlanBase('home') : wantHome())}><Icon n="life" size={15} />{h.baseHome}</button>
+            </div>
+            <small className={askHome && !home ? 'warn' : ''}>{askHome && !home ? h.baseNeed : base === 'home' ? fill(h.baseHomeSub, { home: home.label }) : h.baseArriveSub}</small>
+          </div>
           <PlanButton lang={lang} onClick={(e) => { e.stopPropagation(); setLow(true); setPlan((n) => n + 1); }} />
 
           <p className="st-count">{fill(t.results, { n: recs.length })}</p>
@@ -355,7 +371,8 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
 
       {plan > 0 && map.current && (
         <Plan key={plan} map={map.current} lang={lang} visa={visa} needs={needs} family={family} entry={entry || new Date()}
-              name={name} country={countryLabel || ''} home={home} dist={dist} onClose={() => setPlan(0)} />
+              name={name} country={countryLabel || ''} home={home} dist={dist} base={base}
+              onBase={(b) => { if (b === 'home' && !home) { setPlan(0); wantHome(); return; } setPlanBase(b); setPlan((n) => n + 1); }} onClose={() => setPlan(0)} />
       )}
 
       {picking && (

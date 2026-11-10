@@ -27,9 +27,9 @@ export default async function handler(req, res) {
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
   b = b || {};
   const lang = LANG[b.lang] ? b.lang : 'en';
-  const steps = (Array.isArray(b.steps) ? b.steps : []).slice(0, 16).map((s) => ({ id: clean(s.id, 20), day: Number(s.day) || 0, title: clean(s.t, 120), note: clean(s.n, 300) }));
+  const steps = (Array.isArray(b.steps) ? b.steps : []).slice(0, 16).map((s) => ({ id: clean(s.id, 20), day: Number(s.day) || 0, title: clean(s.t, 120), note: clean(s.n, 300), travel: clean(s.d, 60) }));
   if (!steps.length) return res.status(400).json({ error: 'empty' });
-  const profile = { visa: clean(b.visa, 8), country: clean(b.country, 40), needs: (b.needs || []).slice(0, 10).map((x) => clean(x, 12)), family: !!b.family };
+  const profile = { visa: clean(b.visa, 8), country: clean(b.country, 40), needs: (b.needs || []).slice(0, 10).map((x) => clean(x, 12)), family: !!b.family, homeArea: clean(b.homeArea, 40) };
 
   const system = [
     'You help a foreign resident who just moved to Wonju, Gangwon, Korea follow a 30-day settling-in plan of public support services.',
@@ -37,6 +37,7 @@ export default async function handler(req, res) {
     'You receive the person profile and a fixed list of steps (day offset, title, factual note).',
     'For EACH step id, write one tip of at most 2 short sentences (max 160 characters) explaining why this step matters for THIS person and one practical thing to bring or say.',
     'Do NOT add new programs, places, phone numbers, amounts or dates that are not in the step note. Do not promise eligibility; say "ask" when unsure.',
+    'If profile.homeArea is set, the person lives there and goes to each step from home; you may use the given "travel" text (distance/time from home) to give a practical tip, but never invent other times or distances.',
     'Also write "intro": one warm sentence (max 120 characters) welcoming them to Wonju.',
     'Return JSON only: {"intro": string, "tips": {"<id>": string}}.'
   ].join(' ');
