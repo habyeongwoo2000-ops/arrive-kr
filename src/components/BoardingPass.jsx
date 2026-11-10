@@ -126,14 +126,21 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
               <div className="bp-body">
                 <label className="bp-f bp-name">
                   <small>{lb(t.passenger, 'NAME OF PASSENGER')}</small>
-                  <input value={name} onChange={(e) => setName(e.target.value.slice(0, 26))} placeholder={t.namePh} aria-label={t.passenger} />
+                  <span className="bp-in">
+                    <input value={name} onChange={(e) => setName(e.target.value.slice(0, 26))} placeholder={t.namePh} aria-label={t.passenger} />
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" /></svg>
+                  </span>
                 </label>
 
                 <div className="bp-route">
-                  <div className="bp-port">
+                  <div className="bp-port bp-from">
                     <small>{lb(t.fromL, 'FROM')}</small>
-                    <button type="button" ref={pickBtn} className="bp-code bp-pick" onClick={() => { if (open) setOpen(false); else openPick(); setWarn(''); }} aria-haspopup="listbox">{code}</button>
-                    <em>{city}</em>
+                    {/* 출발 국가 고르기 — 고르기 전에는 "출발 국가 검색" 상자, 고른 뒤에는 공항 코드 + ▾ */}
+                    <button type="button" ref={pickBtn} className={'bp-pick' + (from ? ' bp-code' : ' is-empty')} onClick={() => { if (open) setOpen(false); else openPick(); setWarn(''); }} aria-haspopup="listbox" aria-label={from ? city : t.pickCountry}>
+                      {from ? code : <><svg className="bp-pick-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18" /></svg><span>{t.pickCountry}</span></>}
+                      <svg className="bp-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" /></svg>
+                    </button>
+                    {from && <em>{city}</em>}
                   </div>
                   <div className="bp-path" aria-hidden="true">
                     <span className="bp-dots" />
