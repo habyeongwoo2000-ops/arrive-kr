@@ -37,15 +37,17 @@ function markEl(d, onMark) {
   return el;
 }
 
-export default function GlobeView({ features, selected, hoverable, mode, paths, marks, focus, onPick, onMark, apiRef }) {
+export default function GlobeView({ features, selected, hoverable, mode, paths, marks, focus, onPick, onMark, onEmpty, apiRef }) {
   const host = useRef(null);
   const g = useRef(null);
   const cb = useRef({});
-  cb.current = { onPick, onMark, selected, hoverable, mode };
+  cb.current = { onPick, onMark, onEmpty, selected, hoverable, mode };
   const hover = useRef(null);
   const planeRef = useRef(null);
   const planeOn = useRef(false);
   const marksRef = useRef([]);
+  const hit = useRef(false);       // 이번 클릭이 나라·지구본에 맞았는지
+  const downAt = useRef(null);
 
   /* 한 번만 만들기 */
   useEffect(() => {
@@ -56,7 +58,10 @@ export default function GlobeView({ features, selected, hoverable, mode, paths, 
       .polygonsTransitionDuration(250)
       .polygonSideColor(() => 'rgba(0,0,0,0)')
       .polygonLabel((f) => `<div class="g-tip">${f.properties.label || f.properties.name}</div>`)
-      .onPolygonClick((f) => cb.current.onPick && cb.current.onPick(f))
+      /* 나라를 누르면 고르기 · 이미 고른 나라를 다시 누르면 선택 해제 */
+      .onPolygonClick((f) => { hit.current = true; if (f.id === cb.current.selected) cb.current.onEmpty && cb.current.onEmpty(); else cb.current.onPick && cb.current.onPick(f); })
+      /* 바다(나라가 아닌 지구본)를 누르면 선택 해제 */
+      .onGlobeClick(() => { hit.current = true; cb.current.onEmpty && cb.current.onEmpty(); })
       .onPolygonHover((f) => { hover.current = f; paint(); el.style.cursor = f ? 'pointer' : 'grab'; })
       .pathPoints((d) => d.pts).pathPointLat((p) => p[0]).pathPointLng((p) => p[1]).pathPointAlt((p) => p[2])
       .pathColor((d) => (d.kind === 'ground' ? ['rgba(251,188,4,1)', 'rgba(234,67,53,1)'] : ['rgba(255,255,255,0.95)', 'rgba(138,180,248,1)']))
@@ -64,6 +69,14 @@ export default function GlobeView({ features, selected, hoverable, mode, paths, 
       .htmlElement((d) => markEl(d, (m) => cb.current.onMark && cb.current.onMark(m)))
       .htmlLat((d) => d.lat).htmlLng((d) => d.lng).htmlAltitude((d) => d.alt || 0)
       .htmlTransitionDuration(0);
+    /* 우주(지구본 바깥)를 눌러도 선택 해제 — 끌어서 돌린 경우는 제외 */
+    const down = (e) => { hit.current = false; downAt.current = [e.clientX, e.clientY]; };
+    const click = (e) => {
+      const d = downAt.current; if (!d || Math.hypot(e.clientX - d[0], e.clientY - d[1]) > 6) return;
+      setTimeout(() => { if (!hit.current) cb.current.onEmpty && cb.current.onEmpty(); }, 0);
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('click', click);
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.35;
     globe.controls().enableDamping = true;
@@ -88,7 +101,7 @@ export default function GlobeView({ features, selected, hoverable, mode, paths, 
     const fit = () => globe.width(el.clientWidth).height(el.clientHeight);
     fit();
     const ro = new ResizeObserver(fit); ro.observe(el);
-    return () => { ro.disconnect(); globe._destructor && globe._destructor(); el.innerHTML = ''; };
+    return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('click', click); ro.disconnect(); globe._destructor && globe._destructor(); el.innerHTML = ''; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

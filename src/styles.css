@@ -48,11 +48,16 @@ a { color: var(--blue); text-decoration: none; }
 /* 왼쪽 카드들 */
 .side { position: absolute; top: 12px; left: 12px; z-index: 5; width: 400px; max-width: calc(100vw - 24px); display: flex; flex-direction: column; gap: 10px; max-height: calc(100% - 24px); pointer-events: none; }
 .side > * { pointer-events: auto; }
+/* 검색 목록이 열려 있으면 오른쪽 위 버튼들(z 13)보다 위로 */
+.side:has(.sugg) { z-index: 14; }
 .search { position: relative; display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 8px 0 16px; border-radius: 24px; background: var(--bg); box-shadow: var(--sh); }
 .search > svg { width: 22px; height: 22px; fill: var(--ink-2); flex: none; }
 .search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; padding: 0 8px; font-size: 15px; }
 .icon { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); font-size: 16px; }
 .icon:hover { background: var(--bg-2); }
+/* 나라를 고르면 돋보기 자리에 뒤로 화살표 */
+.search-back { flex: none; margin-inline-start: -8px; }
+.search-back svg { width: 22px; height: 22px; fill: var(--ink-2); }
 .sugg { position: absolute; top: 52px; left: 0; right: 0; margin: 0; padding: 8px 0; list-style: none; border-radius: 12px; background: var(--bg); box-shadow: var(--sh-l); max-height: 60vh; overflow: auto; }
 .sugg button { display: flex; align-items: center; gap: 14px; width: 100%; padding: 9px 18px; border: 0; background: none; text-align: start; font-size: 14px; }
 .sugg button:hover { background: var(--bg-2); }
@@ -128,7 +133,8 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 
 /* 오른쪽 위 */
 .top-r { position: absolute; top: 14px; right: 14px; z-index: 13; display: flex; align-items: center; gap: 10px; }
-.lang { height: 40px; padding: 0 12px; border: 0; border-radius: 20px; background: var(--bg); box-shadow: var(--sh); font-size: 14px; }
+.lang { height: 40px; padding: 0 30px 0 14px; border: 0; border-radius: 20px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center / 16px; color: var(--ink); font: 500 14px var(--f); box-shadow: var(--sh); appearance: none; -webkit-appearance: none; cursor: pointer; }
+.lang:hover { background-color: var(--bg-2); }
 .signin { height: 40px; padding: 0 20px; border: 0; border-radius: 20px; background: var(--blue); color: #fff; font-weight: 500; box-shadow: var(--sh); }
 .avatar { width: 40px; height: 40px; border: 2px solid #fff; border-radius: 50%; background: #7b1fa2; color: #fff; font: 500 17px var(--f); box-shadow: var(--sh); }
 
@@ -142,13 +148,27 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 
 /* 오른쪽 아래 */
 .ctrl { position: absolute; right: 14px; bottom: 28px; z-index: 4; display: flex; align-items: flex-end; gap: 10px; }
-.zoom { display: grid; border-radius: 8px; background: var(--bg); box-shadow: var(--sh); overflow: hidden; }
-.zoom button { width: 40px; height: 40px; border: 0; background: none; font-size: 22px; color: var(--ink-2); }
+.zoom { display: grid; border-radius: 20px; background: var(--bg); box-shadow: var(--sh); overflow: hidden; }
+.zoom button { width: 40px; height: 40px; border: 0; background: none; font: 400 20px var(--f); line-height: 1; color: var(--ink-2); }
 .zoom button + button { border-top: 1px solid var(--line); }
 .zoom button:hover { background: var(--bg-2); }
-.tutor-fab { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px 0 8px; border: 0; border-radius: 24px; background: var(--bg); box-shadow: var(--sh); font-weight: 500; }
-.tutor-fab span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #4285f4, #34a853); color: #fff; font: 700 16px 'Noto Sans KR'; }
+/* 오른쪽 아래 버튼도 위쪽 버튼과 같은 모양: 높이 40 · 흰 바탕 · 진한 글씨 · 보통 굵기 */
+.tutor-fab { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 7px; border: 0; border-radius: 20px; background: var(--bg); color: var(--ink); box-shadow: var(--sh); font-weight: 500; transition: background .15s; }
+.tutor-fab:hover { background: var(--bg-2); }
+.tutor-fab span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #e8f0fe; color: var(--blue); font: 700 14px 'Noto Sans KR'; }
 .tutor-fab em { font-style: normal; font-size: 14px; }
+
+/* PC로 보기 / 모바일로 보기 */
+.view-fab { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; transition: background .15s; border: 0; border-radius: 24px; background: var(--bg); color: var(--ink); box-shadow: var(--sh); font-weight: 500; }
+.view-fab svg { width: 18px; height: 18px; fill: var(--ink-2); flex: none; }
+.view-fab em { font-style: normal; font-size: 14px; white-space: nowrap; }
+.view-fab:hover { background: var(--bg-2); }
+.phone-back { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; background: rgba(0,0,8,.82); backdrop-filter: blur(4px); animation: fadein .25s ease-out; }
+.phone { --s: min(1, calc((100vh - 110px) / 844px)); width: calc(390px * var(--s) + 24px); height: calc(844px * var(--s) + 24px); padding: 12px; border-radius: 44px; background: #111; box-shadow: 0 0 0 2px #3c4043, 0 30px 80px rgba(0,0,0,.6); overflow: hidden; }
+.phone iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 32px; background: #000; transform: scale(var(--s)); transform-origin: 0 0; }
+.phone-close { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px 0 14px; border: 1px solid rgba(201,205,227,.45); border-radius: 22px; background: rgba(255,255,255,.08); color: #fff; font-size: 14px; font-weight: 500; }
+.phone-close svg { width: 20px; height: 20px; fill: #fff; }
+.phone-close:hover { background: rgba(255,255,255,.16); }
 
 /* 튜터 */
 .tutor { position: absolute; right: 14px; bottom: 90px; z-index: 6; width: 380px; max-width: calc(100vw - 28px); max-height: min(560px, calc(100% - 170px)); display: flex; flex-direction: column; border-radius: 16px; background: var(--bg); box-shadow: var(--sh-l); overflow: hidden; animation: up .2s ease-out; }
@@ -220,14 +240,15 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 @media (max-width: 720px) {
   .side { top: 10px; left: 10px; right: 10px; width: auto; bottom: 10px; max-height: none; justify-content: space-between; }
   .top-r { top: 68px; right: 10px; gap: 6px; }
-  .lang { max-width: 88px; padding: 0 8px; }
+  .lang { max-width: 88px; padding: 0 26px 0 12px; background-position: right 8px center; }
   .signin { padding: 0 12px; font-size: 13px; }
   .panel, .hint-card { flex: none; max-height: 46vh; overflow-y: auto; }
-  .layer { left: 10px; width: 52px; height: 52px; bottom: auto; top: 68px; font-size: 11px; }
-  .ctrl { bottom: auto; top: 120px; flex-direction: column-reverse; align-items: flex-end; }
-  .tutor-fab em { display: none; } .tutor-fab { padding: 0 7px; }
+  .layer { left: 10px; width: 52px; height: 52px; bottom: auto; top: 160px; font-size: 11px; } /* 위 버튼 두 줄(68~150px) 아래, 확대 버튼과 같은 높이 */
+  .ctrl { bottom: auto; top: 160px; flex-direction: column-reverse; align-items: flex-end; }
+  .tutor-fab em { display: none; } .tutor-fab { width: 40px; padding: 0; justify-content: center; }
+  .view-fab em { display: none; } .view-fab { width: 40px; padding: 0; justify-content: center; }
   .tutor { left: 10px; right: 10px; bottom: 10px; width: auto; max-height: 70vh; }
-  .turb-card { left: 50%; bottom: auto; top: 124px; }
+  .turb-card { left: 50%; bottom: auto; top: 164px; }
   .attrib { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -345,11 +366,18 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .vs-c.is-on em { color: var(--ink-2); }
 .vs-c small { font-size: 11px; color: #9aa0a6; }
 .vs-c.is-on small { color: var(--ink-3); }
-.bp-act { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bp-act { display: flex; flex-direction: column; align-items: center; gap: 8px;
+  /* 스크롤하지 않아도 항상 화면 아래에 보이도록 고정 */
+  position: sticky; bottom: 0; z-index: 5; align-self: stretch; margin: 0 -16px -32px;
+  padding: 26px 16px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0,0,8,.92) 0%, rgba(0,0,8,.78) 60%, rgba(0,0,8,0) 100%); }
 .bp-go { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 34px; border: 0; border-radius: 27px; background: linear-gradient(100deg, #1a73e8, #0b57d0); color: #fff; font-size: 17px; font-weight: 700; letter-spacing: .02em; box-shadow: 0 8px 24px rgba(26,115,232,.45); transition: transform .15s; }
 .bp-go:hover { transform: translateY(-1px) scale(1.02); }
 .bp-go svg { width: 22px; height: 22px; fill: #fff; transform: rotate(45deg); }
-.bp-skip { border: 0; background: none; color: #9aa0a6; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+/* 보조 버튼 — 탑승하기보다 한 단계 낮지만 분명히 보이게 (반투명 테두리 버튼) */
+.bp-skip { height: 38px; padding: 0 20px; border: 1px solid rgba(201,205,227,.45); border-radius: 19px; background: rgba(255,255,255,.06); color: #e8eaed; font-size: 14px; font-weight: 500; letter-spacing: .01em; backdrop-filter: blur(6px); transition: background .15s, border-color .15s, color .15s; }
+.bp-skip:hover { background: rgba(255,255,255,.14); border-color: rgba(201,205,227,.8); color: #fff; }
+.bp-skip:focus-visible { outline: 2px solid #c9cde3; outline-offset: 2px; }
 .bp-warn { margin: 0; padding: 6px 14px; border-radius: 16px; background: #fce8e6; color: #c5221f; font-size: 13px; font-weight: 500; }
 
 /* 지구본 위 원주 핀 · 경로 패널 비자 띠 · 원주 버튼 · 도착 카드 */
@@ -360,12 +388,16 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .rp-visa { --vc: #1a73e8; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; border-bottom: 1px solid var(--line); }
 .rp-visa b { padding: 2px 8px; border-radius: 6px; background: var(--vc); color: #fff; font: 700 14px 'Roboto Mono', monospace; }
 .rp-visa span { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wj-chip { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 16px 0 12px; border: 0; border-radius: 20px; background: #fff; color: #c5221f; font-weight: 700; font-size: 14px; box-shadow: var(--sh); }
-.wj-chip:hover { background: #fce8e6; }
-.wj-chip { white-space: nowrap; }
-.todo-chip { color: #137333; }
-.todo-chip:hover { background: #e6f4ea; }
-.todo-chip em { margin-inline-start: 2px; padding: 1px 7px; border-radius: 10px; background: #e6f4ea; font-style: normal; font-size: 11px; font-weight: 500; }
+/* 위쪽 버튼 — 흰 바탕 · 진한 글씨 · 선 아이콘으로 통일 (색은 아이콘에만) */
+.wj-chip { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border: 0; border-radius: 20px; background: var(--bg); color: var(--ink); font-weight: 500; font-size: 14px; letter-spacing: -.005em; white-space: nowrap; box-shadow: var(--sh); transition: background .15s, box-shadow .15s; }
+.wj-chip:hover { background: var(--bg-2); }
+.chip-ic { width: 18px; height: 18px; flex: none; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.todo-chip .chip-ic { stroke: #188038; }
+.settle-chip .chip-ic { stroke: #d93025; }
+.todo-chip .chip-s { display: none; }
+/* 진행 배지: 숫자 + 아래 얇은 진행 막대 */
+.todo-chip em { position: relative; margin-inline-start: 2px; padding: 2px 8px 3px; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); font: 500 11px 'Roboto Mono', monospace; font-style: normal; overflow: hidden; }
+.todo-chip em::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: var(--p, 0%); background: #188038; }
 .land-card { position: absolute; left: calc(206px + 50%); bottom: 110px; z-index: 8; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; width: min(600px, calc(100vw - 24px)); padding: 14px 10px 14px 16px; border-radius: 14px; background: #fff; box-shadow: var(--sh-l); animation: up .3s ease-out; }
 .land-ic { font-size: 28px; }
 .land-card div { flex: 1; min-width: 0; } .land-card b { font-size: 17px; } .land-card p { margin: 2px 0 0; font-size: 13px; color: var(--ink-2); }
@@ -376,6 +408,7 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 @keyframes settlein { from { opacity: 0; transform: scale(1.08); filter: blur(6px); } }
 .lf { position: absolute; inset: 0; }
 .st-side { z-index: 500; bottom: 12px; }
+.st-grip { display: none; }
 .st-card { overflow-y: auto; min-height: 0; flex: 1; padding: 0 0 16px; }
 .st-top { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px 8px; background: #fff; border-bottom: 1px solid var(--line); }
 .st-top b { display: block; font-size: 18px; color: #c5221f; } .st-top small { color: var(--ink-2); font-size: 12px; }
@@ -472,18 +505,45 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
   .bp-fine { margin: 8px 16px 0; }
   .bp-drop { width: min(300px, calc(100vw - 64px)); }
   .vs-grid { grid-template-columns: 1fr 1fr; gap: 8px; } .vs-c em { display: none; }
-  .wj-chip { padding: 0 10px; font-size: 12px; height: 36px; }
-  .wj-chip { white-space: nowrap; }
-  .todo-chip .chip-t { display: none; }
+  .wj-chip { padding: 0 12px; font-size: 13px; height: 38px; gap: 6px; }
+  /* 휴대폰 두 줄: 위 = "한국 도착 후 할 일" 전체 이름(한 줄 다), 아래 = 원주 정착 지원 · 언어 · 로그인 */
+  .top-r { left: 10px; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+  .top-r > .wj-chip { flex: 1 1 0; min-width: 0; justify-content: center; }
+  .top-r > .lang { max-width: 104px; }
+  /* 할 일: 한 줄 전체 — 왼쪽 아이콘·이름, 오른쪽 끝 진행 배지 */
+  .top-r > .todo-chip { flex-basis: 100%; justify-content: flex-start; padding: 0 8px 0 14px; }
+  .top-r > .todo-chip em { margin-inline-start: auto; }
+  .lang { max-width: 112px; height: 38px; font-size: 13px; }
+  .signin, .avatar { height: 38px; }
+  .avatar { width: 38px; }
   .land-card { left: 10px; right: 10px; width: auto; transform: none; bottom: 48%; flex-wrap: wrap; }
-  .st-side { top: auto; height: 58%; }
-  .st-tools { left: 10px; transform: none; top: 10px; }
+  .st-side { top: auto; height: 58%; transition: transform .3s cubic-bezier(.3,.7,.2,1); }
+  /* 지도를 누르면 패널이 내려가고 제목 줄만 남음 → 제목 줄을 누르면 다시 올라옴 */
+  .st-side.is-low { transform: translateY(calc(100% - 72px)); cursor: pointer; }
+  .st-side.is-low .st-card { overflow: hidden; }
+  .st-side.is-drag { transition: none; user-select: none; }
+  /* 나라 경로 패널: 끌어서 내리면 비자 줄만 남음 */
+  .side > .panel { position: relative; transition: transform .3s cubic-bezier(.3,.7,.2,1); }
+  .side > .panel.is-low { transform: translateY(calc(100% - 54px)); overflow: hidden; cursor: pointer; }
+  .side > .panel.is-drag { transition: none; user-select: none; }
+  .side > .panel .rp-visa { padding-top: 14px; }
+  /* 지도 확대·축소 버튼은 늘 패널 바로 위에 */
+  .settle .leaflet-bottom.leaflet-right { bottom: calc(58% + 4px); transition: bottom .3s cubic-bezier(.3,.7,.2,1); }
+  .settle.is-low .leaflet-bottom.leaflet-right { bottom: 84px; }
+  .st-grip { display: block; position: absolute; top: 5px; left: 50%; z-index: 3; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #dadce0; pointer-events: none; }
+  /* 정착 지원 지도: 맨 위 오른쪽 = 언어 · 로그인, 그 아래 = 지도 버튼들 (화면 안에서 여러 줄로) */
+  .view-settle .top-r { top: 10px; }
+  .st-tools { left: 10px; right: 10px; transform: none; top: 56px; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .st-tools button { flex: none; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 34px; padding: 0 12px; font-size: 12.5px; }
 }
 @media (prefers-reduced-motion: reduce) { .bp-tilt, .bp-holo, .bp-pick, .g-wj svg { animation: none !important; } }
 
 /* ═════════ 체류자격 여권 ═════════ */
 .pp-wrap { --pw: 420px; --ph: 300px; width: min(980px, 100%); display: flex; flex-direction: column; align-items: center; }
-.pp-wrap .vs-h { align-self: center; }
+/* 비자 고르기 제목 — 항공권 타이포처럼 차분하게: 은색 영문 눈썹 + 큰 흰 제목 */
+.pp-wrap .vs-h { align-self: center; display: grid; justify-items: center; gap: 8px; margin: 6px 0 18px; color: #fff; font-size: 21px; font-weight: 600; letter-spacing: -.01em; text-shadow: 0 2px 14px rgba(0,0,0,.5); }
+.pp-wrap .vs-h::before { content: 'SELECT YOUR VISA CLASS'; display: flex; align-items: center; gap: 12px; color: #c9cde3; font: 500 11px 'Roboto Mono', monospace; letter-spacing: .32em; text-shadow: none; }
+.pp-wrap .vs-h::after { content: ''; width: 28px; height: 2px; border-radius: 1px; background: #c9cde3; opacity: .7; }
 .pp { perspective: 2200px; }
 .pp-book { position: relative; width: calc(var(--pw) * 2); height: var(--ph); transform: translateX(calc(var(--pw) / -2)); transition: transform .9s cubic-bezier(.3,.7,.2,1); }
 .pp.is-open .pp-book { transform: none; }

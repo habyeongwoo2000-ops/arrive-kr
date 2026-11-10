@@ -15,7 +15,7 @@ const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.ch
 const fmt = (d) => String(d.getDate()).padStart(2, '0') + MON[d.getMonth()] + String(d.getFullYear()).slice(2);
 const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-export function a2Of(f) { const c = byIso[f.id]; return c ? c.a2 : NUM2A2[f.id] || ''; }
+export function a2Of(f) { const c = byIso[f.id]; return c ? c.a2 : NUM2A2[f.id] || NUM2A2[f.properties.name] || ''; }
 export function iataOf(f) {
   const a2 = a2Of(f);
   if (a2 && IATA[a2]) return IATA[a2];

@@ -1,4 +1,5 @@
 /* 화면 문구 (6개 언어) */
+import { NAMES, NAME_LANGS } from '../data/countryNames.js';
 
 export const LANGS = ['ko', 'en', 'vi', 'id', 'km', 'ne'];
 export const LANG_NAMES = { ko: '한국어', en: 'English', vi: 'Tiếng Việt', id: 'Bahasa Indonesia', km: 'ខ្មែរ', ne: 'नेपाली' };
@@ -10,12 +11,12 @@ const ko = {
   shopUnsure: '등록 정보가 적어요. 꼭 확인하고 가세요.',
   shopsBtn: '외국인 마트', kakaoMap: '카카오맵', shopNote: '영업시간·파는 물건은 전화나 카카오맵으로 확인하세요',
   ctryMore: '{c} 사람이 더 챙길 것', ctryPick: '지구본에서 내 나라를 고르면, 그 나라 사람이 한국에서 더 챙길 일이 여기에 나와요.', ctryNone: '이 나라 정부가 따로 요구하는 일은 아직 확인하지 못했어요. 대사관이나 송출기관에 물어보세요.', retL: '귀국비용보험', npsL: '국민연금',
-  todoBtn: '한국 도착 후 할 일',
+  todoBtn: '한국 도착 후 할 일', todoShort: '할 일',
   tabTodo: '도착 후 할 일', tabFind: '지원 찾기', tabFindGo: '나에게 맞는 원주·강원 지원 찾기', todoIntro: '인천에 내린 뒤 해야 할 일을 순서대로 모았어요. 기한은 입국 예정일 기준입니다.', arriveBtn: '한국 도착 후 할 일 {n}개', arriveSub: '원주 정착에서 보기',
   costL: '공식 비용', exitNone: '이 단계의 자세한 서류·비용은 아직 확인하지 못했어요. 송출기관 공지에서 확인하세요.', lvNote: '언론·정리 글 기준 — 송출기관 공지로 다시 확인하세요.',
   app: 'ArriveKR', tag: '외국인근로자 한국 입국 준비',
   search: '출발할 나라 검색', hint: '지구본에서 출발할 나라를 누르세요', noResult: '결과 없음',
-  sat: '위성', map: '지도', from: '출발', to: '도착 · 대한민국 인천국제공항',
+  viewPc: 'PC로 보기', viewMobile: '모바일로 보기', back: '뒤로', sat: '위성', map: '지도', from: '출발', to: '도착 · 대한민국 인천국제공항',
   entry: '입국 예정일', fuel: '연료', fuelHelp: '연료 = 입국 예정일까지 그 일을 준비할 수 있는 남은 시간',
   fOk: '여유', fLow: '빠듯함', fOut: '늦음', due: '{date}까지', dleft: 'D-{n}', after: '입국 후 {n}일 안', afterAny: '입국 후',
   fly: '비행 시작', flying: '비행 중…', replay: '다시 비행', turb: '난기류 구간', turbOk: '알겠어요',
@@ -41,12 +42,12 @@ const en = {
   shopUnsure: 'Little information listed — check before you go.',
   shopsBtn: 'Foreign food shops', kakaoMap: 'KakaoMap', shopNote: 'Check hours and products by phone or on KakaoMap',
   ctryMore: 'Extra for people from {c}', ctryPick: 'Pick your country on the globe to see what people from it need to do extra in Korea.', ctryNone: 'We have not confirmed extra duties from this government yet. Ask your embassy or sending agency.', retL: 'Return-cost insurance', npsL: 'National Pension',
-  todoBtn: 'After arrival to-do',
+  todoBtn: 'After arrival to-do', todoShort: 'To-do',
   tabTodo: 'After arrival', tabFind: 'Find support', tabFindGo: 'Find support in Wonju & Gangwon for you', todoIntro: 'What to do after landing, in order. Deadlines count from your entry date.', arriveBtn: '{n} things to do after arrival', arriveSub: 'open in Settle in Wonju',
   costL: 'Official cost', exitNone: 'Details for this step are not confirmed yet. Check your sending agency notice.', lvNote: 'From news or summaries — confirm with your sending agency notice.',
   app: 'ArriveKR', tag: 'Arrival planner for foreign workers coming to Korea',
   search: 'Search your country', hint: 'Tap the country you leave from', noResult: 'No results',
-  sat: 'Satellite', map: 'Map', from: 'From', to: 'To · Incheon International Airport, Korea',
+  viewPc: 'Desktop view', viewMobile: 'Mobile view', back: 'Back', sat: 'Satellite', map: 'Map', from: 'From', to: 'To · Incheon International Airport, Korea',
   entry: 'Planned entry date', fuel: 'Fuel', fuelHelp: 'Fuel = time left to prepare this before your planned entry date',
   fOk: 'Enough', fLow: 'Tight', fOut: 'Late', due: 'by {date}', dleft: 'D-{n}', after: 'within {n} days after entry', afterAny: 'after entry',
   fly: 'Start flight', flying: 'Flying…', replay: 'Fly again', turb: 'Turbulence', turbOk: 'Got it',
@@ -72,12 +73,12 @@ const vi = {
   shopUnsure: 'Ít thông tin — hãy kiểm tra trước khi đi.',
   shopsBtn: 'Chợ đồ nước ngoài', kakaoMap: 'KakaoMap', shopNote: 'Hỏi giờ mở cửa, mặt hàng qua điện thoại hoặc KakaoMap',
   ctryMore: 'Người {c} cần làm thêm', ctryPick: 'Chọn nước của bạn trên quả địa cầu để xem việc cần làm thêm.', ctryNone: 'Chưa xác nhận yêu cầu riêng của nước này. Hỏi đại sứ quán hoặc cơ quan phái cử.', retL: 'Bảo hiểm chi phí về nước', npsL: 'Lương hưu quốc gia',
-  todoBtn: 'Việc cần làm khi đến',
+  todoBtn: 'Việc cần làm khi đến', todoShort: 'Việc cần làm',
   tabTodo: 'Việc sau khi đến', tabFind: 'Tìm hỗ trợ', tabFindGo: 'Tìm hỗ trợ ở Wonju và Gangwon', todoIntro: 'Những việc cần làm sau khi hạ cánh, theo thứ tự. Thời hạn tính từ ngày nhập cảnh.', arriveBtn: '{n} việc cần làm sau khi đến', arriveSub: 'xem trong Định cư tại Wonju',
   costL: 'Chi phí chính thức', exitNone: 'Chưa xác nhận chi tiết bước này. Hãy xem thông báo của cơ quan phái cử.', lvNote: 'Theo báo chí/bản tóm tắt — hãy kiểm tra lại thông báo chính thức.',
   tag: 'Chuẩn bị nhập cảnh cho lao động nước ngoài đến Hàn Quốc',
   search: 'Tìm quốc gia của bạn', hint: 'Chạm vào quốc gia bạn xuất phát', noResult: 'Không có kết quả',
-  sat: 'Vệ tinh', map: 'Bản đồ', from: 'Từ', to: 'Đến · Sân bay quốc tế Incheon, Hàn Quốc',
+  viewPc: 'Xem trên máy tính', viewMobile: 'Xem trên điện thoại', back: 'Quay lại', sat: 'Vệ tinh', map: 'Bản đồ', from: 'Từ', to: 'Đến · Sân bay quốc tế Incheon, Hàn Quốc',
   entry: 'Ngày dự kiến nhập cảnh', fuel: 'Nhiên liệu', fuelHelp: 'Nhiên liệu = thời gian còn lại để chuẩn bị trước ngày nhập cảnh',
   fOk: 'Đủ', fLow: 'Gấp', fOut: 'Trễ', due: 'trước {date}', after: 'trong {n} ngày sau khi đến', afterAny: 'sau khi đến',
   fly: 'Bắt đầu bay', flying: 'Đang bay…', replay: 'Bay lại', turb: 'Vùng nhiễu động', turbOk: 'Đã hiểu',
@@ -103,12 +104,12 @@ const id = {
   shopUnsure: 'Info sedikit — cek dulu sebelum pergi.',
   shopsBtn: 'Toko makanan asing', kakaoMap: 'KakaoMap', shopNote: 'Cek jam buka dan barang lewat telepon atau KakaoMap',
   ctryMore: 'Tambahan untuk warga {c}', ctryPick: 'Pilih negara Anda di globe untuk melihat tugas tambahan.', ctryNone: 'Kewajiban tambahan dari negara ini belum dikonfirmasi. Tanyakan kedutaan atau lembaga pengirim.', retL: 'Asuransi biaya pulang', npsL: 'Pensiun Nasional',
-  todoBtn: 'Tugas setelah tiba',
+  todoBtn: 'Tugas setelah tiba', todoShort: 'Tugas',
   tabTodo: 'Setelah tiba', tabFind: 'Cari bantuan', tabFindGo: 'Cari bantuan di Wonju & Gangwon', todoIntro: 'Hal yang harus dilakukan setelah mendarat, berurutan. Batas waktu dihitung dari tanggal masuk.', arriveBtn: '{n} hal setelah tiba', arriveSub: 'buka di Menetap di Wonju',
   costL: 'Biaya resmi', exitNone: 'Detail langkah ini belum dikonfirmasi. Cek pengumuman lembaga pengirim.', lvNote: 'Dari berita/ringkasan — cek lagi pengumuman resmi.',
   tag: 'Persiapan masuk Korea untuk pekerja asing',
   search: 'Cari negara Anda', hint: 'Ketuk negara keberangkatan Anda', noResult: 'Tidak ada hasil',
-  sat: 'Satelit', map: 'Peta', from: 'Dari', to: 'Ke · Bandara Internasional Incheon, Korea',
+  viewPc: 'Tampilan desktop', viewMobile: 'Tampilan seluler', back: 'Kembali', sat: 'Satelit', map: 'Peta', from: 'Dari', to: 'Ke · Bandara Internasional Incheon, Korea',
   entry: 'Rencana tanggal masuk', fuel: 'Bahan bakar', fuelHelp: 'Bahan bakar = sisa waktu untuk menyiapkan ini sebelum tanggal masuk',
   fOk: 'Cukup', fLow: 'Mepet', fOut: 'Terlambat', due: 'sebelum {date}', after: 'dalam {n} hari setelah tiba', afterAny: 'setelah tiba',
   fly: 'Mulai terbang', flying: 'Terbang…', replay: 'Terbang lagi', turb: 'Turbulensi', turbOk: 'Mengerti',
@@ -134,12 +135,12 @@ const km = {
   shopUnsure: 'ព័ត៌មានតិច — សូមពិនិត្យមុនទៅ។',
   shopsBtn: 'ហាងម្ហូបបរទេស', kakaoMap: 'KakaoMap', shopNote: 'សូមពិនិត្យម៉ោងបើក និងទំនិញតាមទូរស័ព្ទ ឬ KakaoMap',
   ctryMore: 'បន្ថែមសម្រាប់ប្រជាជន {c}', ctryPick: 'ជ្រើសប្រទេសរបស់អ្នកនៅលើភពផែនដី ដើម្បីមើលកិច្ចការបន្ថែម។', ctryNone: 'មិនទាន់បញ្ជាក់កាតព្វកិច្ចបន្ថែមពីប្រទេសនេះទេ។ សូមសួរស្ថានទូត ឬស្ថាប័នបញ្ជូន។', retL: 'ធានារ៉ាប់រងថ្លៃត្រឡប់', npsL: 'សោធននិវត្តន៍ជាតិ',
-  todoBtn: 'កិច្ចការក្រោយមកដល់',
+  todoBtn: 'កិច្ចការក្រោយមកដល់', todoShort: 'កិច្ចការ',
   tabTodo: 'ក្រោយមកដល់', tabFind: 'ស្វែងរកជំនួយ', tabFindGo: 'ស្វែងរកជំនួយនៅ Wonju និង Gangwon', todoIntro: 'កិច្ចការត្រូវធ្វើក្រោយចុះចត តាមលំដាប់។ កាលកំណត់គិតពីថ្ងៃចូល។', arriveBtn: 'កិច្ចការ {n} ក្រោយមកដល់', arriveSub: 'មើលក្នុងការតាំងលំនៅ Wonju',
   costL: 'ថ្លៃផ្លូវការ', exitNone: 'ព័ត៌មានលម្អិតនៃជំហាននេះមិនទាន់បញ្ជាក់។ សូមពិនិត្យសេចក្តីជូនដំណឹងរបស់ស្ថាប័ន។', lvNote: 'ពីព័ត៌មាន ឬសេចក្តីសង្ខេប — សូមពិនិត្យសេចក្តីជូនដំណឹងផ្លូវការម្តងទៀត។',
   tag: 'ការត្រៀមចូលកូរ៉េសម្រាប់កម្មករបរទេស',
   search: 'ស្វែងរកប្រទេសរបស់អ្នក', hint: 'ចុចលើប្រទេសដែលអ្នកចេញដំណើរ', noResult: 'គ្មានលទ្ធផល',
-  sat: 'ផ្កាយរណប', map: 'ផែនទី', from: 'ពី', to: 'ទៅ · អាកាសយានដ្ឋានអន្តរជាតិអ៊ីនឆន',
+  viewPc: 'មើលលើកុំព្យូទ័រ', viewMobile: 'មើលលើទូរស័ព្ទ', back: 'ថយក្រោយ', sat: 'ផ្កាយរណប', map: 'ផែនទី', from: 'ពី', to: 'ទៅ · អាកាសយានដ្ឋានអន្តរជាតិអ៊ីនឆន',
   entry: 'ថ្ងៃគ្រោងចូល', fuel: 'ប្រេង', fuelHelp: 'ប្រេង = ពេលនៅសល់ដើម្បីត្រៀមមុនថ្ងៃចូល',
   fOk: 'គ្រប់គ្រាន់', fLow: 'តឹង', fOut: 'យឺត', due: 'មុន {date}', after: 'ក្នុង {n} ថ្ងៃក្រោយមកដល់', afterAny: 'ក្រោយមកដល់',
   fly: 'ចាប់ផ្តើមហោះ', flying: 'កំពុងហោះ…', replay: 'ហោះម្តងទៀត', turb: 'ខ្យល់ច្របូកច្របល់', turbOk: 'យល់ហើយ',
@@ -165,12 +166,12 @@ const ne = {
   shopUnsure: 'जानकारी कम छ — जानुअघि जाँच्नुहोस्।',
   shopsBtn: 'विदेशी खाद्य पसल', kakaoMap: 'KakaoMap', shopNote: 'खुल्ने समय र सामान फोन वा KakaoMap मा हेर्नुहोस्',
   ctryMore: '{c} का मानिसले थप गर्नुपर्ने', ctryPick: 'थप काम हेर्न ग्लोबमा आफ्नो देश छान्नुहोस्।', ctryNone: 'यस देशको थप दायित्व अझै पुष्टि भएको छैन। दूतावास वा पठाउने निकायलाई सोध्नुहोस्।', retL: 'फिर्ती खर्च बीमा', npsL: 'राष्ट्रिय पेन्सन',
-  todoBtn: 'आइपुगेपछिका काम',
+  todoBtn: 'आइपुगेपछिका काम', todoShort: 'काम',
   tabTodo: 'आइपुगेपछि', tabFind: 'सहायता खोज्नुहोस्', tabFindGo: 'वोन्जु र गाङवोनमा सहायता खोज्नुहोस्', todoIntro: 'अवतरणपछि गर्नुपर्ने काम क्रमैसँग। म्याद प्रवेश मितिबाट गनिन्छ।', arriveBtn: 'आइपुगेपछि गर्ने {n} काम', arriveSub: 'वोन्जु बसोबासमा हेर्नुहोस्',
   costL: 'आधिकारिक खर्च', exitNone: 'यो चरणको विवरण अझै पुष्टि भएको छैन। पठाउने निकायको सूचना हेर्नुहोस्।', lvNote: 'समाचार/सारांशबाट — आधिकारिक सूचनामा फेरि जाँच्नुहोस्।',
   tag: 'कोरिया आउने विदेशी कामदारका लागि प्रवेश तयारी',
   search: 'आफ्नो देश खोज्नुहोस्', hint: 'प्रस्थान गर्ने देश थिच्नुहोस्', noResult: 'नतिजा छैन',
-  sat: 'स्याटेलाइट', map: 'नक्सा', from: 'बाट', to: 'सम्म · इन्छन अन्तर्राष्ट्रिय विमानस्थल, कोरिया',
+  viewPc: 'कम्प्युटरमा हेर्नुहोस्', viewMobile: 'मोबाइलमा हेर्नुहोस्', back: 'पछाडि', sat: 'स्याटेलाइट', map: 'नक्सा', from: 'बाट', to: 'सम्म · इन्छन अन्तर्राष्ट्रिय विमानस्थल, कोरिया',
   entry: 'प्रवेश योजना मिति', fuel: 'इन्धन', fuelHelp: 'इन्धन = प्रवेश मितिअघि यो तयारी गर्न बाँकी समय',
   fOk: 'पर्याप्त', fLow: 'कसिलो', fOut: 'ढिलो', due: '{date} सम्म', after: 'आइपुगेको {n} दिनभित्र', afterAny: 'आइपुगेपछि',
   fly: 'उडान सुरु', flying: 'उडिरहेको…', replay: 'फेरि उडान', turb: 'हावाको हलचल', turbOk: 'बुझेँ',
@@ -231,7 +232,17 @@ export const fill = (s, v) => String(s || '').replace(/\{(\w+)\}/g, (m, k) => (v
 export const tx = (o, lang) => (o ? (o[lang] || o.en || o.ko) : '');
 
 /* 브라우저가 나라 이름을 그 언어로 바꿔 줍니다(Intl.DisplayNames). */
+/* ISO 코드가 없는 지역 — 지구본 지도 데이터의 영어 이름 → 언어별 이름 */
+const NO_CODE = {
+  'N. Cyprus': { ko: '북키프로스', en: 'Northern Cyprus', vi: 'Bắc Síp', id: 'Siprus Utara', km: 'ស៊ីបភាគខាងជើង', ne: 'उत्तरी साइप्रस' },
+  'Somaliland': { ko: '소말릴란드', en: 'Somaliland', vi: 'Somaliland', id: 'Somaliland', km: 'សូម៉ាលីឡង់', ne: 'सोमालील्याण्ड' },
+};
+
 export function countryName(a2, lang, fallback) {
+  const row = a2 && NAMES[a2], li = NAME_LANGS.indexOf(lang);
+  if (row && li >= 0) return row[li];
   try { if (a2) return new Intl.DisplayNames([lang, 'en'], { type: 'region' }).of(a2); } catch (e) { /* 지원 안 함 */ }
+  const x = NO_CODE[fallback];
+  if (x) return x[lang] || x.en;
   return fallback || a2 || '';
 }

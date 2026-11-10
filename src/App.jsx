@@ -10,6 +10,8 @@ import RoutePanel from './components/RoutePanel.jsx';
 import Tutor from './components/Tutor.jsx';
 import AuthDialog from './components/AuthDialog.jsx';
 import BoardingPass, { a2Of } from './components/BoardingPass.jsx';
+import ViewToggle from './components/ViewToggle.jsx';
+import useSheetDrag from './useSheetDrag.js';
 import Settle from './components/Settle.jsx';
 import { byCode } from './data/visas.js';
 import { WONJU } from './data/wonju.js';
@@ -103,7 +105,12 @@ export default function App() {
   /* 지금 고른 나라 */
   const country = sel ? byIso[sel.id] : null;
   const isKorea = sel && sel.id === KOREA.iso;
-  const labelOf = (f) => { const c = byIso[f.id]; return c ? countryName(c.a2, lang, f.properties.name) : f.properties.name; };
+  /* 휴대폰: 나라를 고르면 뜨는 경로 패널도 끌어서 내리기 · 올리기 (내려가면 비자 줄만 보임) */
+  const panelEl = useRef(null);
+  const sheet = useSheetDrag(panelEl, panelEl, { peek: 54, active: !!(sel && !isKorea) });
+  useEffect(() => { sheet.setLow(false); }, [sel]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 지구본의 모든 나라 이름을 사용자가 고른 언어로 (코드가 없는 지역은 직접 번역한 이름)
+  const labelOf = (f) => countryName(a2Of(f), lang, f.properties.name);
   FEATURES.forEach((f) => { f.properties.label = labelOf(f); });
   const vObj = byCode[visa] || byCode['E-9'];
   const eps = visa === 'E-9';
@@ -136,6 +143,7 @@ export default function App() {
   function choose(f, save = true) {
     stopFlight();
     setSel(f); setActiveLeg(-1); setTurb(null); setOpenList(false); setQuery(''); setLanded(false);
+    markBack('sel'); // 뒤로가기 → 나라 선택 해제
     if (save) set('u.' + who + '.country', f.id);
     if (f.id === KOREA.iso) { setFocus({ lat: KOREA.city[0], lng: KOREA.city[1], altitude: 1.6 }); return; }
     const c = byIso[f.id];
@@ -197,8 +205,27 @@ export default function App() {
     choose(from);
     setTimeout(() => fly(), 2100);
   }
-  function openSettle(tab = 'todo') { stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); api.current && api.current.pause(); }
-  function closeSettle() { setView('globe'); api.current && api.current.resume(); }
+  function openSettle(tab = 'todo') { stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
+  function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
+  function clearSel() { stopFlight(); setSel(null); setFocus({ lat: 22, lng: 110, altitude: 2.4 }); set('u.' + who + '.country', null); }
+
+  /* 뒤로가기 (브라우저 버튼 · 휴대폰 뒤로 제스처)
+     나라를 고르거나 정착 지원 화면을 열 때 기록을 하나 쌓고, 뒤로가기를 누르면 한 단계씩 닫습니다.
+     [처음] → [나라 선택] → [정착 지원] 순서 — 화면 안의 닫기 버튼도 같은 길로 돌아갑니다. */
+  function markBack(kind) { if (!history.state || history.state.ak !== kind) history.pushState({ ak: kind }, ''); }
+  function closeSettle() { if (history.state && history.state.ak === 'settle') history.back(); else doCloseSettle(); }
+  function closeSel() { if (history.state && history.state.ak === 'sel') history.back(); else clearSel(); }
+  const viewRef = useRef(view); viewRef.current = view;
+  const selRef = useRef(sel); selRef.current = sel;
+  useEffect(() => {
+    const onPop = (e) => {
+      const ak = e.state && e.state.ak;
+      if (viewRef.current === 'settle' && ak !== 'settle') doCloseSettle();
+      if (selRef.current && !ak) clearSel();
+    };
+    addEventListener('popstate', onPop);
+    return () => removeEventListener('popstate', onPop);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* QR로 들어오면 그 나라를 골라 둡니다 */
   useEffect(() => {
     const a2 = QS.get('from'); if (!a2) return;
@@ -217,22 +244,27 @@ export default function App() {
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
-    <div className={'app mode-' + mode}>
+    <div className={'app mode-' + mode + ' view-' + view}>
       <div className={'globe-wrap' + (shake ? ' shake sev' + (turb ? turb.sev : 1) : '')}>
         <GlobeView features={FEATURES} selected={sel && sel.id} hoverable={SENDING} mode={mode}
                    paths={paths} marks={marks} focus={focus} apiRef={api}
                    onPick={choose}
+                   onEmpty={() => { if (selRef.current) closeSel(); }}
                    onMark={(m) => { if (m.kind === 'leg') { setActiveLeg(m.idx); const el = document.getElementById('leg-' + m.idx); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } if (m.kind === 'turb') { setTurb(turbs[m.idx]); } }} />
       </div>
 
       {/* 왼쪽: 검색 + 경로 패널 */}
       <aside className="side">
         <div className="search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14" /></svg>
+          {sel && !openList ? (
+            <button type="button" className="icon search-back" aria-label={t.back} title={t.back} onClick={closeSel}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" /></svg>
+            </button>
+          ) : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14" /></svg>}
           <input value={sel && !openList ? labelOf(sel) : query} placeholder={t.search} aria-label={t.search}
                  onFocus={() => { setOpenList(true); setQuery(''); }} onChange={(e) => { setQuery(e.target.value); setOpenList(true); }}
                  onBlur={() => setTimeout(() => setOpenList(false), 180)} />
-          {sel && <button type="button" className="icon" aria-label={t.close} onClick={() => { stopFlight(); setSel(null); setFocus({ lat: 22, lng: 110, altitude: 2.4 }); set('u.' + who + '.country', null); }}>✕</button>}
+          {sel && <button type="button" className="icon" aria-label={t.close} onClick={closeSel}>✕</button>}
           {openList && (
             <ul className="sugg" role="listbox">
               {results.length ? results.map((r) => (
@@ -248,7 +280,8 @@ export default function App() {
         {!sel && <div className="card hint-card"><b>{t.app}</b><span>{t.tag}</span><p>{t.hint}</p></div>}
         {isKorea && <div className="card hint-card"><p>{t.korea}</p></div>}
         {sel && !isKorea && (
-          <div className="card panel">
+          <div ref={panelEl} className={'card panel' + (sheet.low ? ' is-low' : '')} onClick={() => { if (sheet.low && !sheet.justDragged.current) sheet.setLow(false); }}>
+            <span className="st-grip" aria-hidden="true" />
             <div className="rp-visa" style={{ '--vc': vObj.color }}>
               <b>{visa}</b><span>{tx(vObj.name, lang)}</span>
               <button type="button" className="btn-t" onClick={() => setTicket(true)}>🎫 {t.ticket}</button>
@@ -268,10 +301,10 @@ export default function App() {
       <div className="top-r">
         {view === 'globe' && arriveSum && (
           <button type="button" className="wj-chip todo-chip" onClick={() => openSettle('todo')} aria-label={t.todoBtn} title={t.todoBtn}>
-            <span aria-hidden="true">✅</span><span className="chip-t">{t.todoBtn}</span><em>{arriveSum.done}/{arriveSum.total}</em>
+            <svg className="chip-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5l2 2 4-4.5M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0" /></svg><span className="chip-t">{t.todoBtn}</span><span className="chip-s">{t.todoShort}</span><em style={{ '--p': (arriveSum.total ? arriveSum.done / arriveSum.total * 100 : 0) + '%' }}>{arriveSum.done}/{arriveSum.total}</em>
           </button>
         )}
-        {view === 'globe' && <button type="button" className="wj-chip" onClick={() => openSettle('find')}><span aria-hidden="true">📍</span>{t.settleBtn}</button>}
+        {view === 'globe' && <button type="button" className="wj-chip settle-chip" onClick={() => openSettle('find')}><svg className="chip-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg><span className="chip-t">{t.settleBtn}</span></button>}
         <select className="lang" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
           {LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
         </select>
@@ -289,6 +322,7 @@ export default function App() {
 
       {/* 오른쪽 아래: 확대 · 축소 · 튜터 */}
       <div className="ctrl">
+        <ViewToggle lang={lang} />
         <button type="button" className="tutor-fab" onClick={() => setTutorOpen((o) => !o)} aria-label={t.tutor}><span aria-hidden="true">가</span><em>{t.tutor}</em></button>
         <div className="zoom">
           <button type="button" aria-label="Zoom in" onClick={() => api.current && api.current.zoom(0.75)}>+</button>

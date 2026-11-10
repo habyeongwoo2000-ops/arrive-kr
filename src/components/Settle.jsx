@@ -2,6 +2,7 @@
    원주 → 강원 → 전국 순서로 맞춤 공공지원을 추천합니다. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import useSheetDrag from '../useSheetDrag.js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SHOPS, PHONES, FOODS, PLACES, TOWNS, NEEDS, SCOPE, STATS, SOURCES, WONJU, recommend } from '../data/wonju.js';
@@ -38,6 +39,9 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const map = useRef(null);
   const layer = useRef(null);
   const card = useRef(null);
+  const sideEl = useRef(null);
+  // 휴대폰: 지도를 누르면(또는 아래로 끌면) 아래 패널을 내려 지도를 넓게
+  const { low, setLow, justDragged } = useSheetDrag(sideEl, card, { peek: 72 });
   const shopLayer = useRef(null);
   const [shops, setShops] = useState(true);
   const [phones, setPhones] = useState(true);
@@ -63,6 +67,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     layer.current = L.layerGroup().addTo(m);
     shopLayer.current = L.layerGroup().addTo(m);
     map.current = m;
+    m.on('click', () => setLow(true)); // 지도 빈 곳을 누르면 패널 내리기 (핀을 누를 땐 그대로)
     // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
     const tm = setTimeout(() => { m.invalidateSize(); m.panBy(innerWidth > 760 ? [-200, 0] : [0, Math.round(innerHeight * 0.27)], { animate: false }); }, 50);
     return () => { clearTimeout(tm); m.remove(); };
@@ -84,7 +89,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
       const color = CAT[ps[0].needs[0]] || '#1a73e8';
       const mk = L.marker([pl.lat, pl.lng], { icon: pinIcon(color, pl[K].split(' (')[0] + (ps.length > 1 ? ' · ' + ps.length : ''), on), zIndexOffset: on ? 1000 : 0 }).addTo(lg);
       mk.bindPopup(`<b>${pl[K]}</b>${pl.exact ? '' : ` <small>(${t.approx})</small>`}<ul>${ps.map((p) => `<li>${p[K].t}</li>`).join('')}</ul>`);
-      mk.on('click', () => { setHi(ps[0].id); const el = document.getElementById('pg-' + ps[0].id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+      mk.on('click', () => { setLow(false); setHi(ps[0].id); const el = document.getElementById('pg-' + ps[0].id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
     });
   }, [recs, hi, K]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -143,10 +148,11 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   };
 
   return (
-    <div className="settle">
+    <div className={'settle' + (low ? ' is-low' : '')}>
       <div className="lf" ref={host} />
 
-      <aside className="side st-side">
+      <aside ref={sideEl} className={'side st-side' + (low ? ' is-low' : '')} onClick={() => { if (low && !justDragged.current) setLow(false); }}>
+        <span className="st-grip" aria-hidden="true" />
         <div className="card st-card" ref={card}>
           <div className="st-top">
             <button type="button" className="icon" onClick={onBack} aria-label={t.toGlobe} title={t.toGlobe}>←</button>
