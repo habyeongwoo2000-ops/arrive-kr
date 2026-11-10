@@ -13,11 +13,13 @@ import BoardingPass, { a2Of } from './components/BoardingPass.jsx';
 import ViewToggle from './components/ViewToggle.jsx';
 import useSheetDrag from './useSheetDrag.js';
 import Settle from './components/Settle.jsx';
+import Icon from './components/Icon.jsx';
+import { nav } from './i18n/nav.js';
 import { byCode } from './data/visas.js';
 import { WONJU } from './data/wonju.js';
 import { COUNTRIES, KOREA, byIso } from './data/countries.js';
 import { LEGS, TURBULENCE, GENERAL } from './data/route.js';
-import { LANGS, LANG_NAMES, ui, tx, countryName } from './i18n/ui.js';
+import { LANGS, LANG_NAMES, ui, tx, fill, countryName } from './i18n/ui.js';
 import { get, set } from './lib/store.js';
 import { current, signOut } from './lib/auth.js';
 
@@ -57,6 +59,9 @@ const bearing = (p, q) => {
 export default function App() {
   const [lang, setLangS] = useState(pickLang);
   const t = ui(lang);
+  const n = nav(lang);
+  const [fold, setFold] = useState(false);          // PC: 왼쪽 패널 접기
+  const [planGo, setPlanGo] = useState(0);         // 메뉴 '30일 일정' → 정착 화면에서 바로 AI 일정 시작
   const [mode, setMode] = useState('sat');
   const [sel, setSel] = useState(null);           // world-atlas feature
   const [query, setQuery] = useState('');
@@ -205,7 +210,7 @@ export default function App() {
     choose(from);
     setTimeout(() => fly(), 2100);
   }
-  function openSettle(tab = 'todo') { stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
+  function openSettle(tab = 'todo') { setFold(false); stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
   function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
   function clearSel() { stopFlight(); setSel(null); setFocus({ lat: 22, lng: 110, altitude: 2.4 }); set('u.' + who + '.country', null); }
 
@@ -241,10 +246,43 @@ export default function App() {
   }, [query, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const live = useRef({}); live.current = { route, legs, turbs };
+  /* 첫 화면 목록: 송출국 (지도에 있는 나라만) */
+  const epsList = useMemo(() => COUNTRIES.map((c) => ({ c, f: FEATURES.find((x) => x.id === c.iso) })).filter((r) => r.f)
+    .sort((a, b) => labelOf(a.f).localeCompare(labelOf(b.f))), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); };
+  const railOn = view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : 'route';
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
-    <div className={'app mode-' + mode + ' view-' + view}>
+    <div className={'app mode-' + mode + ' view-' + view + (fold ? ' is-fold' : '')}>
+      {/* 맨 왼쪽 메뉴 (네이버 지도식 세로 메뉴) */}
+      <nav className="rail" aria-label="Menu">
+        <button type="button" className="rail-logo" onClick={goRoute} aria-label="ArriveKR"><Icon n="globe" size={22} /><b>ArriveKR</b></button>
+        <button type="button" className={'rail-i' + (railOn === 'route' ? ' is-on' : '')} onClick={goRoute}><Icon n="route" size={22} /><span>{n.route}</span></button>
+        <button type="button" className={'rail-i' + (railOn === 'todo' ? ' is-on' : '')} onClick={() => openSettle('todo')}><Icon n="todo" size={22} /><span>{n.todo}</span>{arriveSum && <em>{arriveSum.done}/{arriveSum.total}</em>}</button>
+        <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openSettle('find')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
+        <button type="button" className="rail-i" onClick={() => { openSettle('find'); setPlanGo((x) => x + 1); }}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
+        <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => setTutorOpen((o) => !o)}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
+        <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
+        <div className="rail-foot">
+          <label className="rail-lang" title={n.lang}>
+            <Icon n="globe" size={20} />
+            <select value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
+              {LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
+            </select>
+            <span>{LANG_NAMES[lang]}</span>
+          </label>
+          {user ? (
+            <button type="button" className="rail-i rail-me" title={user} onClick={() => { if (window.confirm(t.signOut + '?')) { signOut(); setUser(null); } }}><b className="avatar">{user.slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
+          ) : (
+            <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="user" size={22} /><span>{n.login}</span></button>
+          )}
+        </div>
+      </nav>
+      <button type="button" className="fold" onClick={() => setFold((f) => !f)} aria-label={fold ? n.unfold : n.fold} title={fold ? n.unfold : n.fold}>
+        <Icon n={fold ? 'next' : 'back'} size={16} />
+      </button>
+
       <div className={'globe-wrap' + (shake ? ' shake sev' + (turb ? turb.sev : 1) : '')}>
         <GlobeView features={FEATURES} selected={sel && sel.id} hoverable={SENDING} mode={mode}
                    paths={paths} marks={marks} focus={focus} apiRef={api}
@@ -258,18 +296,19 @@ export default function App() {
         <div className="search">
           {sel && !openList ? (
             <button type="button" className="icon search-back" aria-label={t.back} title={t.back} onClick={closeSel}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" /></svg>
+              <Icon n="back" size={20} />
             </button>
-          ) : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14" /></svg>}
+          ) : null}
           <input value={sel && !openList ? labelOf(sel) : query} placeholder={t.search} aria-label={t.search}
                  onFocus={() => { setOpenList(true); setQuery(''); }} onChange={(e) => { setQuery(e.target.value); setOpenList(true); }}
                  onBlur={() => setTimeout(() => setOpenList(false), 180)} />
-          {sel && <button type="button" className="icon" aria-label={t.close} onClick={closeSel}>✕</button>}
+          {sel ? <button type="button" className="icon" aria-label={t.close} onClick={closeSel}><Icon n="close" size={18} /></button>
+               : <span className="search-go" aria-hidden="true"><Icon n="search" size={20} /></span>}
           {openList && (
             <ul className="sugg" role="listbox">
               {results.length ? results.map((r) => (
                 <li key={r.f.id}><button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(r.f)}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7m0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5" /></svg>
+                  <Icon n="pin" size={18} />
                   <span>{r.name}{r.send && <em>EPS</em>}</span>
                 </button></li>
               )) : <li className="none">{t.noResult}</li>}
@@ -277,14 +316,33 @@ export default function App() {
           )}
         </div>
 
-        {!sel && <div className="card hint-card"><b>{t.app}</b><span>{t.tag}</span><p>{t.hint}</p></div>}
-        {isKorea && <div className="card hint-card"><p>{t.korea}</p></div>}
+        {!sel && (
+          <div className="card home">
+            <div className="home-h"><b>{n.homeT}</b><p>{n.homeSub}</p></div>
+            <div className="band" />
+            <h3 className="sec-h">{n.epsT}<span>{fill(n.epsN, { n: epsList.length })}</span></h3>
+            <ul className="plist">
+              {epsList.map(({ c, f }) => (
+                <li key={c.iso}><button type="button" onClick={() => choose(f)}>
+                  <span className="plist-t"><b>{labelOf(f)}</b>{c.newly && <em className="tag-new">{n.newL}</em>}</span>
+                  <span className="plist-s">{c.agency.split(' (')[0]}</span>
+                  <span className="plist-m">{n.feeL} {c.fee}</span>
+                  <Icon n="next" size={16} className="plist-go" />
+                </button></li>
+              ))}
+            </ul>
+            <div className="band" />
+            <div className="home-other"><Icon n="globe" size={18} /><span><b>{n.otherT}</b><small>{n.otherSub}</small></span></div>
+            <p className="rp-note home-note">{n.homeNote}</p>
+          </div>
+        )}
+        {isKorea && <div className="card home"><div className="home-h"><p>{t.korea}</p></div></div>}
         {sel && !isKorea && (
           <div ref={panelEl} className={'card panel' + (sheet.low ? ' is-low' : '')} onClick={() => { if (sheet.low && !sheet.justDragged.current) sheet.setLow(false); }}>
             <span className="st-grip" aria-hidden="true" />
             <div className="rp-visa" style={{ '--vc': vObj.color }}>
               <b>{visa}</b><span>{tx(vObj.name, lang)}</span>
-              <button type="button" className="btn-t" onClick={() => setTicket(true)}>🎫 {t.ticket}</button>
+              <button type="button" className="btn-o sm" onClick={() => setTicket(true)}><Icon n="ticket" size={16} />{t.ticket}</button>
             </div>
             <RoutePanel lang={lang} country={eps ? country : null} fromLabel={labelOf(sel)} legs={legs} extra={extra}
                         info={!eps ? (vObj.inKorea ? t.inKorea : '') : !country ? t.notE9 : country.newly ? t.newCountry : ''}
@@ -297,43 +355,25 @@ export default function App() {
         )}
       </aside>
 
-      {/* 오른쪽 위: 원주 정착 · 언어 · 계정 */}
-      <div className="top-r">
-        {view === 'globe' && arriveSum && (
-          <button type="button" className="wj-chip todo-chip" onClick={() => openSettle('todo')} aria-label={t.todoBtn} title={t.todoBtn}>
-            <svg className="chip-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5l2 2 4-4.5M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0" /></svg><span className="chip-t">{t.todoBtn}</span><span className="chip-s">{t.todoShort}</span><em style={{ '--p': (arriveSum.total ? arriveSum.done / arriveSum.total * 100 : 0) + '%' }}>{arriveSum.done}/{arriveSum.total}</em>
+      {/* 지도 오른쪽 위 도구 (지도 유형 · 모바일 보기) */}
+      <div className="mtools">
+        <div className="mtool-g">
+          <button type="button" className="mtool" onClick={() => setMode(mode === 'sat' ? 'map' : 'sat')} title={n.layer}>
+            <Icon n="layers" size={20} /><span>{mode === 'sat' ? n.map : n.sat}</span>
           </button>
-        )}
-        {view === 'globe' && <button type="button" className="wj-chip settle-chip" onClick={() => openSettle('find')}><svg className="chip-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg><span className="chip-t">{t.settleBtn}</span></button>}
-        <select className="lang" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
-          {LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}
-        </select>
-        {user ? (
-          <button type="button" className="avatar" title={user} onClick={() => { if (window.confirm(t.signOut + '?')) { signOut(); setUser(null); } }}>{user.slice(0, 1).toUpperCase()}</button>
-        ) : (
-          <button type="button" className="signin" onClick={() => setAuthOpen(true)}>{t.signIn}</button>
-        )}
-      </div>
-
-      {/* 왼쪽 아래: 레이어 */}
-      <button type="button" className={'layer ' + (mode === 'sat' ? 'to-map' : 'to-sat')} onClick={() => setMode(mode === 'sat' ? 'map' : 'sat')}>
-        <span className="layer-th" aria-hidden="true" /><span>{mode === 'sat' ? t.map : t.sat}</span>
-      </button>
-
-      {/* 오른쪽 아래: 확대 · 축소 · 튜터 */}
-      <div className="ctrl">
-        <ViewToggle lang={lang} />
-        <button type="button" className="tutor-fab" onClick={() => setTutorOpen((o) => !o)} aria-label={t.tutor}><span aria-hidden="true">가</span><em>{t.tutor}</em></button>
-        <div className="zoom">
-          <button type="button" aria-label="Zoom in" onClick={() => api.current && api.current.zoom(0.75)}>+</button>
-          <button type="button" aria-label="Zoom out" onClick={() => api.current && api.current.zoom(1.33)}>−</button>
+          <ViewToggle lang={lang} />
         </div>
+      </div>
+      {/* 오른쪽 아래: 확대 · 축소 */}
+      <div className="zoom">
+        <button type="button" aria-label="Zoom in" onClick={() => api.current && api.current.zoom(0.75)}><Icon n="plus" size={18} /></button>
+        <button type="button" aria-label="Zoom out" onClick={() => api.current && api.current.zoom(1.33)}><Icon n="minus" size={18} /></button>
       </div>
 
       {/* 난기류 알림 */}
       {turb && (
         <div className={'turb-card sev' + turb.sev} role="alert">
-          <span className="turb-ic" aria-hidden="true">⚠</span>
+          <span className="turb-ic" aria-hidden="true"><Icon n="alert" size={20} /></span>
           <div><small>{t.turb}</small><b>{tx(turb.t, lang)}</b><p>{tx(turb.d, lang)}</p></div>
           <button type="button" className="btn-t" onClick={endTurb}>{t.turbOk}</button>
         </div>
@@ -342,16 +382,16 @@ export default function App() {
       {/* 인천 도착 → 원주 */}
       {landed && view === 'globe' && (
         <div className="land-card" role="status">
-          <span className="land-ic" aria-hidden="true">🛬</span>
+          <span className="land-ic" aria-hidden="true"><Icon n="land" size={24} /></span>
           <div><b>{t.landed}</b><p>ICN → WJU · {t.toWonjuMove}</p></div>
           <button type="button" className="btn-p" onClick={() => openSettle('todo')}>{t.startSettle} →</button>
-          <button type="button" className="icon" aria-label={t.close} onClick={() => setLanded(false)}>✕</button>
+          <button type="button" className="icon" aria-label={t.close} onClick={() => setLanded(false)}><Icon n="close" size={18} /></button>
         </div>
       )}
 
       {view === 'settle' && <Settle lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
                                         checks={checks} toggle={toggle} entry={entry}
-                                        country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} />}
+                                        country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} planGo={planGo} />}
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}
                       init={{ name: pax, from: sel && !isKorea ? sel : null, visa, entry }}

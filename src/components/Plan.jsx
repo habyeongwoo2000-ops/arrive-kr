@@ -7,6 +7,8 @@ import { buildPlan, fmtDate } from '../lib/plan.js';
 import { PLACES } from '../data/wonju.js';
 import { ui, fill } from '../i18n/ui.js';
 import './plan.css';
+import Icon from './Icon.jsx';
+const ICON = { '🚌': 'bus', '🎓': 'study', '☎': 'call', '🏢': 'culture', '🌾': 'work', '🚍': 'bus', '가': 'ko', '🏥': 'health', '👪': 'family', '🪪': 'stay', '🦺': 'safety', '🎉': 'culture', '✅': 'check' };
 
 /* 이 기능의 문구 — ui.js 를 건드리지 않도록 여기에 둡니다 (없는 언어는 영어) */
 const S = {
@@ -20,9 +22,9 @@ export function PlanButton({ lang, onClick }) {
   const t = words(lang);
   return (
     <button type="button" className="ai-plan" onClick={onClick}>
-      <span className="ai-spark" aria-hidden="true">✨</span>
-      <span><b>{t.planBtn}</b><small>{t.planBtnSub}</small></span>
-      <i aria-hidden="true">→</i>
+      <span className="ai-spark" aria-hidden="true"><Icon n="calendar" size={22} /></span>
+      <span><b>{t.planBtn}<em className="ai-tag">AI</em></b><small>{t.planBtnSub}</small></span>
+      <Icon n="next" size={18} />
     </button>
   );
 }
@@ -66,7 +68,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   }
   /* 도크·패널에 가리지 않게 화면 중심을 비켜서 날아가기 */
   function focus(lat, lng, z) {
-    const off = innerWidth > 760 ? L.point(-206, 170) : L.point(0, Math.round(innerHeight * 0.3));
+    const off = innerWidth > 760 ? L.point(0, 150) : L.point(0, Math.round(innerHeight * 0.3));
     const c = map.unproject(map.project([lat, lng], z).add(off), z);
     map.flyTo(c, z, { duration: 0.8 });
   }
@@ -112,7 +114,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
     if (run.current !== my) return;
     setPlaying(false);
     const pts = Object.keys(byPlace).map((k) => [PLACES[k].lat, PLACES[k].lng]);
-    if (pts.length > 1) map.flyToBounds(L.latLngBounds(pts).pad(0.35), { duration: 1, ...(innerWidth > 760 ? { paddingTopLeft: [430, 20], paddingBottomRight: [20, 260] } : { paddingBottomRight: [0, innerHeight * 0.45] }) });
+    if (pts.length > 1) map.flyToBounds(L.latLngBounds(pts).pad(0.35), { duration: 1, ...(innerWidth > 760 ? { paddingTopLeft: [40, 80], paddingBottomRight: [40, 300] } : { paddingBottomRight: [0, innerHeight * 0.45] }) });
   }
   const stop = () => { run.current++; setPlaying(false); };
   const jump = (i) => {
@@ -139,12 +141,12 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
     <div className="pl-dock">
       <div className="pl-h">
         <div className="pl-ttl">
-          <b>🗓 {t.planT}</b>
-          <span className={'pl-badge' + (ai ? ' ai' : '')}>{ai ? '✨ ' + t.planAi : t.planBase}</span>
+          <b>{t.planT}</b>
+          <span className={'pl-badge' + (ai ? ' ai' : '')}>{ai ? t.planAi : t.planBase}</span>
         </div>
         <div className="pl-ctl">
-          <button type="button" onClick={() => (playing ? stop() : play())}>{playing ? '⏸ ' + t.planPause : '▶ ' + t.planReplay}</button>
-          <button type="button" className="x" aria-label={t.close} onClick={onClose}>✕</button>
+          <button type="button" onClick={() => (playing ? stop() : play())}>{playing ? <><Icon n="pause" size={14} />{t.planPause}</> : <><Icon n="play" size={14} />{t.planReplay}</>}</button>
+          <button type="button" className="x" aria-label={t.close} onClick={onClose}><Icon n="close" size={16} /></button>
         </div>
       </div>
       <p className="pl-intro">{(ai && ai.intro) || (name ? fill(t.planHello, { name: name.toUpperCase() }) : t.planHello0)}</p>
@@ -166,13 +168,13 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
           return (
             <article key={s.id} className={'pl-c' + (i === active ? ' is-on' : '') + (i < active ? ' done' : '')} style={{ '--c': KIND[s.kind] }} onClick={() => jump(i)}>
               <header><b>D+{s.day}</b><span>{fmtDate(s.date, lang)}</span></header>
-              <div className="pl-c-t"><i aria-hidden="true">{s.icon}</i><h4>{s.t[K]}</h4></div>
+              <div className="pl-c-t"><i aria-hidden="true"><Icon n={ICON[s.icon] || 'info'} size={16} /></i><h4>{s.t[K]}</h4></div>
               <p>{tip || s.n[K]}</p>
               {tip && <small className="pl-c-fact">{s.n[K]}</small>}
               <footer>
-                {pl && <span>📍 {pl[K].split(' (')[0]}{pl.exact ? '' : ' · ' + t.approx}</span>}
-                {s.tel && <a href={'tel:' + s.tel.replace(/[^0-9]/g, '')} onClick={(e) => e.stopPropagation()}>☎ {s.tel}</a>}
-                {s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>↗ {t.site}</a>}
+                {pl && <span><Icon n="pin" size={13} />{pl[K].split(' (')[0]}{pl.exact ? '' : ' · ' + t.approx}</span>}
+                {s.tel && <a href={'tel:' + s.tel.replace(/[^0-9]/g, '')} onClick={(e) => e.stopPropagation()}><Icon n="call" size={13} />{s.tel}</a>}
+                {s.url && <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}><Icon n="link" size={13} />{t.site}</a>}
               </footer>
             </article>
           );

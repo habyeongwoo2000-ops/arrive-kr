@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react';
 import { QUIZ } from '../data/korean.js';
 import { ui, fill, tx } from '../i18n/ui.js';
+import Icon from './Icon.jsx';
 
 /* 정답이 늘 첫 번째에 있지 않게 문제마다 고정된 순서로 섞습니다. */
 function order(i, n) {
@@ -50,7 +51,7 @@ export default function Tutor({ lang, hintLang, countryLabel, onClose }) {
       <header className="tu-h">
         <span className="tu-logo" aria-hidden="true">가</span>
         <div><b>{t.tutor}</b>{countryLabel && <small>{fill(t.tutorFor, { country: countryLabel })}</small>}</div>
-        <button type="button" className="icon" onClick={onClose} aria-label={t.close}>✕</button>
+        <button type="button" className="icon" onClick={onClose} aria-label={t.close}><Icon n="close" size={18} /></button>
       </header>
       <div className="tu-tabs" role="tablist">
         <button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>{t.practice}</button>
