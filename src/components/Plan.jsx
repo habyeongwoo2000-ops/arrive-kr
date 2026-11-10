@@ -129,8 +129,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
       if (run.current !== my) return;
       const s = steps[i];
       setActive(i);
-      const card = strip.current && strip.current.children[i];
-      if (card) card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      center(i);
       const to = pts[i];
       if (to) {
         if (prev && !prev.equals(to)) {
@@ -166,11 +165,29 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
     if (all.length > 1) map.flyToBounds(L.latLngBounds(all), { ...dockPad(), maxZoom: 15, duration: 1 });
   }
   const stop = () => { run.current++; setPlaying(false); };
+  /* 카드 줄을 i번째 카드가 가운데 오도록 부드럽게 밀기 */
+  function center(i) {
+    const el = strip.current; const card = el && el.children[i]; if (!card) return;
+    el.scrollTo({ left: card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2, behavior: 'smooth' });
+  }
   const jump = (i) => {
-    stop(); setActive(i);
+    stop(); setActive(i); center(i);
     const pl = steps[i].place && PLACES[steps[i].place];
     if (pl && map) focus(pl.lat, pl.lng, 14);
   };
+
+  /* ‹ › 버튼·키보드 화살표 → 앞뒤 일정으로 (지도도 같이 이동) */
+  const go = (d) => { const i = Math.min(steps.length - 1, Math.max(0, (active < 0 ? 0 : active + d))); if (i !== active) jump(i); };
+  const goRef = useRef(go); goRef.current = go;
+  useEffect(() => {
+    const onKey = (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') || e.altKey || e.metaKey || e.ctrlKey) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); goRef.current(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goRef.current(-1); }
+    };
+    addEventListener('keydown', onKey);
+    return () => removeEventListener('keydown', onKey);
+  }, []);
 
   const cur = steps[active] || null;
   const curDay = cur ? cur.day : 0;
@@ -212,6 +229,9 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
         <span className="pl-rib-l">D+0</span><span className="pl-rib-r">D+30</span>
       </div>
 
+      <div className="pl-strip">
+      <button type="button" className="pl-nav prev" aria-label={lang === 'ko' ? '이전 일정' : 'Previous'} disabled={active <= 0} onClick={() => go(-1)}><Icon n="back" size={20} /></button>
+      <button type="button" className="pl-nav next" aria-label={lang === 'ko' ? '다음 일정' : 'Next'} disabled={active >= steps.length - 1} onClick={() => go(1)}><Icon n="next" size={20} /></button>
       <div className="pl-cards" ref={strip}>
         {steps.map((s, i) => {
           const tip = ai && ai.tips && ai.tips[s.id];
@@ -231,6 +251,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
             </article>
           );
         })}
+      </div>
       </div>
       <p className="pl-note" title={t.planNote}>{t.planNote}</p>
     </div>

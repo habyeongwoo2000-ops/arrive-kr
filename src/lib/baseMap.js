@@ -13,21 +13,27 @@ function glOk() {
 }
 
 export default async function addBase(map, alive) {
-  const fallback = () => { if (alive()) osm().addTo(map); };
-  if (!glOk()) { fallback(); return; }
+  const fallback = (why) => { if (!alive()) return; osm().addTo(map); map.getContainer().dataset.base = 'osm-' + why; };
+  if (!glOk()) { fallback('nogl'); return; }
   try {
     await import('maplibre-gl/dist/maplibre-gl.css');
     const ml = await import('maplibre-gl');
     const { default: workerUrl } = await import('maplibre-gl/dist/maplibre-gl-csp-worker.js?url');
     (ml.setWorkerUrl || ml.default.setWorkerUrl)(workerUrl);   // 지도 일꾼 파일 위치 알려 주기
     await import('@maplibre/maplibre-gl-leaflet');
-  } catch (e) { fallback(); return; }
+  } catch (e) { console.warn('[map] load', e); fallback('load'); return; }
   if (!alive()) return;
   const gl = L.maplibreGL({ style: mapStyle(), localIdeographFontFamily: KO_FONT, attributionControl: { customAttribution: ATTR }, fadeDuration: 150 }).addTo(map);
   const glMap = gl.getMaplibreMap();
-  let done = false;
-  const swap = () => { if (done || !alive()) return; done = true; map.removeLayer(gl); fallback(); };
-  const timer = setTimeout(() => { if (!glMap.isStyleLoaded()) swap(); }, 12000);   // 바탕 설정을 12초 안에 못 받으면 그림 지도로
-  glMap.on('load', () => { done = true; clearTimeout(timer); });
-  glMap.on('error', () => { if (!glMap.isStyleLoaded()) swap(); });          // 바탕 설정을 못 받았을 때만
+  const box = map.getContainer(); box.dataset.base = 'loading';
+  /* 벡터 지도가 늦거나 막히면 그림 지도를 '잠깐' 위에 깔고, 벡터 지도가 다 뜨면 걷어 냅니다.
+     (탭이 뒤에 있으면 그리기가 멈춰서 늦게 뜰 수 있어요 — 그래서 벡터 지도를 버리지 않습니다) */
+  let raster = null, done = false;
+  const cover = () => { if (done || raster || !alive()) return; raster = osm().addTo(map); box.dataset.base = 'osm'; };
+  const timer = setTimeout(cover, 8000);
+  glMap.on('load', () => {
+    done = true; clearTimeout(timer); box.dataset.base = 'gl';
+    if (raster) { map.removeLayer(raster); raster = null; }
+  });
+  glMap.on('error', (e) => { if (!done) { console.warn('[map] vector style', e && e.error && e.error.message); cover(); } });
 }
