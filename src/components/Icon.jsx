@@ -41,7 +41,12 @@ const P = {
   life: <><path d="M4 11l8-6.5 8 6.5" /><path d="M6 9.5V20h12V9.5M10 20v-5h4v5" /></>,
   safety: <><path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z" /><path d="M9 12l2.2 2.2L15.5 10" /></>,
   culture: <><path d="M5 20V9l7-5 7 5v11" /><path d="M9 20v-6h6v6M3.5 20h17" /></>,
-  study: <><path d="M3 9l9-4.5L21 9l-9 4.5z" /><path d="M7 11v4.5c1.5 1.5 3 2 5 2s3.5-.5 5-2V11M21 9v5" /></>
+  study: <><path d="M3 9l9-4.5L21 9l-9 4.5z" /><path d="M7 11v4.5c1.5 1.5 3 2 5 2s3.5-.5 5-2V11M21 9v5" /></>,
+  camera: <><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2.2h5.6L16.3 7h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" /><circle cx="12" cy="13" r="3.4" /></>,
+  mic: <><rect x="9" y="3.5" width="6" height="11" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" /></>,
+  send: <path d="M4.5 12L20 4.5 16 20l-3.5-6.5zM12.5 13.5L20 4.5" />,
+  doc: <><path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z" /><path d="M14 3.5V8h4M9 12h6M9 15.5h6" /></>,
+  moved: <path d="M5 12h12M13 7l5 5-5 5" />
 };
 
 export default function Icon({ n, size = 20, className = '', ...rest }) {
