@@ -1,5 +1,5 @@
 /* POST /api/plan { lang, visa, country, needs, steps:[{id, day, t, n}] } → { intro, tips: { id: text } }
-   "나의 원주 정착 30일" 일정의 설명을 그 사람의 말과 상황에 맞게 다듬습니다 (Amazon Bedrock 또는 Google Gemini — api/_ai.js).
+   "나의 원주 정착 30일" 일정의 설명을 그 사람의 말과 상황에 맞게 다듬습니다 (대회 서버의 Amazon Bedrock · Claude — api/_ai.js).
    · 일정(장소·날짜·전화번호)은 화면의 규칙이 정합니다. AI는 설명 문장만 씁니다 — 새 사업·번호를 지어내지 않게.
    · AI가 꺼져 있으면 501 → 화면은 기본 설명을 그대로 보여 줍니다. 개인정보는 저장하지 않습니다. */
 

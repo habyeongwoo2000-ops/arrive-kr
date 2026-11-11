@@ -1,5 +1,5 @@
 /* POST /api/tutor { q, lang, country } → { answer }
-   EPS-TOPIK(한국어능력시험) 공부를 돕는 짧은 AI 튜터 (Amazon Bedrock 또는 Google Gemini — api/_ai.js).
+   EPS-TOPIK(한국어능력시험) 공부를 돕는 짧은 AI 튜터 (대회 서버의 Amazon Bedrock · Claude — api/_ai.js).
    · AI가 꺼져 있으면 501 을 돌려주고, 화면은 연습 문제만 보여 줍니다.
    · 질문은 300자까지, IP 당 1분 10번까지 받습니다. 개인정보는 저장하지 않습니다. */
 

@@ -20,7 +20,7 @@
 | 체크리스트 | 구간마다 할 일과 설명, 그 나라 송출기관이 더 요구하는 서류(사진 용량·신분증 등) |
 | ⛽ 연료 | 입국 예정일을 넣으면 항목마다 "언제까지 · D-몇"과 남은 준비 기간 게이지(여유 / 빠듯함 / 늦음) |
 | ✈ 비행 · 난기류 | "비행 시작"을 누르면 비행기가 경로를 따라가고, 위험 구간(여권 이름 불일치, 브로커, 사진 규격, 건강검진, 위조 서류, 도착 후 기한)에서 화면과 비행기가 흔들리며 경고 카드가 뜸 |
-| 가 한국어 시험 도우미 | EPS-TOPIK 연습 문제 12개(직장·안전 어휘). 힌트는 고른 나라의 언어로. "AI에게 묻기"는 Gemini 로 답함 |
+| 가 한국어 시험 도우미 | EPS-TOPIK 연습 문제 12개(직장·안전 어휘). 힌트는 고른 나라의 언어로. "AI에게 묻기"는 Claude(Amazon Bedrock)로 답함 |
 | 로그인 | 아이디·비밀번호로 계정을 만들면 체크 기록·입국 예정일·나라가 계정별로 저장 |
 
 ## 데이터 (확인일 2026-11-08 · 원주 2026-11-09)
@@ -48,12 +48,26 @@ npm run dev        # http://localhost:5173
 npm run build
 ```
 
-Vercel: 저장소 Import → Deploy. `api/tutor.js` 는 Vercel 함수로 자동 배포됩니다.
+### 대회 서버(AWS)에 올리기 — AI는 Amazon Bedrock (Claude)
 
-| 환경변수 | 용도 |
+서버에 붙은 권한으로 Bedrock 을 부르므로 **API 키가 없습니다.** 키·.pem 파일은 GitHub 에 올리지 마세요.
+
+```bash
+git clone https://github.com/habyeongwoo2000-ops/arrive-kr.git
+cd arrive-kr
+bash deploy/setup.sh      # Node 22 · Caddy(https) 설치 → 빌드 → AI 확인 → 자동 실행 → https://<IP를 -로>.sslip.io
+bash deploy/update.sh     # 이후 GitHub 에 올린 코드를 반영할 때
+```
+
+- `server.mjs` — 화면(dist/)과 AI 주소(/api/plan·tutor·doc·replan)를 함께 여는 Node 서버 (127.0.0.1:3000, 바깥은 Caddy 가 https 로)
+- `api/_ai.js` — Bedrock Converse 호출 공통
+
+| 환경변수 (deploy/arrive.service) | 용도 |
 |---|---|
-| `GEMINI_API_KEY` | 한국어 도우미 "AI에게 묻기" (없으면 연습 문제만 동작) |
-| `GEMINI_MODEL` | 선택. 기본 `gemini-2.5-flash` |
+| `AI_MODEL` | 기본 `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| `AI_MODEL_DOC` | 선택. 서류 사진 읽기만 다른 모델(예: `global.anthropic.claude-sonnet-5`) |
+| `AWS_REGION` | 서버 지역(setup.sh 가 자동으로 넣음) |
+| `AI_PROVIDER` | `off` 로 두면 AI 없이 기본 설명으로 동작 |
 
 ## 로그인에 대해 (데모)
 

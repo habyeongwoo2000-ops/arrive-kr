@@ -81,4 +81,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => console.log(`ArriveKR · http://${HOST}:${PORT} · AI=${process.env.AI_PROVIDER || (process.env.GEMINI_API_KEY ? 'gemini' : 'off')}`));
+server.listen(PORT, HOST, () => console.log(`ArriveKR · http://${HOST}:${PORT} · AI=${(process.env.AI_PROVIDER || 'bedrock')}`));

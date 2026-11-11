@@ -112,7 +112,7 @@ export function DocReview({ lang, doc, onPick, onAdd, onClose, onRetake, fmt }) 
         {doc.phase === 'done' && <>
           <div className="dr-h">
             <b className="dr-t">{t.foundT}</b>
-            {doc.res.demo ? <em className="dr-demo">{t.demo}</em> : <em className="dr-ai">Gemini</em>}
+            {doc.res.demo ? <em className="dr-demo">{t.demo}</em> : <em className="dr-ai">Claude AI</em>}
           </div>
           {doc.res.docType && <p className="dr-type"><Icon n="doc" size={14} />{doc.res.docType}</p>}
           {doc.res.summary && <p className="dr-sum">{doc.res.summary}</p>}
