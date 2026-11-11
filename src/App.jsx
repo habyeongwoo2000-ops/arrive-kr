@@ -20,8 +20,8 @@ import { WONJU } from './data/wonju.js';
 import { COUNTRIES, KOREA, byIso } from './data/countries.js';
 import { LEGS, TURBULENCE, GENERAL } from './data/route.js';
 import { LANGS, LANG_NAMES, ui, tx, fill, countryName } from './i18n/ui.js';
-import { get, set } from './lib/store.js';
-import { current, signOut } from './lib/auth.js';
+import { get, set, uget, uset, adoptGuest } from './lib/store.js';
+import { current, signOut, nickOf, finishKakao } from './lib/auth.js';
 
 const FEATURES = feature(world, world.objects.countries).features.filter((f) => f.id !== '010'); // 남극 제외
 const SENDING = new Set(COUNTRIES.map((c) => c.iso));
@@ -70,7 +70,7 @@ export default function App() {
   const rzMove = (e) => { if (rz.current) setPanelW(Math.min(PW_MAX, Math.max(PW_MIN, rz.current.w + e.clientX - rz.current.x))); };
   const rzUp = () => { if (!rz.current) return; rz.current = null; document.body.classList.remove('is-rz'); setPanelW((v) => { savePW(v); return v; }); };
   const [planGo, setPlanGo] = useState(0);         // 메뉴 '30일 일정' → 정착 화면에서 바로 AI 일정 시작
-  const [mode, setMode] = useState('sat');
+  const [mode, setModeS] = useState(() => uget(current(), 'mode', 'sat'));
   const [sel, setSel] = useState(null);           // world-atlas feature
   const [query, setQuery] = useState('');
   const [openList, setOpenList] = useState(false);
@@ -83,8 +83,8 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
-  const [view, setView] = useState('globe');      // globe | settle
-  const [settleTab, setSettleTab] = useState('todo'); // todo | find
+  const [view, setView] = useState('globe');      // globe | settle  (새로고침해도 마지막 화면으로 — 아래 복원)
+  const [settleTab, setSettleTabS] = useState(() => uget(current(), 'settleTab', 'todo')); // todo | find
   const [landed, setLanded] = useState(false);
   const api = useRef(null);
   const flight = useRef(null);
@@ -106,12 +106,21 @@ export default function App() {
   useEffect(() => {
     setChecks(get('u.' + who + '.checks', {}));
     const v = get('u.' + who + '.entry'); if (v) setEntryS(new Date(v + 'T00:00:00'));
+    setVisaS(get('u.' + who + '.visa', 'E-9')); setPax(get('u.' + who + '.name', ''));
+    setModeS(uget(who, 'mode', 'sat')); setSettleTabS(uget(who, 'settleTab', 'todo'));
     const c = get('u.' + who + '.country'); if (c) { const f = FEATURES.find((x) => x.id === c); if (f) choose(f, false); }
   }, [who]); // eslint-disable-line react-hooks/exhaustive-deps
   const [visa, setVisaS] = useState(() => { const q = QS.get('visa'); return byCode[q] ? q : get('u.' + who + '.visa', 'E-9'); });
   const [pax, setPax] = useState(() => get('u.' + who + '.name', ''));
-  const [ticket, setTicket] = useState(() => !QS.get('skip'));
+  const [ticket, setTicket] = useState(() => !QS.get('skip') && !uget(current(), 'boarded', false));
   const setVisa = (v) => { setVisaS(v); set('u.' + who + '.visa', v); };
+  const setMode = (m) => { setModeS(m); uset(who, 'mode', m); };
+  const setSettleTab = (x) => { setSettleTabS(x); uset(who, 'settleTab', x); };
+  const boarded = () => uset(who, 'boarded', true);
+  /* 지금 화면(지구본/정착)을 기억 → 새로고침·다른 앱에 다녀와도 그 화면으로 */
+  const lastView = useRef(uget(current(), 'view', 'globe'));   // 지난번 화면 (저장하기 전에 읽어 둠)
+  useEffect(() => { if (lastView.current === 'settle' && !QS.get('from')) setTimeout(() => openSettle(uget(who, 'settleTab', 'todo')), 300); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { uset(who, 'view', view); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggle = (id) => setChecks((c) => { const n = { ...c, [id]: !c[id] }; set('u.' + who + '.checks', n); return n; });
   const setEntry = (d) => { setEntryS(d); set('u.' + who + '.entry', d.toISOString().slice(0, 10)); };
 
@@ -213,7 +222,7 @@ export default function App() {
 
   /* 탑승권 → 비행 */
   function onBoard({ name, from, visa: v, entry: en }) {
-    setTicket(false); setPax(name); set('u.' + who + '.name', name);
+    setTicket(false); boarded(); setPax(name); set('u.' + who + '.name', name);
     setVisa(v); setEntry(en);
     choose(from);
     setTimeout(() => fly(), 2100);
@@ -239,6 +248,20 @@ export default function App() {
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* 로그인 끝 → 로그인 전에 해 둔 작업을 계정으로 옮기고 그 계정의 작업을 불러옵니다 */
+  function loggedIn(id) {
+    adoptGuest(id); setUser(id); setAuthOpen(false);
+    setToast(ui(lang).saved); setTimeout(() => setToast(''), 2600);
+  }
+  /* 카카오 로그인에서 돌아왔을 때 (?code=…&state=…) */
+  useEffect(() => {
+    if (!QS.get('code') || !QS.get('state')) return;
+    finishKakao(QS.get('code'), QS.get('state')).then((r) => {
+      history.replaceState(history.state, '', location.pathname + (QS.get('lang') ? '?lang=' + QS.get('lang') : ''));
+      if (r && r.id) loggedIn(r.id); else { setToast(lang === 'ko' ? '카카오 로그인에 실패했어요' : 'Kakao login failed'); setTimeout(() => setToast(''), 3000); }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* QR로 들어오면 그 나라를 골라 둡니다 */
   useEffect(() => {
     const a2 = QS.get('from'); if (!a2) return;
@@ -281,7 +304,7 @@ export default function App() {
             <span>{LANG_NAMES[lang]}</span>
           </label>
           {user ? (
-            <button type="button" className="rail-i rail-me" title={user} onClick={() => { if (window.confirm(t.signOut + '?')) { signOut(); setUser(null); } }}><b className="avatar">{user.slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
+            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={() => { if (window.confirm(nickOf(user) + ' · ' + t.signOut + '?')) { signOut(); setUser(null); } }}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
           ) : (
             <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="user" size={22} /><span>{n.login}</span></button>
           )}
@@ -402,17 +425,17 @@ export default function App() {
         </div>
       )}
 
-      {view === 'settle' && <Settle lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
+      {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
                                         checks={checks} toggle={toggle} entry={entry}
                                         country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} planGo={planGo} />}
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}
                       init={{ name: pax, from: sel && !isKorea ? sel : null, visa, entry }}
-                      onBoard={onBoard} onSkip={() => setTicket(false)} />
+                      onBoard={onBoard} onSkip={() => { setTicket(false); boarded(); }} />
       )}
 
-      {tutorOpen && <Tutor lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} name={pax} onClose={() => setTutorOpen(false)} />}
-      {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} onDone={(id) => { setUser(id); setAuthOpen(false); setToast(ui(lang).saved); setTimeout(() => setToast(''), 2600); }} />}
+      {tutorOpen && <Tutor key={who} who={who} lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} name={pax} onClose={() => setTutorOpen(false)} />}
+      {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} onDone={loggedIn} />}
       {toast && <div className="snack">{toast}</div>}
       <p className="attrib">Imagery: NASA Blue Marble · Borders: Natural Earth</p>
     </div>

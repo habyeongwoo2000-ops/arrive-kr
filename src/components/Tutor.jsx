@@ -1,7 +1,8 @@
 /* 한국어 시험(EPS-TOPIK) 도우미 — 연습 문제 + AI 질문
    힌트는 고른 나라의 언어(지원하는 6개 언어일 때)와 화면 언어로 보여 줍니다. */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { uget, uset } from '../lib/store.js';
 import { QUIZ } from '../data/korean.js';
 import { ui, fill, tx } from '../i18n/ui.js';
 import Icon from './Icon.jsx';
@@ -10,8 +11,8 @@ import ExamMode from './ExamMode.jsx';
 import { EXAMS, EXAM_LIST } from '../data/exams.js';
 
 const XT = {
-  ko: { exam: '모의시험', examIntro: '실제 시험지처럼 큰 화면에서 풀고, 끝나면 AI가 채점해 점수까지 알려 줘요.', go: '시험 보기', mins: '{n}분 · {q}문항', when: { eps: '입국 전', kiip: '입국 후 · 정착', topik: '유학·취업' } },
-  en: { exam: 'Mock test', examIntro: 'Take it full screen like a real paper — AI grades it and gives your score.', go: 'Start', mins: '{n} min · {q} items', when: { eps: 'Before entry', kiip: 'After arrival', topik: 'Study & jobs' } }
+  ko: { last: '최근 점수', exam: '모의시험', examIntro: '실제 시험지처럼 큰 화면에서 풀고, 끝나면 AI가 채점해 점수까지 알려 줘요.', go: '시험 보기', mins: '{n}분 · {q}문항', when: { eps: '입국 전', kiip: '입국 후 · 정착', topik: '유학·취업' } },
+  en: { last: 'Last score', exam: 'Mock test', examIntro: 'Take it full screen like a real paper — AI grades it and gives your score.', go: 'Start', mins: '{n} min · {q} items', when: { eps: 'Before entry', kiip: 'After arrival', topik: 'Study & jobs' } }
 };
 
 /* 정답이 늘 첫 번째에 있지 않게 문제마다 고정된 순서로 섞습니다. */
@@ -22,19 +23,24 @@ function order(i, n) {
   return a;
 }
 
-export default function Tutor({ lang, hintLang, countryLabel, name = '', onClose }) {
+export default function Tutor({ who = 'guest', lang, hintLang, countryLabel, name = '', onClose }) {
   const t = ui(lang);
   const x = lang === 'ko' ? XT.ko : XT.en;
   const XL = lang === 'ko' ? 'ko' : 'en';
   const [exam, setExam] = useState(null);
   useEsc(onClose, !exam);
-  const [tab, setTab] = useState('exam');
-  const [i, setI] = useState(0);
+  /* 탭·연습 진도·AI 대화·최근 시험 점수 — 계정별로 기억 */
+  const mem = uget(who, 'tutor', {});
+  const [tab, setTab] = useState(mem.tab || 'exam');
+  const [i, setI] = useState(mem.i || 0);
   const [pick, setPick] = useState(null);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(mem.score || 0);
+  const [recent, setRecent] = useState(() => uget(who, 'exams', {}));
   const [showHint, setShowHint] = useState(false);
   const [q, setQ] = useState('');
-  const [chat, setChat] = useState([]);
+  const [chat, setChat] = useState(mem.chat || []);
+  useEffect(() => { uset(who, 'tutor', { tab, i, score, chat: chat.slice(-30) }); }, [tab, i, score, chat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const examDone = (id, sc) => setRecent((r) => { const n = { ...r, [id]: { total: sc.total, max: sc.max, level: sc.level, at: Date.now() } }; uset(who, 'exams', n); return n; });
   const [busy, setBusy] = useState(false);
   const item = QUIZ[i % QUIZ.length];
   const ord = useMemo(() => order(i, item.c.length), [i, item.c.length]);
@@ -79,14 +85,15 @@ export default function Tutor({ lang, hintLang, countryLabel, name = '', onClose
             return (
               <button key={k} type="button" className="tu-ex" style={{ '--ec': e.color }} onClick={() => setExam(k)}>
                 <span className="tu-ex-b"><b>{e.short}</b><em>{x.when[k]}</em></span>
-                <span className="tu-ex-t"><b>{e.name[XL]}</b><small>{e.who[XL]}</small><small className="tu-ex-m">{x.mins.replace('{n}', e.minutes).replace('{q}', n)} · {e.session[XL]}</small></span>
+                <span className="tu-ex-t"><b>{e.name[XL]}</b><small>{e.who[XL]}</small><small className="tu-ex-m">{x.mins.replace('{n}', e.minutes).replace('{q}', n)} · {e.session[XL]}</small>
+                  {recent[k] && <small className="tu-ex-last">{x.last} {recent[k].total}/{recent[k].max}{recent[k].level ? ' · ' + (k === 'kiip' ? recent[k].level + (XL === 'ko' ? '단계' : '') : recent[k].level) : ''}</small>}</span>
                 <span className="tu-ex-go">{x.go}<Icon n="next" size={15} /></span>
               </button>
             );
           })}
         </div>
       )}
-      {exam && <ExamMode id={exam} lang={lang} hintLang={hintLang} name0={name} onClose={() => setExam(null)} />}
+      {exam && <ExamMode id={exam} lang={lang} hintLang={hintLang} name0={name} onResult={(sc) => examDone(exam, sc)} onClose={() => setExam(null)} />}
 
       {tab === 'quiz' && (
         <div className="tu-body">

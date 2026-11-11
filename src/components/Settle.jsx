@@ -15,12 +15,14 @@ import Icon from './Icon.jsx';
 import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
 import useEsc from '../lib/useEsc.js';
+import { uget, uset } from '../lib/store.js';
 import HomePicker, { hs } from './HomePicker.jsx';
 import { distances, distText, reverse, roadPath } from '../lib/route.js';
 
-const HOME_KEY = 'arrive.home';
-const loadHome = () => { try { const h = JSON.parse(localStorage.getItem(HOME_KEY)); return h && isFinite(h.lat) && isFinite(h.lng) ? h : null; } catch (e) { return null; } };
-const saveHome = (h) => { try { h ? localStorage.setItem(HOME_KEY, JSON.stringify(h)) : localStorage.removeItem(HOME_KEY); } catch (e) { /* 저장 안 돼도 화면은 그대로 */ } };
+/* 집 위치 — 계정별로 이 브라우저에 저장 (예전 판의 공용 저장값도 한 번 읽어 옴) */
+const okHome = (h) => (h && isFinite(h.lat) && isFinite(h.lng) ? h : null);
+const loadHome = (who) => { const h = okHome(uget(who, 'home')); if (h || who !== 'guest') return h; try { return okHome(JSON.parse(localStorage.getItem('arrive.home'))); } catch (e) { return null; } };
+const saveHome = (who, h) => uset(who, 'home', h || null);
 const homeIcon = () => L.divIcon({ className: 'poi lf-home', html: `<span class="poi-ic" style="--c:#03c75a"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5"/></svg></span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
 
 /* 지도 위 장소 아이콘 (Leaflet divIcon 은 HTML 문자열이라 SVG 를 글자로 둡니다) */
@@ -51,25 +53,28 @@ const TODO_PIN = { arc: 'cityhall', bank: 'hana', unlimit: 'hana', remit: 'hana'
 const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : null);
 
 
-export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
+export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
   const t = ui(lang);
   const n = nav(lang);
   const [moreOpen, setMoreOpen] = useState(false);
   const K = lang === 'ko' ? 'ko' : 'en';
-  const [visa, setVisa] = useState(visa0 || 'E-9');
-  const [town, setTown] = useState('wonju');
-  const [needs, setNeeds] = useState(['stay', 'health', 'korean']);
-  const [family, setFamily] = useState(visa0 === 'F-6');
+  /* 지원 찾기 조건 — 계정별로 기억 (다른 화면에 다녀오거나 새로고침해도 그대로) */
+  const saved = uget(who, 'settle', {});
+  const wasOpen = useRef(uget(who, 'planOpen', false));   // 지난번에 30일 일정을 보고 있었나
+  const [visa, setVisa] = useState(saved.visa || visa0 || 'E-9');
+  const [town, setTown] = useState(saved.town || 'wonju');
+  const [needs, setNeeds] = useState(saved.needs || ['stay', 'health', 'korean']);
+  const [family, setFamily] = useState(saved.family != null ? saved.family : visa0 === 'F-6');
   const [hi, setHi] = useState(null);
   const [plan, setPlan] = useState(0);   // 0 = 닫힘, 숫자 = 새로 만들 때마다 증가 (AI 30일 일정)
   const h = hs(lang);
-  const [home, setHomeS] = useState(loadHome);     // { lat, lng, label }
+  const [home, setHomeS] = useState(() => loadHome(who));     // { lat, lng, label }
   const [dist, setDist] = useState({});            // 장소 키 → { m, s, est }
-  const [near, setNear] = useState(false);         // 가까운 순
+  const [near, setNear] = useState(!!saved.near); // 가까운 순
   const [picking, setPicking] = useState(false);   // 지도에서 집 고르는 중
   const [routeTo, setRouteTo] = useState(null);    // 집 → 이 장소 길 보기
   const pickRef = useRef(null);
-  const [planBase, setPlanBase] = useState(null);  // 30일 일정 출발 기준: 'arrive'(버스터미널) | 'home'(내 집) — 정하지 않으면 집이 있을 때 집
+  const [planBase, setPlanBase] = useState(saved.planBase || null);  // 30일 일정 출발 기준: 'arrive'(버스터미널) | 'home'(내 집) — 정하지 않으면 집이 있을 때 집
   const [askHome, setAskHome] = useState(false);   // '내 집'을 골랐는데 집 주소가 없을 때 안내
   const base = home && planBase !== 'arrive' ? 'home' : 'arrive';
   const wantHome = () => {
@@ -78,7 +83,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     setTimeout(() => { const i = document.querySelector('.hp-box input'); if (i) i.focus(); }, 350);
   };
   const homeLayer = useRef(null);
-  const setHome = (v) => { setHomeS(v); saveHome(v); if (v && askHome) { setAskHome(false); setPlanBase('home'); } };
+  const setHome = (v) => { setHomeS(v); saveHome(who, v); if (v && askHome) { setAskHome(false); setPlanBase('home'); } };
   const host = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -238,6 +243,12 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
   const allGW = () => map.current && map.current.flyToBounds(L.latLngBounds(Object.values(PLACES).map((p) => [p.lat, p.lng])).pad(0.1), { ...pad(), duration: 1 });
   const pad = () => (innerWidth > 760 ? { paddingTopLeft: [40, 80], paddingBottomRight: [60, 30] } : { paddingBottomRight: [0, innerHeight * 0.55] });
   const goWonju = () => map.current && map.current.flyToBounds(L.latLngBounds([[37.30, 127.80], [37.38, 128.0]]), { ...pad(), duration: 0.9 });
+  /* 조건·일정 열림 상태 저장 */
+  useEffect(() => { uset(who, 'settle', { visa, town, needs, family, near, planBase }); }, [visa, town, needs, family, near, planBase]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { uset(who, 'planOpen', plan > 0); }, [plan]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* 일정을 보던 중이었으면 다시 열어 둡니다 (AI 결과는 저장해 둔 것을 바로 보여 줌) */
+  useEffect(() => { if (wasOpen.current && !planGo) { const tm = setTimeout(() => { if (map.current) { setLow(true); setPlan(1); } }, 400); return () => clearTimeout(tm); } return undefined; }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* 왼쪽 메뉴의 '30일 일정' → 바로 AI 일정 시작 */
   useEffect(() => { if (planGo > 0 && map.current) { setLow(true); setPlan((x) => x + 1); } }, [planGo]); // eslint-disable-line react-hooks/exhaustive-deps
   const tog = (n) => setNeeds((a) => (a.includes(n) ? a.filter((x) => x !== n) : [...a, n]));
@@ -373,7 +384,7 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
       </aside>
 
       {plan > 0 && map.current && (
-        <Plan key={plan} map={map.current} lang={lang} visa={visa} needs={needs} family={family} entry={entry || new Date()}
+        <Plan key={plan} who={who} map={map.current} lang={lang} visa={visa} needs={needs} family={family} entry={entry || new Date()}
               name={name} country={countryLabel || ''} home={home} dist={dist} base={base}
               onBase={(b) => { if (b === 'home' && !home) { setPlan(0); wantHome(); return; } setPlanBase(b); setPlan((n) => n + 1); }} onClose={() => setPlan(0)} />
       )}

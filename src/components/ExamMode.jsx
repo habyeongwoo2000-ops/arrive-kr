@@ -94,7 +94,7 @@ function OpenAnswer({ value, onChange, t, disabled }) {
   );
 }
 
-export default function ExamMode({ id, lang, hintLang, name0 = '', onClose }) {
+export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onResult }) {
   const ex = EXAMS[id];
   const t = lang === 'ko' ? W.ko : W.en;
   const L = lang === 'ko' ? 'ko' : 'en';
@@ -158,7 +158,9 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose }) {
     if (ai && ai.open) Object.entries(ai.open).forEach(([k, v]) => { openScores[k] = v.score; });
     else openItems.forEach((x) => { const len = (open[x.n] || '').replace(/[^가-힣]/g, '').length; openScores[x.n] = Math.min(x.max, Math.round(x.max * Math.min(1, len / 30))); });
     setGstep(3); await sleep(500);
-    setRes({ score: scoreExam(ex, ans, openScores), ai, openScores });
+    const final = scoreExam(ex, ans, openScores);
+    setRes({ score: final, ai, openScores });
+    if (onResult) onResult(final);
     setPhase('result');
   }
   const retry = () => { setAns({}); setOpen({}); setLeft(ex.minutes * 60); setRes(null); setMark(0); setPhase('cover'); };

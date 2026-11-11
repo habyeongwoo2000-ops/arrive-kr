@@ -11,6 +11,8 @@ Environment=PORT=3000
 Environment=AI_PROVIDER=bedrock
 Environment=AWS_REGION=__REGION__
 Environment=AI_MODEL=__MODEL__
+# 구글·카카오 로그인 키 (GitHub 에 올리지 않는 파일) — 없으면 간편 로그인만 꺼집니다
+EnvironmentFile=-__DIR__/.env.server
 ExecStart=/usr/bin/node server.mjs
 Restart=always
 RestartSec=3

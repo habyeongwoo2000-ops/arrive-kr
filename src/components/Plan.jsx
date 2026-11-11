@@ -12,6 +12,7 @@ import { roadPath, distText, geocode, distances } from '../lib/route.js';
 import { applyRules, docStep, parseRules, ruleChips, hasRules, targetMin, travelMin, ymd, EMPTY } from '../lib/replan.js';
 import { AgentBar, DocReview, aw, shrink } from './PlanAgent.jsx';
 import useEsc from '../lib/useEsc.js';
+import { uget, uset } from '../lib/store.js';
 const ICON = { home: 'life', doc: 'doc', '🚌': 'bus', '🎓': 'study', '☎': 'call', '🏢': 'culture', '🌾': 'work', '🚍': 'bus', '가': 'ko', '🏥': 'health', '👪': 'family', '🪪': 'stay', '🦺': 'safety', '🎉': 'culture', '✅': 'check' };
 
 /* 이 기능의 문구 — ui.js 를 건드리지 않도록 여기에 둡니다 (없는 언어는 영어) */
@@ -66,7 +67,7 @@ function sampleResult(entry, lang) {
 }
 const areaOf = (label = '') => label.split(', ').slice(-1)[0];   // AI에는 동 이름까지만 보냅니다
 
-export default function Plan({ map, lang, visa, needs, family, entry, name, country, home, dist = {}, base = 'arrive', onBase, onClose }) {
+export default function Plan({ who = 'guest', map, lang, visa, needs, family, entry, name, country, home, dist = {}, base = 'arrive', onBase, onClose }) {
   const t = { ...ui(lang), ...words(lang) };
   const K = lang === 'ko' ? 'ko' : 'en';
   const atHome = base === 'home' && !!home;
@@ -84,15 +85,15 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   }, [visa, needs, family, entry, atHome]); // eslint-disable-line react-hooks/exhaustive-deps
   /* ── AI 비서: 서류에서 넣은 일정(extras) + 말로 정한 조건(rules) — 이 기기에 기억 ── */
   const a = aw(lang);
-  const [extras, setExtras] = useState(() => load('plan.extras.v1', []));
-  const [rules, setRules] = useState(() => ({ ...EMPTY, ...load('plan.rules.v1', {}) }));
+  const [extras, setExtras] = useState(() => uget(who, 'plan.extras', load('plan.extras.v1', [])));
+  const [rules, setRules] = useState(() => ({ ...EMPTY, ...uget(who, 'plan.rules', load('plan.rules.v1', {})) }));
   const [reply, setReply] = useState(null);         // { text, ai }
   const [doc, setDoc] = useState(null);             // { img, phase:'read'|'done'|'err', res, pick:[], msg }
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState([]);           // 방금 넣거나 옮긴 일정 id (반짝)
   const [xdist, setXdist] = useState({});
-  useEffect(() => save('plan.extras.v1', extras), [extras]);
-  useEffect(() => save('plan.rules.v1', rules), [rules]);
+  useEffect(() => uset(who, 'plan.extras', extras), [extras]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => uset(who, 'plan.rules', rules), [rules]); // eslint-disable-line react-hooks/exhaustive-deps
   const extraPlaces = useMemo(() => Object.fromEntries(extras.filter((x) => x.ll && !x.placeKey).map((x) => [x.id, { lat: x.ll.lat, lng: x.ll.lng, ko: (x.place && x.place.name) || x.titleKo, en: (x.place && x.place.name) || x.title, exact: false }])), [extras]);
   useEffect(() => { if (home && Object.keys(extraPlaces).length) distances(home, extraPlaces).then(setXdist); }, [extraPlaces, home]);
   const compose = (ex, rl) => applyRules([...baseSteps, ...ex.map((x, i) => docStep(x, i, entry))], rl, entry);
@@ -166,8 +167,16 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 1) AI에게 설명 받기 + "생각하는 장면" (최소 2.4초) */
+  /* 같은 조건으로 만든 AI 일정이 있으면(다른 화면에 다녀왔을 때) 기다리지 않고 바로 보여 줍니다 */
+  const sig = JSON.stringify([lang, visa, needs, family, base, home && home.label, baseSteps.map((x) => x.id + x.day)]);
   useEffect(() => {
     let alive = true;
+    const cached = uget(who, 'plan.ai');
+    if (cached && cached.sig === sig) {
+      if (cached.ai) setAi(cached.ai);
+      setPhase('ready'); setTimeout(() => { if (alive) play(true); }, 60);
+      return () => { alive = false; run.current++; if (lg.current) { lg.current.remove(); lg.current = null; } };
+    }
     const ticker = setInterval(() => setTick((n) => Math.min(4, n + 1)), 560);
     const call = fetch('/api/plan', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -176,7 +185,9 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
     Promise.all([call, sleep(2400)]).then(([res]) => {
       if (!alive) return;
       clearInterval(ticker); setTick(4);
-      if (res && res.tips && Object.keys(res.tips).length) setAi(res);
+      const good = res && res.tips && Object.keys(res.tips).length ? res : null;
+      if (good) setAi(good);
+      uset(who, 'plan.ai', { sig, ai: good, at: Date.now() });
       setTimeout(() => { if (alive) { setPhase('ready'); play(); } }, 350);
     });
     return () => { alive = false; clearInterval(ticker); run.current++; if (lg.current) { lg.current.remove(); lg.current = null; } };
@@ -205,8 +216,9 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   /* 지도가 다 움직인 뒤에 선을 그려야 선이 밀리지 않습니다 */
   const settled = () => new Promise((res) => { let t = 0; const f = () => { clearTimeout(t); map.off('moveend', f); res(); }; map.on('moveend', f); t = setTimeout(f, 1500); });
 
-  async function play() {
+  async function play(fast = false) {
     if (!map) return;
+    const wait = (ms) => (fast ? Promise.resolve() : sleep(ms));
     const my = ++run.current;
     if (lg.current) lg.current.remove();
     const g = L.layerGroup().addTo(map); lg.current = g;
@@ -247,19 +259,18 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
             cur = mkLine(); lines.push(cur); me.setLatLng(fr); add(fr);
           }
           const path = segs[i] || [fr, to];
-          map.flyToBounds(L.latLngBounds(path), { ...dockPad(), maxZoom: 15, duration: 0.8 });
-          await settled();
-          const step = Math.max(1, Math.ceil(path.length / 45));       // 길 따라 조금씩 그리기 (약 0.9초)
+          if (!fast) { map.flyToBounds(L.latLngBounds(path), { ...dockPad(), maxZoom: 15, duration: 0.8 }); await settled(); }
+          const step = fast ? path.length : Math.max(1, Math.ceil(path.length / 45));       // 길 따라 조금씩 그리기 (약 0.9초)
           for (let k = 1; k < path.length; k += step) {
             if (run.current !== my) return;
             for (let q = Math.max(1, k - step + 1); q <= k; q++) add(path[q]);
             me.setLatLng(path[k]);
-            await sleep(20);
+            await wait(20);
           }
           const end = path[path.length - 1];
           add(end); me.setLatLng(end);
         } else {
-          if (!prev) { map.flyTo(to, 15, { duration: 0.8 }); await settled(); map.panBy([0, Math.round(dockPad().paddingBottomRight[1] / 2)], { animate: false }); }
+          if (!prev && !fast) { map.flyTo(to, 15, { duration: 0.8 }); await settled(); map.panBy([0, Math.round(dockPad().paddingBottomRight[1] / 2)], { animate: false }); }
           add(to); me.setLatLng(to);
         }
         prev = to;
@@ -267,13 +278,14 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
         const ex = byPlace[s.place];
         if (ex) { ex.days.push(lbl); ex.m.setIcon(dayIcon(ex.days.join(' · '), KIND[s.kind], true)); }
         else byPlace[s.place] = { days: [lbl], m: L.marker(to, { icon: dayIcon(lbl, KIND[s.kind], true), zIndexOffset: 1000, interactive: false }).addTo(g) };
-        await sleep(800);
+        await wait(800);
       } else {
-        await sleep(1200);                      // 장소 없는 일(전화·교육)은 카드만 강조
+        await wait(1200);                      // 장소 없는 일(전화·교육)은 카드만 강조
       }
     }
     if (run.current !== my) return;
     setPlaying(false);
+    if (fast) { setActive(0); setTimeout(() => center(0), 50); }
     lines.forEach((x) => { x.line.setStyle({ opacity: 1 }); x.casing.setStyle({ opacity: 1 }); });
     const all = lines.flatMap((x) => x.line.getLatLngs());
     if (all.length > 1) map.flyToBounds(L.latLngBounds(all), { ...dockPad(), maxZoom: 15, duration: 1 });

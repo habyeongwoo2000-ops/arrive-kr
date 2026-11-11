@@ -12,7 +12,7 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const DIST = join(ROOT, 'dist');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';          // 바깥에는 Caddy(https)가 대신 열어 줍니다
-const APIS = new Set(['plan', 'tutor', 'doc', 'replan', 'exam']);
+const APIS = new Set(['plan', 'tutor', 'doc', 'replan', 'exam', 'auth']);
 const MAX_BODY = 6 * 1024 * 1024;
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',

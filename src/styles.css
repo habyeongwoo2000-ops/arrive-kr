@@ -809,3 +809,19 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .tu-ex-t { min-width: 0; } .tu-ex-t b { display: block; font-size: 14px; font-weight: 800; } .tu-ex-t small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
 .tu-ex-t .tu-ex-m { color: var(--ink-4); }
 .tu-ex-go { display: inline-flex; align-items: center; gap: 2px; padding: 6px 8px 6px 10px; border-radius: 15px; background: var(--ec); color: #fff; font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+
+/* 간편 로그인 (카카오 · 구글) */
+.sso { display: grid; gap: 8px; margin: -8px 0 6px; }
+.sso > small { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.sso-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border: 0; border-radius: 6px; background: #FEE500; color: rgba(0,0,0,.85); font-size: 15px; font-weight: 700; }
+.sso-kakao svg { width: 18px; height: 18px; fill: #000; }
+.sso-kakao:hover:not(:disabled) { filter: brightness(.97); }
+.sso-kakao:disabled, .sso-gfake:disabled { opacity: .45; cursor: not-allowed; }
+.sso-google { display: flex; justify-content: center; min-height: 44px; } .sso-google > .sso-gfake { width: 100%; }
+.sso-gfake { height: 44px; border: 1px solid #dadce0; border-radius: 6px; background: #fff; color: #3c4043; font-size: 15px; font-weight: 600; }
+.sso-off { margin: 0; font-size: 11.5px; color: var(--ink-4); }
+.sso-or { position: relative; margin: 6px 0 2px; text-align: center; font-size: 12px; color: var(--ink-4); }
+.sso-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--line-2); }
+.sso-or span { position: relative; padding: 0 10px; background: #fff; }
+.avatar.kakao { background: #FEE500; color: #3c1e1e; } .avatar.google { background: #4285f4; }
+.tu-ex-t .tu-ex-last { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 3px; background: #fff1ee; color: #c62828; font-weight: 800; }
