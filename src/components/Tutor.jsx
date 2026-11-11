@@ -6,6 +6,13 @@ import { QUIZ } from '../data/korean.js';
 import { ui, fill, tx } from '../i18n/ui.js';
 import Icon from './Icon.jsx';
 import useEsc from '../lib/useEsc.js';
+import ExamMode from './ExamMode.jsx';
+import { EXAMS, EXAM_LIST } from '../data/exams.js';
+
+const XT = {
+  ko: { exam: '모의시험', examIntro: '실제 시험지처럼 큰 화면에서 풀고, 끝나면 AI가 채점해 점수까지 알려 줘요.', go: '시험 보기', mins: '{n}분 · {q}문항', when: { eps: '입국 전', kiip: '입국 후 · 정착', topik: '유학·취업' } },
+  en: { exam: 'Mock test', examIntro: 'Take it full screen like a real paper — AI grades it and gives your score.', go: 'Start', mins: '{n} min · {q} items', when: { eps: 'Before entry', kiip: 'After arrival', topik: 'Study & jobs' } }
+};
 
 /* 정답이 늘 첫 번째에 있지 않게 문제마다 고정된 순서로 섞습니다. */
 function order(i, n) {
@@ -15,10 +22,13 @@ function order(i, n) {
   return a;
 }
 
-export default function Tutor({ lang, hintLang, countryLabel, onClose }) {
+export default function Tutor({ lang, hintLang, countryLabel, name = '', onClose }) {
   const t = ui(lang);
-  useEsc(onClose);
-  const [tab, setTab] = useState('quiz');
+  const x = lang === 'ko' ? XT.ko : XT.en;
+  const XL = lang === 'ko' ? 'ko' : 'en';
+  const [exam, setExam] = useState(null);
+  useEsc(onClose, !exam);
+  const [tab, setTab] = useState('exam');
   const [i, setI] = useState(0);
   const [pick, setPick] = useState(null);
   const [score, setScore] = useState(0);
@@ -56,9 +66,27 @@ export default function Tutor({ lang, hintLang, countryLabel, onClose }) {
         <button type="button" className="icon" onClick={onClose} aria-label={t.close}><Icon n="close" size={18} /></button>
       </header>
       <div className="tu-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'exam'} onClick={() => setTab('exam')}>{x.exam}</button>
         <button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>{t.practice}</button>
         <button type="button" role="tab" aria-selected={tab === 'ai'} onClick={() => setTab('ai')}>{t.askAi}</button>
       </div>
+
+      {tab === 'exam' && (
+        <div className="tu-body tu-exams">
+          <p className="tu-ex-intro">{x.examIntro}</p>
+          {EXAM_LIST.map((k) => {
+            const e = EXAMS[k]; const n = e.sections.reduce((a, s) => a + s.items.length, 0);
+            return (
+              <button key={k} type="button" className="tu-ex" style={{ '--ec': e.color }} onClick={() => setExam(k)}>
+                <span className="tu-ex-b"><b>{e.short}</b><em>{x.when[k]}</em></span>
+                <span className="tu-ex-t"><b>{e.name[XL]}</b><small>{e.who[XL]}</small><small className="tu-ex-m">{x.mins.replace('{n}', e.minutes).replace('{q}', n)} · {e.session[XL]}</small></span>
+                <span className="tu-ex-go">{x.go}<Icon n="next" size={15} /></span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {exam && <ExamMode id={exam} lang={lang} hintLang={hintLang} name0={name} onClose={() => setExam(null)} />}
 
       {tab === 'quiz' && (
         <div className="tu-body">

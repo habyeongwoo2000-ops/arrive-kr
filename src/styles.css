@@ -798,3 +798,14 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .bp-drop-h input { flex: 1; min-width: 0; }
 .phone-x { z-index: 2; }
 @media (max-width: 760px) { .x-close.on-dark { top: 10px; right: 10px; width: 40px; height: 40px; } }
+
+/* 한국어 도우미 — 모의시험 고르기 */
+.tu-exams { display: grid; gap: 8px; }
+.tu-ex-intro { margin: 0 0 4px; font-size: 13px; color: var(--ink-3); line-height: 1.5; }
+.tu-ex { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid var(--line-2); border-left: 4px solid var(--ec); border-radius: 8px; background: #fff; text-align: start; }
+.tu-ex:hover { background: var(--hover); border-color: var(--ec); }
+.tu-ex-b { display: grid; justify-items: center; gap: 3px; } .tu-ex-b b { font-size: 13px; font-weight: 900; color: var(--ec); text-align: center; line-height: 1.2; }
+.tu-ex-b em { padding: 0 5px; border-radius: 3px; background: var(--band); font: 700 10px/1.6 var(--f); font-style: normal; color: var(--ink-3); white-space: nowrap; }
+.tu-ex-t { min-width: 0; } .tu-ex-t b { display: block; font-size: 14px; font-weight: 800; } .tu-ex-t small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+.tu-ex-t .tu-ex-m { color: var(--ink-4); }
+.tu-ex-go { display: inline-flex; align-items: center; gap: 2px; padding: 6px 8px 6px 10px; border-radius: 15px; background: var(--ec); color: #fff; font-size: 12.5px; font-weight: 800; white-space: nowrap; }

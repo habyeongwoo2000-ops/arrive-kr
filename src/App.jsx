@@ -411,7 +411,7 @@ export default function App() {
                       onBoard={onBoard} onSkip={() => setTicket(false)} />
       )}
 
-      {tutorOpen && <Tutor lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} onClose={() => setTutorOpen(false)} />}
+      {tutorOpen && <Tutor lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} name={pax} onClose={() => setTutorOpen(false)} />}
       {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} onDone={(id) => { setUser(id); setAuthOpen(false); setToast(ui(lang).saved); setTimeout(() => setToast(''), 2600); }} />}
       {toast && <div className="snack">{toast}</div>}
       <p className="attrib">Imagery: NASA Blue Marble · Borders: Natural Earth</p>
