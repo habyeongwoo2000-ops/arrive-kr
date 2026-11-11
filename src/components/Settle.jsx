@@ -19,11 +19,15 @@ import { uget, uset } from '../lib/store.js';
 import HomePicker, { hs } from './HomePicker.jsx';
 import { distances, distText, reverse, roadPath } from '../lib/route.js';
 
+import { rm, STAGES, stageOf, levelOf } from '../lib/roadmap.js';
+const walkerIcon = () => L.divIcon({ className: 'walker', html: '<span><svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2.4"/><path d="M10.2 8.6h3.6l1.6 5.2-1.7.5-1-3.1-.6 3.4 2.3 3.6v3.8h-2v-3.2l-1.8-2.6-1 2.9-2.9 2.6-1.4-1.4 2.4-2.3 1.2-5.3-.8.8v2.7h-2V11.2z"/></svg></span>', iconSize: [36, 36], iconAnchor: [18, 18] });
+const visitIcon = () => L.divIcon({ className: 'visit', html: '<span><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
+
 /* 집 위치 — 계정별로 이 브라우저에 저장 (예전 판의 공용 저장값도 한 번 읽어 옴) */
 const okHome = (h) => (h && isFinite(h.lat) && isFinite(h.lng) ? h : null);
 const loadHome = (who) => { const h = okHome(uget(who, 'home')); if (h || who !== 'guest') return h; try { return okHome(JSON.parse(localStorage.getItem('arrive.home'))); } catch (e) { return null; } };
 const saveHome = (who, h) => uset(who, 'home', h || null);
-const homeIcon = () => L.divIcon({ className: 'poi lf-home', html: `<span class="poi-ic" style="--c:#03c75a"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5"/></svg></span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
+const homeIcon = () => L.divIcon({ className: 'poi lf-home', html: `<span class="poi-ic" style="--c:#191f28"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5"/></svg></span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
 
 /* 지도 위 장소 아이콘 (Leaflet divIcon 은 HTML 문자열이라 SVG 를 글자로 둡니다) */
 const G = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -50,7 +54,13 @@ function pinIcon(color, label, on, glyph = 'gov') {
 
 /* 도착 후 할 일 → 지도 핀 (원주에서 그 일을 하는 곳) */
 const TODO_PIN = { arc: 'cityhall', bank: 'hana', unlimit: 'hana', remit: 'hana' };
-const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : null);
+const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : id.endsWith('-nhis') ? 'nhis' : null);
+/* 체크했을 때 걸어갈 곳: 공공기관 핀, 휴대폰 개통은 가까운 선불폰 매장 */
+const spotOf = (id, K) => {
+  if (id === 'sim' || id === 'phone2' || id.endsWith('-sim')) { const p = PHONES[0]; return p ? { lat: p.lat, lng: p.lng, name: p[K].t } : null; }
+  const k = pinOf(id); const pl = k && PLACES[k];
+  return pl ? { lat: pl.lat, lng: pl.lng, name: pl[K].split(' (')[0] } : null;
+};
 
 
 export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
@@ -65,6 +75,8 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   const [town, setTown] = useState(saved.town || 'wonju');
   const [needs, setNeeds] = useState(saved.needs || ['stay', 'health', 'korean']);
   const [family, setFamily] = useState(saved.family != null ? saved.family : visa0 === 'F-6');
+  const rmT = rm(lang);
+  const [walkMsg, setWalkMsg] = useState('');
   const [hi, setHi] = useState(null);
   const [plan, setPlan] = useState(0);   // 0 = 닫힘, 숫자 = 새로 만들 때마다 증가 (AI 30일 일정)
   const h = hs(lang);
@@ -92,9 +104,10 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   // 휴대폰: 지도를 누르면(또는 아래로 끌면) 아래 패널을 내려 지도를 넓게
   const { low, setLow, justDragged } = useSheetDrag(sideEl, card, { peek: 72 });
   const shopLayer = useRef(null);
-  const [shops, setShops] = useState(true);
-  const [phones, setPhones] = useState(true);
-  const [foods, setFoods] = useState(true);
+  /* 지도를 조용하게: 가게 핀은 처음엔 꺼 두고, 위 칩을 누르면 켭니다 */
+  const [shops, setShops] = useState(false);
+  const [phones, setPhones] = useState(false);
+  const [foods, setFoods] = useState(false);
   /* 고향 음식점: 지구본에서 고른 나라의 음식점만 */
   const myFoods = country ? FOODS.filter((f) => f.c.includes(country.a2)) : [];
   /* 탭을 바꾸면 새 탭의 맨 위부터 보여 줍니다 */
@@ -122,6 +135,9 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
     shopLayer.current = L.layerGroup().addTo(m);
     map.current = m;
     homeLayer.current = L.layerGroup().addTo(m);
+    /* 충분히 확대했을 때만 모든 핀에 이름표 (네이버 지도처럼) */
+    const near = () => host.current && host.current.classList.toggle('is-near', m.getZoom() >= 15);
+    m.on('zoomend', near); near();
     m.on('click', (e) => { if (pickRef.current) { pickRef.current(e.latlng); return; } setLow(true); setMoreOpen(false); }); // 지도 빈 곳을 누르면 패널 내리기 (핀을 누를 땐 그대로)
     const ro = new ResizeObserver(() => m.invalidateSize()); ro.observe(host.current); // 왼쪽 패널을 접고 펼 때 지도 크기 맞추기
     // 지도가 이미 닫혔으면(StrictMode 이중 실행·빠른 뒤로 가기) 움직이지 않습니다.
@@ -150,11 +166,67 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
     roadPath(home, pl).then((path) => {
       if (!ok) return;
       L.polyline(path, { color: '#fff', weight: 9, opacity: 1, interactive: false }).addTo(g);
-      L.polyline(path, { color: '#03c75a', weight: 5, opacity: 1, interactive: false }).addTo(g);
+      L.polyline(path, { color: '#3182f6', weight: 5, opacity: 1, interactive: false }).addTo(g);
       map.current.flyToBounds(L.latLngBounds(path), { ...pad(), maxZoom: 15, duration: 0.8 });
     });
     return () => { ok = false; g.remove(); };
   }, [routeTo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ---------- 정착 로드맵: 체크하면 사람이 지도 위를 걸어갑니다 ----------
+     · 출발점은 집 주소(정해 두었으면), 없으면 원주 버스터미널.
+     · 다녀온 곳에는 작은 체크 표시가 남습니다. 체크를 풀면 표시도 사라집니다. */
+  const walkLayer = useRef(null);
+  const walker = useRef(null);
+  const walkRun = useRef(0);
+  const prevChecks = useRef(checks);
+  const startPt = () => (home ? { lat: home.lat, lng: home.lng } : { lat: PLACES.terminal.lat, lng: PLACES.terminal.lng });
+  /* 다녀온 곳 표시 + 사람 위치 다시 그리기 */
+  const drawVisits = () => {
+    const m = map.current; if (!m) return;
+    if (!walkLayer.current) walkLayer.current = L.layerGroup().addTo(m);
+    const lg = walkLayer.current; lg.clearLayers();
+    todoItems.forEach((it) => {
+      if (!checks[it.id]) return;
+      const sp = spotOf(it.id, K); if (!sp) return;
+      L.marker([sp.lat, sp.lng], { icon: visitIcon(), interactive: false, zIndexOffset: 800 }).addTo(lg);
+    });
+    const s = startPt();
+    walker.current = L.marker([s.lat, s.lng], { icon: walkerIcon(), interactive: false, zIndexOffset: 2500 }).addTo(lg);
+  };
+  useEffect(() => { drawVisits(); }, [home && home.lat, home && home.lng, visa]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function walkTo(sp) {
+    const m = map.current; if (!m || !walker.current) return;
+    const my = ++walkRun.current;
+    const from = startPt();
+    walker.current.setLatLng([from.lat, from.lng]);
+    setWalkMsg(fill(rmT.walking, { p: sp.name }));
+    let path;
+    try { path = await roadPath(from, sp); } catch (e) { path = null; }
+    if (!path || path.length < 2) path = [L.latLng(from.lat, from.lng), L.latLng(sp.lat, sp.lng)];
+    if (my !== walkRun.current) return;
+    const trail = L.polyline([], { color: '#3182f6', weight: 4, opacity: .85, dashArray: '2 8', lineCap: 'round', interactive: false }).addTo(walkLayer.current);
+    m.flyToBounds(L.latLngBounds(path), { ...pad(), maxZoom: 15, duration: 0.7 });
+    await new Promise((res) => setTimeout(res, 750));
+    const stepN = Math.max(1, Math.ceil(path.length / 60));
+    for (let k = 0; k < path.length; k += stepN) {
+      if (my !== walkRun.current) return;
+      trail.addLatLng(path[k]); walker.current.setLatLng(path[k]);
+      await new Promise((res) => setTimeout(res, 22));
+    }
+    const end = path[path.length - 1];
+    trail.addLatLng(end); walker.current.setLatLng(end);
+    L.marker(end, { icon: visitIcon(), interactive: false, zIndexOffset: 800 }).addTo(walkLayer.current);
+    setTimeout(() => { if (my === walkRun.current) setWalkMsg(''); }, 1600);
+  }
+  /* 새로 체크한 항목에 갈 곳이 있으면 걸어가기 · 체크를 풀면 표시 정리 */
+  useEffect(() => {
+    const prev = prevChecks.current; prevChecks.current = checks;
+    const newly = todoItems.filter((i) => checks[i.id] && !prev[i.id]);
+    const unchecked = todoItems.some((i) => !checks[i.id] && prev[i.id]);
+    if (unchecked) drawVisits();
+    const sp = newly.map((i) => spotOf(i.id, K)).find(Boolean);
+    if (sp && tab === 'todo') walkTo(sp);
+  }, [checks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 지도에서 집 고르기 */
   const startPick = () => {
@@ -284,18 +356,53 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
           {tab === 'todo' && (
             <div className="st-todo">
               <p className="st-todo-intro">{t.todoIntro}</p>
-              <div className="st-prog"><i style={{ width: (todoItems.length ? Math.round((todoDone / todoItems.length) * 100) : 0) + '%' }} /></div>
-              <ul className="items">
-                {todoItems.map((it) => {
-                  const pk = pinOf(it.id);
-                  return (
-                    <CheckItem key={it.id} it={it} lang={lang} entry={entry} today={today} checked={!!checks[it.id]} toggle={toggle}
-                               extraBtn={it.id === 'sim' || it.id.endsWith('-sim')
-                                 ? <button type="button" className="st-pin" title={t.phonesBtn} onClick={showPhonesOn}><Icon n="mobile" size={14} />{t.onMap}</button>
-                                 : pk && PLACES[pk] ? <button type="button" className="st-pin" title={PLACES[pk][K]} onClick={() => flyPlace(pk)}><Icon n="pin" size={14} />{t.onMap}</button> : null} />
-                  );
-                })}
-              </ul>
+              {(() => {
+                const ratio = todoItems.length ? todoDone / todoItems.length : 0;
+                return (
+                  <div className="rm-level">
+                    <div className="rm-level-h"><span>{rmT.level}</span><b>{Math.round(ratio * 100)}%</b></div>
+                    <p className="rm-level-t">{rmT[levelOf(ratio)]}</p>
+                    <div className="st-prog"><i style={{ width: Math.round(ratio * 100) + '%' }} /></div>
+                    <p className="rm-home">
+                      <Icon n="life" size={15} />
+                      {home ? <span><b>{home.label || h.picked}</b> · {rmT.fromHome}</span> : <span>{rmT.noHome}</span>}
+                      {!home && <button type="button" onClick={() => setTab('find')}>{rmT.setHome}</button>}
+                    </p>
+                    {walkMsg && <p className="rm-walk" role="status">{walkMsg}</p>}
+                  </div>
+                );
+              })()}
+              <ol className="legs rm">
+                {(() => {
+                  const groups = STAGES.map((id) => ({ id, items: todoItems.filter((it) => stageOf(it) === id) })).filter((g) => g.items.length);
+                  const cur = groups.findIndex((g) => g.items.some((it) => !checks[it.id]));
+                  return groups.map((g, gi) => {
+                    const d = g.items.filter((it) => checks[it.id]).length;
+                    const all = d === g.items.length;
+                    return (
+                      <li key={g.id} className={'leg rm-stage' + (gi === cur ? ' is-on' : '') + (all ? ' is-done' : '')}>
+                        <div className="leg-h">
+                          <span className="leg-n">{all ? '✓' : gi + 1}</span>
+                          <b>{rmT[g.id]}</b>
+                          {gi === cur && <em className="rm-now">{rmT.now}</em>}
+                          <small>{d}/{g.items.length}</small>
+                        </div>
+                        <ul className="items">
+                          {g.items.map((it) => {
+                            const pk = pinOf(it.id);
+                            return (
+                              <CheckItem key={it.id} it={it} lang={lang} entry={entry} today={today} checked={!!checks[it.id]} toggle={toggle}
+                                         extraBtn={it.id === 'sim' || it.id.endsWith('-sim')
+                                           ? <button type="button" className="st-pin" title={t.phonesBtn} onClick={showPhonesOn}><Icon n="mobile" size={14} />{t.onMap}</button>
+                                           : pk && PLACES[pk] ? <button type="button" className="st-pin" title={PLACES[pk][K]} onClick={() => flyPlace(pk)}><Icon n="pin" size={14} />{t.onMap}</button> : null} />
+                            );
+                          })}
+                        </ul>
+                      </li>
+                    );
+                  });
+                })()}
+              </ol>
               {visa === 'E-9' && (country ? (
                 <section className="st-country">
                   <h3>{fill(t.ctryMore, { c: countryLabel })}</h3>

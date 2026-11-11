@@ -6,7 +6,8 @@ const NAME = ['coalesce', ['get', 'name:ko'], ['get', 'name']];
 const R = 'Noto Sans Regular', B = 'Noto Sans Bold';
 const z = (...stops) => ['interpolate', ['exponential', 1.5], ['zoom'], ...stops];
 const cls = (...c) => ['match', ['get', 'class'], c, true, false];
-const RANK = ['<=', ['get', 'rank'], ['step', ['zoom'], 3, 15, 8, 16, 18, 17, 40]];
+/* 네이버 지도처럼 조용하게: 가게·시설 이름은 16단계부터, 그것도 중요한 것부터 조금씩 */
+const RANK = ['<=', ['get', 'rank'], ['step', ['zoom'], 2, 16, 6, 17, 16, 18, 40]];
 const line = ['match', ['geometry-type'], ['LineString', 'MultiLineString'], true, false];
 
 /* 장소 분류 → 색 */
@@ -75,12 +76,12 @@ export default function mapStyle() {
       { id: 'road-name', type: 'symbol', source: 'omt', 'source-layer': 'transportation_name', minzoom: 13,
         layout: { 'symbol-placement': 'line', 'text-field': NAME, 'text-font': [R], 'text-size': z(13, 10.5, 18, 13), 'symbol-spacing': 320, 'text-max-angle': 30 },
         paint: { 'text-color': '#7a7a7a', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } },
-      { id: 'poi-dot', type: 'circle', source: 'omt', 'source-layer': 'poi', minzoom: 14, filter: RANK,
+      { id: 'poi-dot', type: 'circle', source: 'omt', 'source-layer': 'poi', minzoom: 16, filter: RANK,
         paint: { 'circle-color': POI_COLOR, 'circle-radius': z(14, 4.5, 17, 8), 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.6 } },
-      { id: 'poi-name', type: 'symbol', source: 'omt', 'source-layer': 'poi', minzoom: 14, filter: RANK,
+      { id: 'poi-name', type: 'symbol', source: 'omt', 'source-layer': 'poi', minzoom: 16, filter: RANK,
         layout: { 'text-field': NAME, 'text-font': [B], 'text-size': z(14, 11, 17, 12.5), 'text-anchor': 'top', 'text-offset': [0, .85], 'text-max-width': 7, 'text-optional': true },
         paint: { 'text-color': POI_COLOR, 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } },
-      { id: 'place-small', type: 'symbol', source: 'omt', 'source-layer': 'place', minzoom: 12, filter: cls('suburb', 'quarter', 'neighbourhood', 'village', 'hamlet'),
+      { id: 'place-small', type: 'symbol', source: 'omt', 'source-layer': 'place', minzoom: 13, filter: cls('suburb', 'quarter', 'neighbourhood', 'village', 'hamlet'),
         layout: { 'text-field': NAME, 'text-font': [B], 'text-size': z(12, 13, 16, 17), 'text-max-width': 8 },
         paint: { 'text-color': '#8c8c8c', 'text-halo-color': 'rgba(255,255,255,.9)', 'text-halo-width': 1.6 } },
       { id: 'place-town', type: 'symbol', source: 'omt', 'source-layer': 'place', filter: cls('town', 'city'),

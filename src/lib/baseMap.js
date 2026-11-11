@@ -13,6 +13,8 @@ function glOk() {
 }
 
 export default async function addBase(map, alive) {
+  /* 미리보기(공유 링크) 빌드: 외부 지도 서버에 접속할 수 없어 바탕을 그리지 않습니다 */
+  if (import.meta.env.VITE_PREVIEW) { map.getContainer().dataset.base = 'preview'; return; }
   const fallback = (why) => { if (!alive()) return; osm().addTo(map); map.getContainer().dataset.base = 'osm-' + why; };
   if (!glOk()) { fallback('nogl'); return; }
   try {

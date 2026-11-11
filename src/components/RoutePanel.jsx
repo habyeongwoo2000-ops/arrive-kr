@@ -18,7 +18,7 @@ export function fuelOf(item, entry, today) {
   return { kind: 'before', date: iso(due), left, ratio, st };
 }
 
-export default function RoutePanel({ lang, country, fromLabel, legs, extra, entry, setEntry, checks, toggle, activeLeg, onLeg, flying, onFly, info, arrive, onArrive }) {
+export default function RoutePanel({ lang, country, fromLabel, legs, extra, entry, setEntry, checks, toggle, activeLeg, onLeg, flying, onFly, flightOn = false, flightPct = 0, info, arrive, onArrive }) {
   const t = ui(lang);
   const n = nav(lang);
   const today = new Date();
@@ -66,10 +66,12 @@ export default function RoutePanel({ lang, country, fromLabel, legs, extra, entr
         </div>
         <p className="rp-sum"><span className="ok">{t.fOk} {sum.ok}</span><span className="low">{t.fLow} {sum.low}</span><span className="out">{t.fOut} {sum.out}</span></p>
         <p className="rp-help">{t.fuelHelp}</p>
-        <button type="button" className="fly" onClick={onFly} disabled={flying}>
+        {/* 비행 시작 → 비행기가 지금까지 한 만큼의 자리에 뜨고, 체크할 때마다 앞으로 나아갑니다 */}
+        <button type="button" className={'fly' + (flightOn ? ' is-on' : '')} onClick={onFly} disabled={flying}>
           <Icon n="plane" size={18} />
-          {flying ? t.flying : t.fly}
+          {flying ? t.flying : flightOn ? fill(n.flyOn, { p: flightPct }) : t.fly}
         </button>
+        {flightOn && <p className="fly-hint">{n.flyHint}</p>}
       </div>
       <div className="band" />
       <h3 className="sec-h">{n.stepsL}<span>{done}/{all.length}</span></h3>

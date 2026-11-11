@@ -42,7 +42,7 @@ function Bars({ seed, h = 54 }) {
   );
 }
 
-export default function BoardingPass({ lang, features, labelOf, init, onBoard, onSkip }) {
+export default function BoardingPass({ lang, features, labelOf, init, onBoard, onSkip, top = null }) {
   const t = ui(lang);
   const [name, setName] = useState(init.name || '');
   const [from, setFrom] = useState(init.from || null);   // feature
@@ -121,6 +121,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   return (
     <div className={'bp-back ph-' + phase} role="dialog" aria-modal="true" aria-label={t.bpTitle}>
       {phase === 'idle' && <button type="button" className="x-close on-dark bp-x" onClick={onSkip} aria-label={t.close} title={t.close}><Icon n="close" size={22} /></button>}
+      {phase === 'idle' && top}   {/* 저장해 둔 것 요약 (App 의 MySummary) */}
       <div className="bp-stage">
         <div className="bp-tilt" ref={card} onMouseMove={tilt} onMouseLeave={untilt}>
           <article className="bp" aria-label={t.bpTitle}>

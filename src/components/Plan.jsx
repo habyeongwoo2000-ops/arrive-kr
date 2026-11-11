@@ -224,7 +224,7 @@ export default function Plan({ who = 'guest', map, lang, visa, needs, family, en
     const g = L.layerGroup().addTo(map); lg.current = g;
     const mkLine = () => ({
       casing: L.polyline([], { color: '#ffffff', weight: 10, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g),
-      line: L.polyline([], { color: '#2b6ff4', weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g)
+      line: L.polyline([], { color: '#3182f6', weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(g)
     });
     const lines = [mkLine()];
     let cur = lines[0];

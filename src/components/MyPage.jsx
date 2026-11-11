@@ -1,189 +1,215 @@
-/* 마이페이지 — 프로필을 누르면 열립니다. 이 계정으로 해 둔 것을 한눈에:
-   입국 준비 · 원주 정착 조건과 추천 지원 · 30일 정착 일정(다가오는 일) · 모의시험 기록 · 한국어 연습
-   · 모든 기록은 이 브라우저에 계정별로 저장된 값을 읽어 보여 줍니다(서버로 보내지 않음). */
-import { useMemo } from 'react';
+/* 내 정보 — 저장해 둔 것을 한곳에 모으고, 궁금한 메뉴를 바로 찾게 합니다.
+   ------------------------------------------------------------------
+   구성 (토스 '전체' 탭의 메뉴 검색, 정부24 '마이 정부24'의 진행 현황,
+         당근 '나의 당근'의 프로필 + 묶음 메뉴를 참고)
+     1. 프로필 — 이름, 체류자격, 나라, 로그인 상태
+     2. 메뉴 찾기 — "기한", "집", "언어", "전화"처럼 치면 해당 섹션이나 화면으로 바로 갑니다
+     3. 한눈에 보기 — 입국까지 D-day, 입국 준비, 정착도
+     4. 섹션 바로가기 → 내 여정 / 정착 / 내 집 / 맞춤 지원 / 설정 / 도움받기
+   저장 위치는 그대로입니다(이 기기 localStorage, 로그인하면 계정별로 나뉨). 이 화면은 읽어서 보여 주기만 합니다.
+   ------------------------------------------------------------------ */
+
+import { useMemo, useState } from 'react';
 import Icon from './Icon.jsx';
-import useEsc from '../lib/useEsc.js';
-import { get, uget, del } from '../lib/store.js';
-import { nickOf } from '../lib/auth.js';
-import { NEEDS, TOWNS, PLACES, recommend } from '../data/wonju.js';
-import { EXAMS } from '../data/exams.js';
-import { buildPlan, fmtDate } from '../lib/plan.js';
-import { applyRules, docStep, ruleChips, EMPTY } from '../lib/replan.js';
-import './mypage.css';
+import { my } from '../i18n/my.js';
+import { fill, LANGS, LANG_NAMES } from '../i18n/ui.js';
+import { rm, STAGES, stageOf, levelOf } from '../lib/roadmap.js';
+import { NEEDS, TOWNS } from '../data/wonju.js';
 
-const W = {
-  ko: { title: '마이페이지', joined: '가입 {d}', via: { kakao: '카카오 계정', google: 'Google 계정', id: '아이디 계정', guest: '로그인 전' }, logout: '로그아웃', sure: '로그아웃할까요? 기록은 이 기기에 그대로 남아요.',
-    prep: '입국 준비', visa: '체류자격', entry: '입국 예정일', from: '출발 나라', none: '아직 없어요', todo: '도착 후 할 일', dday: 'D-{n}', dpast: '입국 {n}일째', today: '오늘 입국',
-    settle: '원주 정착 지원', home: '내 집', needs: '필요한 것', town: '사는 곳', recs: '나에게 맞는 지원 {n}건', seeAll: '지원 찾기 열기',
-    plan: '원주 정착 30일', planNone: '아직 일정을 만들지 않았어요', planMake: 'AI로 30일 일정 만들기', planOpen: '30일 일정 열기', next: '다가오는 일정', docs: '서류에서 넣은 일정 {n}건', rules: '내 조건', aiOn: 'AI 맞춤 설명 있음',
-    exams: '모의시험 기록', examNone: '아직 본 시험이 없어요', examGo: '모의시험 보러 가기', best: '최고', last: '최근', level: { kiip: '{l}단계', topik: '{l}', eps: '' },
-    korean: '한국어 연습', quiz: '연습 문제 {i}문제째 · 맞힌 수 {s}', chat: 'AI에게 물어본 것 {n}개',
-    store: '기록은 이 기기의 브라우저에만 저장돼요. 다른 기기에서는 이어지지 않아요.', wipe: '이 계정의 기록 지우기', wipeSure: '이 계정의 체크·일정·시험 기록을 이 기기에서 모두 지울까요? 되돌릴 수 없어요.' },
-  en: { title: 'My page', joined: 'Joined {d}', via: { kakao: 'Kakao account', google: 'Google account', id: 'ID account', guest: 'Not signed in' }, logout: 'Sign out', sure: 'Sign out? Your records stay on this device.',
-    prep: 'Before arrival', visa: 'Visa', entry: 'Entry date', from: 'From', none: 'Not set', todo: 'After-arrival to-dos', dday: 'D-{n}', dpast: 'Day {n} in Korea', today: 'Arriving today',
-    settle: 'Wonju settlement support', home: 'Home', needs: 'Needs', town: 'Lives in', recs: '{n} programs for you', seeAll: 'Open support finder',
-    plan: 'My 30 days in Wonju', planNone: 'No plan yet', planMake: 'Build my 30-day plan with AI', planOpen: 'Open my 30-day plan', next: 'Coming up', docs: '{n} added from letters', rules: 'My conditions', aiOn: 'AI notes saved',
-    exams: 'Mock test history', examNone: 'No tests taken yet', examGo: 'Take a mock test', best: 'Best', last: 'Last', level: { kiip: 'Level {l}', topik: '{l}', eps: '' },
-    korean: 'Korean practice', quiz: 'Practice question {i} · {s} correct', chat: '{n} questions asked to AI',
-    store: 'Records are saved only in this browser on this device.', wipe: 'Clear this account’s records', wipeSure: 'Delete all checks, plans and test records for this account on this device? This cannot be undone.' }
-};
-const fill = (s, v) => String(s).replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m));
 const DAY = 86400000;
+const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const ddayOf = (entry) => {
+  if (!entry) return null;
+  const a = new Date(); a.setHours(0, 0, 0, 0);
+  const n = Math.round((new Date(entry).setHours(0, 0, 0, 0) - a) / DAY);
+  return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : 'D+' + -n;
+};
 
-export default function MyPage({ who, user, lang, visa, entry, pax, countryLabel, checks, arriveSum, onClose, onLogout, onPlan, onSettle, onTutor }) {
-  const t = lang === 'ko' ? W.ko : W.en;
+/* 첫 화면(탑승권 위 · 처음 패널)에 띄우는 "다시 오셨네요" 요약 — 저장한 것이 없으면 그리지 않습니다 */
+export function MySummary({ lang, me, onContinue, onMore, dark = false }) {
+  const s = my(lang);
+  if (!me || !me.has) return null;
+  const ratio = me.arrive && me.arrive.total ? me.arrive.done / me.arrive.total : 0;
+  const chips = [
+    me.visa && { k: 'visa', v: me.visa + (me.countryLabel ? ' · ' + me.countryLabel : '') },
+    me.entry && { k: 'dd', l: s.tEntry, v: ddayOf(me.entry) },
+    me.pre && me.pre.total > 0 && { k: 'pre', l: s.tPre, v: me.pre.done + '/' + me.pre.total },
+    me.arrive && me.arrive.done > 0 && { k: 'set', l: s.tSettle, v: Math.round(ratio * 100) + '%' },
+    me.home && { k: 'home', v: me.home.label, icon: true }
+  ].filter(Boolean);
+  return (
+    <section className={'mysum' + (dark ? ' is-dark' : '')} aria-label={s.title}>
+      <b className="mysum-h">{me.name ? fill(s.back, { name: me.name }) : s.backGuest}</b>
+      <ul className="mysum-chips">
+        {chips.map((c) => (
+          <li key={c.k}>{c.icon && <Icon n="life" size={14} />}{c.l && <span>{c.l}</span>}<b>{c.v}</b></li>
+        ))}
+      </ul>
+      <div className="mysum-act">
+        {onContinue && <button type="button" className="mysum-go" onClick={onContinue}>{s.cont}</button>}
+        {onMore && <button type="button" className="mysum-more" onClick={onMore}>{s.more}</button>}
+      </div>
+    </section>
+  );
+}
+
+export default function MyPage({ lang, setLang, me, arriveItems, checks, setEntry, onGo, onClose, onLogin, onLogout, onClear }) {
+  const s = my(lang);
+  const R = rm(lang);
   const K = lang === 'ko' ? 'ko' : 'en';
-  useEsc(onClose);
-  const provider = !user ? 'guest' : /^kakao:/.test(user) ? 'kakao' : /^google:/.test(user) ? 'google' : 'id';
-  const name = user ? nickOf(user) : (pax || 'Guest');
-  const acc = user ? get('users', {})[user.toLowerCase()] : null;
+  const [q, setQ] = useState('');
 
-  /* 저장해 둔 값들 */
-  const st = uget(who, 'settle', {});
-  const home = uget(who, 'home');
-  const extras = uget(who, 'plan.extras', []);
-  const rules = { ...EMPTY, ...uget(who, 'plan.rules', {}) };
-  const ai = uget(who, 'plan.ai');
-  const exams = uget(who, 'exams', {});
-  const hist = uget(who, 'examHist', []);
-  const tutor = uget(who, 'tutor', {});
-  const sv = st.visa || visa;
-  const needs = st.needs || ['stay', 'health', 'korean'];
-  const recs = useMemo(() => recommend({ visa: sv, town: st.town || 'wonju', needs, family: !!st.family }), [sv]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ratio = arriveItems.length ? arriveItems.filter((i) => checks[i.id]).length / arriveItems.length : 0;
+  const stages = STAGES.map((id) => {
+    const items = arriveItems.filter((it) => stageOf(it) === id);
+    return { id, total: items.length, done: items.filter((it) => checks[it.id]).length };
+  }).filter((g) => g.total);
+  const preRatio = me.pre && me.pre.total ? me.pre.done / me.pre.total : 0;
 
-  /* 30일 일정 (저장된 조건으로 다시 계산 — 화면의 일정과 같은 규칙) */
-  const planMade = !!ai || extras.length > 0;
-  const steps = useMemo(() => {
-    try { return applyRules([...buildPlan({ visa: sv, needs, family: !!st.family, entry }), ...extras.map((x, i) => docStep(x, i, entry))], rules, entry); }
-    catch (e) { return []; }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const today = new Date(new Date().setHours(0, 0, 0, 0));
-  const upcoming = steps.filter((s) => s.date >= today).slice(0, 4);
-  const showSteps = upcoming.length ? upcoming : steps.slice(0, 4);
-  const dn = Math.round((new Date(entry).setHours(0, 0, 0, 0) - today) / DAY);
-  const dText = dn > 0 ? fill(t.dday, { n: dn }) : dn === 0 ? t.today : fill(t.dpast, { n: -dn + 1 });
-
-  const bestOf = (id) => hist.filter((h) => h.id === id).reduce((a, h) => (!a || h.total / h.max > a.total / a.max ? h : a), null);
-  const lvText = (id, l) => (l ? fill(t.level[id] || '{l}', { l }) : '');
-  const wipe = () => {
-    if (!window.confirm(t.wipeSure)) return;
-    try {
-      const pre = 'arrive.u.' + (who || 'guest') + '.'; const ks = [];
-      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(pre) && !k.endsWith('.nick')) ks.push(k); }
-      ks.forEach((k) => localStorage.removeItem(k));
-    } catch (e) { /* 무시 */ }
-    del('u.' + who + '.view'); location.reload();
+  /* 메뉴 찾기: 제목 + 찾는 말(한국어·영어) → 이 화면의 섹션(#) 또는 다른 화면(action) */
+  const entries = useMemo(() => [
+    { t: s.tabs.trip, k: '여정 출발 나라 경로 기한 입국 날짜 trip route deadline entry date country', to: '#me-trip' },
+    { t: s.visa, k: '비자 체류자격 visa', to: '#me-trip' },
+    { t: s.goTicket, k: '탑승권 boarding pass ticket', go: 'ticket' },
+    { t: s.tabs.settle, k: '정착 할 일 로드맵 체크 도착 settle todo roadmap check arrival', to: '#me-settle' },
+    { t: s.goPlan, k: '30일 일정 AI 계획 plan 30 days', go: 'plan' },
+    { t: s.tabs.home, k: '집 주소 거주지 home address', to: '#me-home' },
+    { t: s.tabs.reco, k: '지원 혜택 필요 가족 support benefit needs family', to: '#me-reco' },
+    { t: s.lang, k: '언어 language ngôn ngữ bahasa', to: '#me-set' },
+    { t: s.account, k: '로그인 로그아웃 계정 account login sign', to: '#me-set' },
+    { t: s.clear, k: '삭제 지우기 초기화 delete reset clear', to: '#me-set' },
+    { t: s.h1345, k: '전화 상담 비자 call visa 1345', to: '#me-help' },
+    { t: s.h0644, k: '전화 상담 일자리 사업장 call job workplace', to: '#me-help' },
+    { t: s.hTutor, k: '한국어 시험 토픽 korean topik tutor', go: 'tutor' }
+  ], [s]);
+  const term = q.trim().toLowerCase();
+  const hits = term ? entries.filter((e) => (e.t + ' ' + e.k).toLowerCase().includes(term)).slice(0, 6) : [];
+  const jump = (e) => {
+    setQ('');
+    if (e.go) { onGo(e.go); return; }
+    const el = document.getElementById(e.to.slice(1));
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  const scrollTo = (id) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const needNames = (me.needs || []).map((id) => { const n = NEEDS.find((x) => x.id === id); return n ? n[K] : null; }).filter(Boolean);
+  const townName = (TOWNS.find((x) => x.id === me.town) || {})[K] || '';
 
   return (
-    <div className="mp-back" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <section className="mp" role="dialog" aria-modal="true" aria-label={t.title}>
-        <header className="mp-h">
-          <b>{t.title}</b>
-          <button type="button" className="x-close" onClick={onClose} aria-label="close"><Icon n="close" size={20} /></button>
-        </header>
-        <div className="mp-body">
-          {/* 프로필 */}
-          <div className={'mp-prof ' + provider}>
-            <span className="mp-av">{String(name).slice(0, 1).toUpperCase()}</span>
-            <div>
-              <b>{name}</b>
-              <small><em>{t.via[provider]}</em>{acc && acc.at ? ' · ' + fill(t.joined, { d: fmtDate(new Date(acc.at), lang) }) : ''}</small>
-            </div>
-            {user && <button type="button" className="btn-o sm" onClick={() => { if (window.confirm(t.sure)) onLogout(); }}>{t.logout}</button>}
-          </div>
-
-          {/* 입국 준비 */}
-          <section className="mp-card">
-            <h3><Icon n="plane" size={18} />{t.prep}<span className="mp-dday">{dText}</span></h3>
-            <dl className="mp-kv">
-              <div><dt>{t.visa}</dt><dd>{visa}</dd></div>
-              <div><dt>{t.entry}</dt><dd>{fmtDate(new Date(entry), lang)}</dd></div>
-              <div><dt>{t.from}</dt><dd>{countryLabel || t.none}</dd></div>
-            </dl>
-            {arriveSum && (
-              <div className="mp-prog"><span>{t.todo}</span><i><b style={{ width: Math.round((arriveSum.done / Math.max(1, arriveSum.total)) * 100) + '%' }} /></i><em>{arriveSum.done}/{arriveSum.total}</em></div>
-            )}
-          </section>
-
-          {/* 원주 정착 지원 */}
-          <section className="mp-card">
-            <h3><Icon n="pin" size={18} />{t.settle}</h3>
-            <dl className="mp-kv">
-              <div><dt>{t.home}</dt><dd>{home ? home.label : t.none}</dd></div>
-              <div><dt>{t.town}</dt><dd>{(TOWNS.find((x) => x.id === (st.town || 'wonju')) || TOWNS[0])[K]}</dd></div>
-              <div><dt>{t.needs}</dt><dd className="mp-chips">{needs.map((n) => { const x = NEEDS.find((y) => y.id === n); return x ? <span key={n}>{x[K]}</span> : null; })}</dd></div>
-            </dl>
-            <p className="mp-sub">{fill(t.recs, { n: recs.length })}</p>
-            <ul className="mp-list">{recs.slice(0, 3).map(({ p }) => <li key={p.id}><b>{p[K].t}</b><small>{p.org}</small></li>)}</ul>
-            <button type="button" className="mp-go" onClick={onSettle}>{t.seeAll}<Icon n="next" size={16} /></button>
-          </section>
-
-          {/* 30일 정착 일정 */}
-          <section className="mp-card">
-            <h3><Icon n="calendar" size={18} />{t.plan}{ai && ai.ai && <em className="mp-ai">{t.aiOn}</em>}</h3>
-            {!planMade && <p className="mp-empty">{t.planNone}</p>}
-            {showSteps.length > 0 && <>
-              <p className="mp-sub">{t.next}</p>
-              <ul className="mp-steps">
-                {showSteps.map((s) => {
-                  const pl = s.place && (PLACES[s.place] || (s.placeName ? { [K]: s.placeName } : null));
-                  return (
-                    <li key={s.id} className={s.src === 'doc' ? 'doc' : ''}>
-                      <span className="mp-d">D+{s.day}<small>{fmtDate(s.date, lang)}</small></span>
-                      <span><b>{s.t[K]}</b>{pl && <small><Icon n="pin" size={12} />{String(pl[K] || '').split(' (')[0]}</small>}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>}
-            {(extras.length > 0 || ruleChips(rules, lang).length > 0) && (
-              <p className="mp-tags">
-                {extras.length > 0 && <span className="doc"><Icon n="doc" size={12} />{fill(t.docs, { n: extras.length })}</span>}
-                {ruleChips(rules, lang).map((c) => <span key={c.k}>{c.t}</span>)}
-              </p>
-            )}
-            <button type="button" className="mp-go" onClick={onPlan}>{planMade ? t.planOpen : t.planMake}<Icon n="next" size={16} /></button>
-          </section>
-
-          {/* 모의시험 기록 */}
-          <section className="mp-card">
-            <h3><Icon n="study" size={18} />{t.exams}</h3>
-            {!Object.keys(exams).length && <p className="mp-empty">{t.examNone}</p>}
-            <div className="mp-exams">
-              {['eps', 'kiip', 'topik'].filter((id) => exams[id]).map((id) => {
-                const e = EXAMS[id], last = exams[id], best = bestOf(id) || last;
-                return (
-                  <div key={id} className="mp-ex" style={{ '--ec': e.color }}>
-                    <b>{e.short}</b>
-                    <span className="mp-sc"><strong>{last.total}</strong>/{last.max}</span>
-                    <small>{t.last} · {fmtDate(new Date(last.at), lang)}{last.level ? ' · ' + lvText(id, last.level) : ''}</small>
-                    {best.total / best.max > last.total / last.max && <small>{t.best} {best.total}/{best.max}</small>}
-                    <i><b style={{ width: Math.round((last.total / last.max) * 100) + '%' }} /></i>
-                  </div>
-                );
-              })}
-            </div>
-            {hist.length > 1 && (
-              <ul className="mp-hist">{hist.slice(0, 6).map((h, k) => <li key={k}><span>{EXAMS[h.id] ? EXAMS[h.id].short : h.id}</span><span>{h.total}/{h.max}{h.level ? ' · ' + lvText(h.id, h.level) : ''}</span><small>{fmtDate(new Date(h.at), lang)}</small></li>)}</ul>
-            )}
-            <button type="button" className="mp-go" onClick={onTutor}>{t.examGo}<Icon n="next" size={16} /></button>
-          </section>
-
-          {/* 한국어 연습 */}
-          {(tutor.i || (tutor.chat && tutor.chat.length)) ? (
-            <section className="mp-card">
-              <h3><Icon n="ko" size={18} />{t.korean}</h3>
-              <p className="mp-sub">{fill(t.quiz, { i: (tutor.i || 0) + 1, s: tutor.score || 0 })}</p>
-              {tutor.chat && tutor.chat.length > 0 && <p className="mp-sub">{fill(t.chat, { n: tutor.chat.filter((m) => m.me).length })}</p>}
-            </section>
-          ) : null}
-
-          <p className="mp-note"><Icon n="info" size={14} />{t.store}</p>
-          <button type="button" className="mp-wipe" onClick={wipe}>{t.wipe}</button>
+    <aside className="me-panel" aria-label={s.title}>
+      <div className="me-scroll">
+        <div className="me-top">
+          <button type="button" className="icon" onClick={onClose} aria-label={s.title}><Icon n="back" size={20} /></button>
+          <b>{s.title}</b>
         </div>
-      </section>
-    </div>
+
+        {/* 1. 프로필 */}
+        <header className="me-card me-head">
+          <span className="me-av" aria-hidden="true">{(me.name || '?').slice(0, 1).toUpperCase()}</span>
+          <div className="me-who">
+            <h2>{me.name ? fill(s.hello, { name: me.name }) : s.helloGuest}</h2>
+            <p>{[me.visa, me.countryLabel].filter(Boolean).join(' · ') || s.traveler}</p>
+          </div>
+          {me.user
+            ? <button type="button" className="me-btn" onClick={onLogout}>{s.logout}</button>
+            : <button type="button" className="me-btn is-p" onClick={onLogin}>{s.login}</button>}
+          {!me.user && <p className="me-note">{s.guest}</p>}
+        </header>
+
+        {/* 2. 메뉴 찾기 */}
+        <div className="me-search" role="search">
+          <Icon n="search" size={18} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={s.searchPh} aria-label={s.searchPh} />
+          {term && (
+            <ul className="me-hits">
+              {hits.length ? hits.map((h) => <li key={h.t}><button type="button" onClick={() => jump(h)}>{h.t}</button></li>)
+                : <li className="me-none">{s.searchNone}</li>}
+            </ul>
+          )}
+        </div>
+
+        {/* 3. 한눈에 보기 */}
+        <div className="me-glance">
+          <button type="button" onClick={() => scrollTo('me-trip')}><span>{s.tEntry}</span><b>{ddayOf(me.entry) || s.noEntry}</b></button>
+          <button type="button" onClick={() => scrollTo('me-trip')}><span>{s.tPre}</span><b>{me.pre ? me.pre.done + '/' + me.pre.total : '-'}</b></button>
+          <button type="button" onClick={() => scrollTo('me-settle')}><span>{s.tSettle}</span><b>{Math.round(ratio * 100)}%</b></button>
+        </div>
+
+        {/* 4. 섹션 바로가기 */}
+        <nav className="me-tabs">
+          {Object.entries({ trip: 'me-trip', settle: 'me-settle', home: 'me-home', reco: 'me-reco', set: 'me-set', help: 'me-help' })
+            .map(([k, id]) => <button type="button" key={k} onClick={() => scrollTo(id)}>{s.tabs[k]}</button>)}
+        </nav>
+
+        <section className="me-card" id="me-trip">
+          <h3>{s.tabs.trip}</h3>
+          <dl className="me-dl">
+            <div><dt>{s.from}</dt><dd>{me.countryLabel || s.noCountry}</dd></div>
+            <div><dt>{s.visa}</dt><dd>{me.visa}{me.visaName ? ' · ' + me.visaName : ''}</dd></div>
+            <div><dt>{s.entry}</dt><dd><input type="date" value={me.entry ? iso(me.entry) : ''} onChange={(e) => e.target.value && setEntry(new Date(e.target.value + 'T00:00:00'))} /></dd></div>
+          </dl>
+          <div className="me-bar"><i style={{ width: Math.round(preRatio * 100) + '%' }} /></div>
+          <p className="me-sub">{s.tPre} {me.pre ? me.pre.done + '/' + me.pre.total : '-'}</p>
+          <div className="me-act">
+            <button type="button" className="me-btn is-p" onClick={() => onGo('route')}><Icon n="route" size={16} />{s.goRoute}</button>
+            <button type="button" className="me-btn" onClick={() => onGo('ticket')}><Icon n="ticket" size={16} />{s.goTicket}</button>
+          </div>
+        </section>
+
+        <section className="me-card" id="me-settle">
+          <h3>{s.tabs.settle}</h3>
+          <p className="me-level"><b>{R[levelOf(ratio)]}</b><span>{Math.round(ratio * 100)}%</span></p>
+          <div className="me-bar"><i style={{ width: Math.round(ratio * 100) + '%' }} /></div>
+          <ul className="me-stages">
+            {stages.map((g) => (
+              <li key={g.id} className={g.done === g.total ? 'is-done' : ''}><span>{R[g.id]}</span><b>{g.done}/{g.total}</b></li>
+            ))}
+          </ul>
+          <div className="me-act">
+            <button type="button" className="me-btn is-p" onClick={() => onGo('todo')}><Icon n="todo" size={16} />{s.goTodo}</button>
+            <button type="button" className="me-btn" onClick={() => onGo('plan')}><Icon n="calendar" size={16} />{s.goPlan}</button>
+          </div>
+        </section>
+
+        <section className="me-card" id="me-home">
+          <h3>{s.tabs.home}</h3>
+          {me.home ? <p className="me-home"><Icon n="life" size={16} /><b>{me.home.label}</b></p> : <p className="me-sub">{s.homeNone}</p>}
+          <div className="me-act"><button type="button" className="me-btn" onClick={() => onGo('find')}><Icon n="pin" size={16} />{me.home ? s.goHomeEdit : s.goHome}</button></div>
+        </section>
+
+        <section className="me-card" id="me-reco">
+          <h3>{s.tabs.reco}</h3>
+          <dl className="me-dl">
+            <div><dt>{s.town}</dt><dd>{townName || '-'}</dd></div>
+            <div><dt>{s.needs}</dt><dd>{needNames.join(', ') || '-'}</dd></div>
+            <div><dt>{s.family}</dt><dd>{me.family ? s.yes : s.no}</dd></div>
+          </dl>
+          <div className="me-act"><button type="button" className="me-btn" onClick={() => onGo('find')}><Icon n="sparkle" size={16} />{s.goFind}</button></div>
+        </section>
+
+        <section className="me-card" id="me-set">
+          <h3>{s.tabs.set}</h3>
+          <label className="me-field"><span>{s.lang}</span>
+            <select value={lang} onChange={(e) => setLang(e.target.value)}>{LANGS.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}</select>
+          </label>
+          <div className="me-row"><span>{s.account}</span>
+            {me.user ? <button type="button" className="me-btn" onClick={onLogout}>{s.logout} ({me.user})</button>
+              : <button type="button" className="me-btn" onClick={onLogin}>{s.login}</button>}
+          </div>
+          <div className="me-clear">
+            <b>{s.clear}</b><p className="me-sub">{s.clearLead}</p>
+            <button type="button" className="me-btn" onClick={() => { if (window.confirm(s.clearAsk)) onClear(); }}>{s.clear}</button>
+          </div>
+        </section>
+
+        <section className="me-card" id="me-help">
+          <h3>{s.tabs.help}</h3>
+          <ul className="me-help">
+            <li><a href="tel:1345"><Icon n="call" size={18} /><span><b>{s.h1345}</b><small>{s.h1345s}</small></span></a></li>
+            <li><a href="tel:16440644"><Icon n="call" size={18} /><span><b>{s.h0644}</b><small>{s.h0644s}</small></span></a></li>
+            <li><button type="button" onClick={() => onGo('tutor')}><Icon n="ko" size={18} /><span><b>{s.hTutor}</b><small>{s.hTutorS}</small></span></button></li>
+          </ul>
+        </section>
+      </div>
+    </aside>
   );
 }

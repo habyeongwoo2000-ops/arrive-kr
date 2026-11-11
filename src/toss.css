@@ -1,0 +1,196 @@
+/* 토스 색감 + 여백 — styles.css 다음에 불러와 덮어씁니다.
+   · 틀(왼쪽 세로 메뉴 → 흰 패널 → 지도)은 네이버 지도 방식 그대로, 색과 여백만 토스처럼 바꿉니다.
+   · 강조색은 파랑 하나. 회색 단계로 위계를 만들고, 회색 바탕 위 흰 카드로 묶음을 나눕니다.
+   · 변수 이름(--green …)은 기존 코드가 많이 쓰고 있어 그대로 두고 값만 바꿨습니다.
+   · 색 값은 토스 앱에서 흔히 보이는 톤을 근사한 것입니다. */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+:root {
+  --green: #3182f6; --green-d: #1b64da; --green-t: #1b64da; --green-bg: #e8f3ff;
+  --blue: #3182f6; --link: #1b64da; --red: #f04452; --orange: #ff8a3d; --yellow: #ffc342;
+  --ink: #191f28; --ink-2: #4e5968; --ink-3: #8b95a1; --ink-4: #b0b8c1;
+  --line: #f2f4f6; --line-2: #e5e8eb; --band: #f2f4f6; --hover: #f9fafb; --bg-2: #f2f4f6;
+  --sh: 0 2px 8px rgba(0, 0, 0, .06);
+  --sh-l: 0 8px 24px rgba(0, 0, 0, .10);
+  --chip-sh: 0 2px 8px rgba(0, 0, 0, .08);
+  --f: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Noto Sans Khmer', 'Noto Sans Devanagari', 'Segoe UI', sans-serif;
+}
+:focus-visible { outline-color: var(--green); }
+
+/* ── 공통 버튼 · 칩 ───────────────────────── */
+.chip { height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--band); color: var(--ink-2); font-weight: 500; }
+.chip:hover { border-color: transparent; background: #e9edf1; }
+.chip.is-on { border: 0; background: var(--green-bg); color: var(--green-t); font-weight: 700; }
+.btn-p { border-radius: 12px; }
+
+/* ── 원주 정착 패널: 회색 바탕 위 흰 카드 ───────────── */
+.settle .st-card { background: var(--band); padding-bottom: 28px; }
+.settle .st-top { padding: 14px 20px 14px 12px; border-bottom: 0; }
+.settle .st-top b { font-size: 20px; letter-spacing: -.02em; }
+.settle .st-tabs { top: 68px; }
+.settle .st-tabs button span { color: var(--green); }
+
+.settle .st-todo,
+.settle .hp,
+.settle .st-stats,
+.settle .st-form,
+.settle .st-g,
+.settle .ai-plan { margin: 12px 16px 0; border: 0; border-radius: 20px; background: #fff; }
+.settle .st-todo { padding: 20px; }
+.settle .hp { padding: 18px 20px; }
+.settle .st-stats { padding: 18px 20px; }
+.settle .st-stats b { color: var(--green); }
+.settle .st-form { gap: 16px; padding: 20px; }
+.settle .st-form label { gap: 8px; font-weight: 600; }
+.settle .st-form select { height: 48px; border: 0; border-radius: 12px; background-color: var(--band); font-size: 15px; }
+.settle .ai-plan { width: auto; padding: 18px 20px; }
+.settle .ai-plan:hover { background: #fafbfc; }
+.settle .st-count { margin: 20px 20px 0; padding: 0; border-top: 0; font-size: 18px; }
+.settle .st-g { padding: 6px 20px 8px; }
+.settle .st-g h3 { padding: 14px 0 10px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.settle .pg { padding: 18px 0; border-bottom: 1px solid var(--line); background: none; }
+.settle .pg:last-child { border-bottom: 0; }
+.settle .pg:hover { background: none; }
+.settle .pg.is-on { margin: 0 -12px; padding: 18px 12px; border-radius: 16px; background: var(--green-bg); box-shadow: none; }
+.settle .pg-h b { color: var(--ink); font-size: 17px; }
+.settle .pg-new { border: 0; padding: 1px 6px; border-radius: 6px; background: #ffeeee; }
+.settle .pg p { margin: 8px 0 12px; font-size: 15px; line-height: 1.6; }
+.settle .pg dl { gap: 4px; font-size: 14px; }
+.settle .pg dl div { grid-template-columns: 44px 1fr; }
+.settle .pg dd { color: var(--ink-2); }
+.settle .pg-act { gap: 8px; margin-top: 14px; }
+.settle .pg-act a, .settle .pg-act button { height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--band); color: var(--ink); font-weight: 600; }
+.settle .pg-act a:first-child { background: var(--green-bg); color: var(--green-t); }
+.settle .pg-act a:first-child .ic { color: var(--green-t); }
+.settle .st-next { border: 0; border-radius: 14px; background: var(--green); color: #fff; font-weight: 700; }
+.settle .st-next:hover { background: var(--green-d); }
+.settle .st-country { border: 0; border-radius: 16px; background: var(--band); }
+.settle .rp-note { margin: 16px 20px 0; }
+
+/* 집 주소 칸 */
+.hp-box { height: 48px; border: 0; border-radius: 12px; background: var(--band); }
+.hp-box:focus-within { border: 2px solid var(--green); background: #fff; }
+.hp-alt button { height: 34px; border: 0; background: var(--band); }
+
+/* ── 지도: 네이버 지도처럼 조용하게 ─────────────────
+   평소에는 작은 아이콘만, 이름표는 고른 핀 · 마우스를 올린 핀 · 충분히 확대했을 때(15단계~)만. */
+.lf-pin .poi-ic { width: 26px; height: 26px; border-radius: 8px; }
+.lf-pin .poi-ic svg { width: 14px; height: 14px; }
+.lf-pin .poi-lb { top: 29px; font-size: 12.5px; font-weight: 700; }
+.lf:not(.is-near) .lf-pin:not(.is-on) .poi-lb { display: none; }
+.leaflet-marker-icon.lf-pin:hover .poi-lb { display: block; }
+.poi.is-on .poi-ic { box-shadow: 0 0 0 4px rgba(49, 130, 246, .25), 0 1px 4px rgba(0, 0, 0, .3); }
+.cat { box-shadow: var(--chip-sh); }
+
+/* ── 체크할 때마다 나아가는 비행 ───────────────── */
+.fly { border-radius: 14px; background: var(--green); }
+.fly.is-on { background: var(--green-bg); color: var(--green-t); box-shadow: none; }
+.fly-hint { margin: 8px 2px 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+
+/* ── 정착 로드맵 (도착 후 할 일) ───────────────── */
+.rm-level { margin: 4px 0 16px; padding: 18px; border-radius: 16px; background: var(--band); }
+.rm-level-h { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.rm-level-h b { font-size: 22px; font-weight: 800; color: var(--green); letter-spacing: -.02em; }
+.rm-level-t { margin: 2px 0 10px; font-size: 17px; font-weight: 800; color: var(--ink); }
+.rm-level .st-prog { height: 8px; border-radius: 4px; background: #e5e8eb; }
+.rm-level .st-prog i { border-radius: 4px; }
+.rm-home { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.rm-home .ic { color: var(--green); flex: none; }
+.rm-home span { flex: 1; min-width: 0; }
+.rm-home button { height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: #fff; color: var(--green-t); font-size: 13px; font-weight: 700; }
+.rm-walk { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff; color: var(--green-t); font-size: 13px; font-weight: 700; }
+.legs.rm { margin: 0; padding: 0; }
+.rm-stage .leg-h { cursor: default; }
+.rm-stage.is-done .leg-n { background: var(--green); border-color: var(--green); color: #fff; }
+.rm-stage.is-on .leg-n { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 0 0 4px var(--green-bg); }
+.rm-now { margin-inline-start: 6px; padding: 2px 8px; border-radius: 6px; background: var(--green-bg); color: var(--green-t); font-size: 11.5px; font-weight: 700; font-style: normal; }
+.rm-stage:not(.is-on):not(.is-done) > .leg-h b { color: var(--ink-3); }
+
+/* 지도 위 걷는 사람 · 다녀온 곳 */
+.walker span { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--green); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(49, 130, 246, .22), 0 2px 6px rgba(0, 0, 0, .25); }
+.walker svg { width: 20px; height: 20px; }
+.visit span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #12b886; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+.visit svg { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) { .walker span { box-shadow: 0 2px 6px rgba(0, 0, 0, .25); } }
+
+/* ── 내 정보 화면 ───────────────────────────── */
+.me-panel { position: absolute; top: 0; bottom: 0; left: var(--rail); z-index: 46; width: max(var(--panel), 380px); max-width: calc(100vw - var(--rail)); background: var(--band); border-right: 1px solid var(--line-2); animation: fadein .25s ease-out; }
+.me-scroll { height: 100%; overflow-y: auto; padding: 0 16px 32px; }
+.me-top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 6px; margin: 0 -16px; padding: 14px 16px 10px 8px; background: var(--band); }
+.me-top b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+.me-card { margin-top: 12px; padding: 20px; border-radius: 20px; background: #fff; scroll-margin-top: 70px; }
+.me-card h3 { margin: 0 0 12px; font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.me-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 4px; }
+.me-av { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--green-bg); color: var(--green-t); font-size: 21px; font-weight: 800; }
+.me-who { flex: 1; min-width: 0; }
+.me-who h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.me-who p { margin: 3px 0 0; font-size: 13.5px; color: var(--ink-3); }
+.me-note { flex-basis: 100%; margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.me-btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--band); color: var(--ink); font-size: 14px; font-weight: 600; }
+.me-btn:hover { background: #e9edf1; }
+.me-btn.is-p { background: var(--green); color: #fff; }
+.me-btn.is-p:hover { background: var(--green-d); }
+.me-search { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 12px; height: 52px; padding: 0 16px; border-radius: 16px; background: #fff; color: var(--ink-3); }
+.me-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; font-size: 15px; color: var(--ink); }
+.me-search:focus-within { box-shadow: 0 0 0 2px var(--green); }
+.me-hits { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; margin: 0; padding: 6px; list-style: none; border-radius: 16px; background: #fff; box-shadow: var(--sh-l); }
+.me-hits button { display: block; width: 100%; padding: 12px 14px; border: 0; border-radius: 10px; background: none; text-align: start; font-size: 15px; font-weight: 600; }
+.me-hits button:hover { background: var(--band); }
+.me-none { padding: 12px 14px; font-size: 14px; color: var(--ink-3); }
+.me-glance { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.me-glance button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px 14px; border: 0; border-radius: 16px; background: #fff; text-align: start; }
+.me-glance span { font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+.me-glance b { font-size: 20px; font-weight: 800; color: var(--green); letter-spacing: -.02em; }
+.me-tabs { position: sticky; top: 56px; z-index: 2; display: flex; gap: 6px; margin: 12px -16px 0; padding: 6px 16px; overflow-x: auto; background: var(--band); scrollbar-width: none; }
+.me-tabs::-webkit-scrollbar { display: none; }
+.me-tabs button { flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; color: var(--ink-2); font-size: 13.5px; font-weight: 600; }
+.me-dl { display: grid; gap: 10px; margin: 0 0 14px; }
+.me-dl div { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 10px; font-size: 15px; }
+.me-dl dt { color: var(--ink-3); }
+.me-dl dd { margin: 0; font-weight: 600; }
+.me-dl input[type="date"] { height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--band); font-size: 14px; }
+.me-bar { height: 8px; border-radius: 4px; background: var(--band); overflow: hidden; }
+.me-bar i { display: block; height: 100%; border-radius: 4px; background: var(--green); transition: width .3s; }
+.me-sub { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
+.me-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.me-level { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 10px; }
+.me-level b { font-size: 17px; } .me-level span { font-size: 20px; font-weight: 800; color: var(--green); }
+.me-stages { margin: 12px 0 0; padding: 0; list-style: none; }
+.me-stages li { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.me-stages li:first-child { border-top: 0; }
+.me-stages li.is-done b { color: #12b886; }
+.me-home { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; } .me-home .ic { color: var(--green); }
+.me-field { display: grid; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.me-field select { height: 48px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--band); font-size: 15px; }
+.me-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.me-clear { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.me-clear b { font-size: 15px; } .me-clear .me-btn { margin-top: 12px; color: var(--red); }
+.me-help { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.me-help a, .me-help button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; border: 0; border-radius: 14px; background: var(--band); color: var(--ink); text-align: start; }
+.me-help .ic { color: var(--green); flex: none; }
+.me-help b { display: block; font-size: 15px; } .me-help small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
+
+/* ── 첫 화면 "다시 오셨네요" 요약 ─────────────────── */
+.mysum { margin: 16px 16px 4px; padding: 16px 18px; border-radius: 20px; background: var(--green-bg); }
+.mysum-h { display: block; font-size: 16px; font-weight: 800; color: var(--ink); }
+.mysum-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.mysum-chips li { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 10px; border-radius: 10px; background: #fff; font-size: 13px; color: var(--ink-2); }
+.mysum-chips li b { color: var(--green-t); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mysum-chips .ic { color: var(--green); }
+.mysum-act { display: flex; gap: 8px; margin-top: 12px; }
+.mysum-go { height: 40px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--green); color: #fff; font-size: 14px; font-weight: 700; }
+.mysum-more { height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: #fff; color: var(--ink); font-size: 14px; font-weight: 600; }
+/* 탑승권 위 (어두운 배경) */
+.mysum.is-dark { position: relative; z-index: 61; max-width: 760px; margin: 72px auto 8px; background: rgba(255, 255, 255, .94); box-shadow: 0 8px 30px rgba(0, 0, 0, .3); }
+
+@media (max-width: 760px) {
+  .me-panel { left: 0; right: 0; width: auto; max-width: none; bottom: var(--tabbar); z-index: 39; border-right: 0; }
+  .view-me .rail-foot { display: none; }
+  .me-glance b { font-size: 17px; }
+  .mysum.is-dark { margin: 72px 12px 8px; }
+}
+
+/* ── 미리보기(공유 링크) 빌드: 지도 바탕 대신 옅은 격자 + 안내 ───────── */
+.lf[data-base="preview"] { background-color: #f4f5f7; background-image: linear-gradient(#e9ecef 1px, transparent 1px), linear-gradient(90deg, #e9ecef 1px, transparent 1px); background-size: 64px 64px; }
+.lf[data-base="preview"]::after { content: '미리보기 링크에서는 지도 바탕(도로·지명)을 불러올 수 없어요 · Map tiles are off in this preview'; position: absolute; left: 12px; bottom: 12px; z-index: 450; padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, .92); color: var(--ink-3); font-size: 12px; pointer-events: none; }

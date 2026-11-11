@@ -13,15 +13,15 @@ import BoardingPass, { a2Of } from './components/BoardingPass.jsx';
 import ViewToggle from './components/ViewToggle.jsx';
 import useSheetDrag from './useSheetDrag.js';
 import Settle from './components/Settle.jsx';
-import MyPage from './components/MyPage.jsx';
 import Icon from './components/Icon.jsx';
+import MyPage, { MySummary } from './components/MyPage.jsx';
 import { nav } from './i18n/nav.js';
 import { byCode } from './data/visas.js';
 import { WONJU } from './data/wonju.js';
 import { COUNTRIES, KOREA, byIso } from './data/countries.js';
 import { LEGS, TURBULENCE, GENERAL } from './data/route.js';
 import { LANGS, LANG_NAMES, ui, tx, fill, countryName } from './i18n/ui.js';
-import { get, set, uget, uset, adoptGuest } from './lib/store.js';
+import { get, set, del, uget, uset, adoptGuest } from './lib/store.js';
 import { current, signOut, nickOf, finishKakao } from './lib/auth.js';
 
 const FEATURES = feature(world, world.objects.countries).features.filter((f) => f.id !== '010'); // 남극 제외
@@ -77,7 +77,6 @@ export default function App() {
   const [openList, setOpenList] = useState(false);
   const [user, setUser] = useState(current);
   const [authOpen, setAuthOpen] = useState(false);
-  const [myOpen, setMyOpen] = useState(false);      // 마이페이지
   const [tutorOpen, setTutorOpen] = useState(false);
   const [activeLeg, setActiveLeg] = useState(-1);
   const [flying, setFlying] = useState(false);
@@ -85,7 +84,7 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
-  const [view, setView] = useState('globe');      // globe | settle  (새로고침해도 마지막 화면으로 — 아래 복원)
+  const [view, setView] = useState('globe');      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원)
   const [settleTab, setSettleTabS] = useState(() => uget(current(), 'settleTab', 'todo')); // todo | find
   const [landed, setLanded] = useState(false);
   const api = useRef(null);
@@ -144,6 +143,19 @@ export default function App() {
   /* 원주 정착 화면과 같은 기준: E-9는 상세 목록, 다른 비자는 그 비자의 도착 후 목록 */
   const arriveLeg = (eps ? LEGS : vObj.legs).find((l) => l.key === 'arrive');
   const arriveSum = arriveLeg ? { total: arriveLeg.items.length, done: arriveLeg.items.filter((i) => checks[i.id]).length } : null;
+  /* 내 정보 · 첫 화면 요약에 쓰는 "내가 저장해 둔 것" */
+  const preItems = legs.flatMap((l) => l.items);
+  const savedHome = uget(who, 'home') || (who === 'guest' ? get('home', null) : null);   // Settle 와 같은 규칙
+  const savedSettle = uget(who, 'settle', {});
+  const meData = {
+    user: user ? nickOf(user) : null, name: pax || (user ? nickOf(user) : ''), visa, visaName: tx(vObj.name, lang),
+    countryLabel: sel && !isKorea ? labelOf(sel) : '', entry,
+    pre: sel && !isKorea ? { done: preItems.filter((i) => checks[i.id]).length, total: preItems.length } : null,
+    arrive: arriveSum, home: savedHome && isFinite(savedHome.lat) ? savedHome : null,
+    needs: savedSettle.needs || null, family: !!savedSettle.family, town: savedSettle.town || 'wonju'
+  };
+  meData.has = !!(pax || (sel && !isKorea) || Object.values(checks).some(Boolean) || meData.home);
+
   const extra = eps && country ? (country.extra[lang === 'ko' ? 'ko' : 'en'] || []) : [];
   const start = sel && !isKorea ? (country ? country.city : (([lng, lat]) => [lat, lng])(geoCentroid(sel))) : null;
   const route = useMemo(() => (start ? buildPath(start) : null), [sel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -177,60 +189,123 @@ export default function App() {
     setFocus({ lat: mid[1], lng: mid[0], altitude: Math.min(3.2, 0.9 + d * 1.5) });
   }
 
-  /* ---------- 비행 ---------- */
+  /* ---------- 비행: 체크할 때마다 앞으로 ----------
+     "비행 시작"을 누르면 비행기가 지금까지 끝낸 만큼의 자리에 나타나고, 그다음부터는
+     체크 항목을 하나 끝낼 때마다 그만큼 앞으로 날아갑니다(체크를 풀면 뒤로).
+     구간 하나를 다 끝내면 그 구간 표시에 닿고, 모두 끝내면 인천에 내려 원주로 갑니다.
+     가는 길에 난기류 지점을 지나면 예전처럼 흔들리며 경고 카드가 뜹니다. */
+  const [flightOn, setFlightOn] = useState(false);
+  const progressOf = (lg, ck) => {
+    const items = lg.flatMap((l) => l.items);
+    const total = items.length;
+    const done = items.filter((i) => ck[i.id]).length;
+    if (!total) return 0;
+    if (done >= total) return 1;
+    let before = 0;
+    for (let j = 0; j < lg.length; j++) {
+      const n = lg[j].items.length;
+      const a = j === 0 ? 0 : lg[j - 1].at, b = lg[j].at;
+      if (done < before + n || j === lg.length - 1) return a + (b - a) * Math.min(1, (done - before) / (n || 1));
+      before += n;
+    }
+    return 0;
+  };
   function stopFlight() {
     if (flight.current) cancelAnimationFrame(flight.current.raf);
-    flight.current = null; setFlying(false); setShake(false);
+    flight.current = null; setFlying(false); setShake(false); setFlightOn(false);
     api.current && api.current.setPlane(null);
   }
-  function fly() {
+  /* 비행기를 from → to 로 옮깁니다 (지나는 난기류에서 잠깐 멈추고 흔들림) */
+  function moveTo(to, opts = {}) {
     const { route, legs, turbs } = live.current;
-    if (!route) return;
-    stopFlight();
-    setFlying(true); setTurb(null); setLanded(false);
-    const DUR = 16000;
-    const st = { t: 0, last: performance.now(), pauseUntil: 0, nextTurb: 0, leg: -1, raf: 0 };
+    if (!route || !api.current) return;
+    const prev = flight.current;
+    if (prev) cancelAnimationFrame(prev.raf);
+    const from = prev ? prev.t : to;
+    const st = { t: from, from, to, start: performance.now(), pauseUntil: 0, raf: 0, hd: prev ? prev.hd : 0 };
     flight.current = st;
+    const span = Math.abs(to - from);
+    const DUR = opts.instant || span < 1e-4 ? 0 : Math.min(3600, 900 + span * 9000);
+    const fwd = to > from;
+    const passing = fwd ? turbs.filter((x) => x.at > from && x.at <= to) : [];
+    let k = 0;
+    setFlying(DUR > 0);
     const step = (now) => {
-      if (!flight.current) return;
-      const dt = now - st.last; st.last = now;
+      if (flight.current !== st) return;
       if (now < st.pauseUntil) {
         const p = route.at(st.t); api.current.setPlane({ ...p, heading: st.hd + Math.sin(now / 40) * 9, alt: p.alt + Math.sin(now / 55) * 0.004 });
-      } else {
-        st.t = Math.min(1, st.t + dt / DUR);
-        const p = route.at(st.t), q = route.at(Math.min(1, st.t + 0.01));
-        st.hd = bearing(p, q);
-        api.current.setPlane({ ...p, heading: st.hd });
-        api.current.look({ lat: p.lat, lng: p.lng, altitude: 1.35 }, 0);
-        const li = legs.reduce((a, l, i) => (st.t >= l.at - 0.04 ? i : a), -1);
-        if (li !== st.leg) { st.leg = li; setActiveLeg(li); const el = document.getElementById('leg-' + li); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-        const tb = turbs[st.nextTurb];
-        if (tb && st.t >= tb.at) {
-          st.nextTurb++; st.pauseUntil = now + 2600 + tb.sev * 300;
-          setTurb(tb); setShake(true);
-          clearTimeout(shakeTimer.current);
-          shakeTimer.current = setTimeout(() => setShake(false), 2600 + tb.sev * 300);
-        }
+        st.start += 16; st.raf = requestAnimationFrame(step); return;
       }
-      if (st.t >= 1) {
-        setFlying(false); flight.current = null;
-        setTimeout(() => { if (!api.current) return; api.current.setPlane(null); setTurb(null); setShake(false); api.current.look({ lat: WONJU.lat - 0.25, lng: WONJU.lng - 0.3, altitude: 0.22 }, 2200); setLanded(true); }, 900);
-        return;
+      const r = DUR ? Math.min(1, (now - st.start) / DUR) : 1;
+      const e = r < 0.5 ? 2 * r * r : 1 - Math.pow(-2 * r + 2, 2) / 2;
+      st.t = from + (to - from) * e;
+      const p = route.at(st.t), q = route.at(Math.min(1, st.t + (fwd ? 0.01 : -0.01)));
+      if (Math.abs(q.lat - p.lat) + Math.abs(q.lng - p.lng) > 1e-6) st.hd = fwd ? bearing(p, q) : bearing(q, p);
+      api.current.setPlane({ ...p, heading: st.hd });
+      if (DUR) api.current.look({ lat: p.lat, lng: p.lng, altitude: 1.35 }, 0);
+      const li = legs.reduce((a, l, i) => (st.t >= l.at - 0.04 ? i : a), -1);
+      setActiveLeg(li);
+      const tb = passing[k];
+      if (tb && st.t >= tb.at) {
+        k++; st.pauseUntil = now + 2600 + tb.sev * 300;
+        setTurb(tb); setShake(true);
+        clearTimeout(shakeTimer.current);
+        shakeTimer.current = setTimeout(() => setShake(false), 2600 + tb.sev * 300);
       }
-      st.raf = requestAnimationFrame(step);
+      if (r < 1) { st.raf = requestAnimationFrame(step); return; }
+      setFlying(false);
+      if (to >= 1) {   // 모두 끝냄 → 인천 착륙 → 원주
+        setTimeout(() => { if (!api.current || flight.current !== st) return; api.current.setPlane(null); setTurb(null); setShake(false); setFlightOn(false); flight.current = null; api.current.look({ lat: WONJU.lat - 0.25, lng: WONJU.lng - 0.3, altitude: 0.22 }, 2200); setLanded(true); }, 900);
+      }
     };
     st.raf = requestAnimationFrame(step);
   }
+  /* "비행 시작" — 지금까지 한 만큼의 자리에 비행기를 띄웁니다 */
+  function fly() {
+    const { route, legs } = live.current;
+    if (!route) return;
+    setTurb(null); setLanded(false); setFlightOn(true);
+    if (flight.current) cancelAnimationFrame(flight.current.raf);
+    flight.current = null;
+    const t0 = progressOf(legs, live.current.checks || {});
+    moveTo(t0, { instant: true });
+    const p = route.at(Math.min(t0, 0.999));
+    api.current && api.current.look({ lat: p.lat, lng: p.lng, altitude: 1.6 }, 1200);
+    if (t0 >= 1) moveTo(1);
+  }
+  /* 체크가 바뀌면 그만큼 날아가기 */
+  useEffect(() => {
+    if (!flightOn || !route) return;
+    const to = progressOf(legs, checks);
+    if (!flight.current || Math.abs(flight.current.to - to) > 1e-6) moveTo(to);
+  }, [checks, flightOn]); // eslint-disable-line react-hooks/exhaustive-deps
+  const flightPct = route ? Math.round(progressOf(legs, checks) * 100) : 0;
 
   /* 탑승권 → 비행 */
   function onBoard({ name, from, visa: v, entry: en }) {
     setTicket(false); boarded(); setPax(name); set('u.' + who + '.name', name);
     setVisa(v); setEntry(en);
     choose(from);
-    setTimeout(() => fly(), 2100);
+    setTimeout(() => fly(), 2100);   // 출발 자리에 비행기를 띄우고, 이후는 체크할 때마다 앞으로
   }
   function openSettle(tab = 'todo') { setFold(false); stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
   function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
+  /* 내 정보 화면 */
+  function openMe() { setFold(false); setTicket(false); setView('me'); markBack('me'); }
+  function closeMe() { if (history.state && history.state.ak === 'me') history.back(); else setView('globe'); }
+  function goFromMe(a) {
+    if (a === 'ticket') { setTicket(true); return; }
+    if (a === 'tutor') { setTutorOpen(true); return; }
+    if (a === 'todo' || a === 'find') { openSettle(a); return; }
+    if (a === 'plan') { openSettle('find'); setPlanGo((x) => x + 1); return; }
+    setView('globe');                                   // route
+    if (!sel) { const c = get('u.' + who + '.country'); const f = c && FEATURES.find((x) => x.id === c); if (f) choose(f, false); }
+  }
+  function clearMine() {
+    ['checks', 'entry', 'visa', 'name', 'country', 'home', 'settle', 'planOpen', 'boarded', 'view', 'settleTab'].forEach((k) => del('u.' + who + '.' + k));
+    if (who === 'guest') del('home');
+    location.reload();
+  }
   function clearSel() { stopFlight(); setSel(null); setFocus({ lat: 22, lng: 110, altitude: 2.4 }); set('u.' + who + '.country', null); }
 
   /* 뒤로가기 (브라우저 버튼 · 휴대폰 뒤로 제스처)
@@ -245,6 +320,7 @@ export default function App() {
     const onPop = (e) => {
       const ak = e.state && e.state.ak;
       if (viewRef.current === 'settle' && ak !== 'settle') doCloseSettle();
+      if (viewRef.current === 'me' && ak !== 'me') setView('globe');
       if (selRef.current && !ak) clearSel();
     };
     addEventListener('popstate', onPop);
@@ -278,12 +354,12 @@ export default function App() {
       .sort((a, b) => (b.send - a.send) || a.name.localeCompare(b.name)).slice(0, q ? 12 : 18);
   }, [query, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const live = useRef({}); live.current = { route, legs, turbs };
+  const live = useRef({}); live.current = { route, legs, turbs, checks };
   /* 첫 화면 목록: 송출국 (지도에 있는 나라만) */
   const epsList = useMemo(() => COUNTRIES.map((c) => ({ c, f: FEATURES.find((x) => x.id === c.iso) })).filter((r) => r.f)
     .sort((a, b) => labelOf(a.f).localeCompare(labelOf(b.f))), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); };
-  const railOn = view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : 'route';
+  const railOn = view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : view === 'me' ? 'me' : 'route';
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
@@ -297,6 +373,7 @@ export default function App() {
         <button type="button" className="rail-i" onClick={() => { openSettle('find'); setPlanGo((x) => x + 1); }}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
         <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => setTutorOpen((o) => !o)}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
         <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
+        <button type="button" className={'rail-i' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
         <div className="rail-foot">
           <label className="rail-lang" title={n.lang}>
             <Icon n="globe" size={20} />
@@ -306,7 +383,7 @@ export default function App() {
             <span>{LANG_NAMES[lang]}</span>
           </label>
           {user ? (
-            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={() => setMyOpen(true)}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
+            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={openMe}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
           ) : (
             <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="user" size={22} /><span>{n.login}</span></button>
           )}
@@ -355,6 +432,7 @@ export default function App() {
 
         {!sel && (
           <div className="card home">
+            <MySummary lang={lang} me={meData} onContinue={meData.arrive && meData.arrive.done ? () => openSettle('todo') : null} onMore={openMe} />
             <div className="home-h"><b>{n.homeT}</b><p>{n.homeSub}</p></div>
             <div className="band" />
             <h3 className="sec-h">{n.epsT}<span>{fill(n.epsN, { n: epsList.length })}</span></h3>
@@ -385,7 +463,7 @@ export default function App() {
                         info={!eps ? (vObj.inKorea ? t.inKorea : '') : !country ? t.notE9 : country.newly ? t.newCountry : ''}
                         entry={entry} setEntry={setEntry} checks={checks} toggle={toggle}
                         activeLeg={activeLeg} onLeg={(i) => { setActiveLeg(i); const l = legs[i]; const p = route.at(l.at); setFocus({ lat: p.lat, lng: p.lng, altitude: 1.2 }); }}
-                        flying={flying} onFly={fly}
+                        flying={flying} onFly={fly} flightOn={flightOn} flightPct={flightPct}
                         arrive={arriveSum}
                         onArrive={() => openSettle('todo')} />
           </div>
@@ -430,21 +508,19 @@ export default function App() {
       {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
                                         checks={checks} toggle={toggle} entry={entry}
                                         country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} planGo={planGo} />}
+      {view === 'me' && (
+        <MyPage lang={lang} setLang={setLang} me={meData} arriveItems={arriveLeg ? arriveLeg.items : []} checks={checks} setEntry={setEntry}
+                onGo={goFromMe} onClose={closeMe} onLogin={() => setAuthOpen(true)}
+                onLogout={() => { if (window.confirm(t.signOut + '?')) { signOut(); setUser(null); } }} onClear={clearMine} />
+      )}
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}
+                      top={<MySummary lang={lang} me={meData} dark onContinue={() => setTicket(false)} onMore={openMe} />}
                       init={{ name: pax, from: sel && !isKorea ? sel : null, visa, entry }}
                       onBoard={onBoard} onSkip={() => { setTicket(false); boarded(); }} />
       )}
 
       {tutorOpen && <Tutor key={who} who={who} lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} name={pax} onClose={() => setTutorOpen(false)} />}
-      {myOpen && (
-        <MyPage who={who} user={user} lang={lang} visa={visa} entry={entry} pax={pax} countryLabel={sel && !isKorea ? labelOf(sel) : ''}
-                checks={checks} arriveSum={arriveSum} onClose={() => setMyOpen(false)}
-                onLogout={() => { signOut(); setUser(null); setMyOpen(false); }}
-                onSettle={() => { setMyOpen(false); openSettle('find'); }}
-                onPlan={() => { setMyOpen(false); openSettle('find'); setPlanGo((x) => x + 1); }}
-                onTutor={() => { setMyOpen(false); setTutorOpen(true); }} />
-      )}
       {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} onDone={loggedIn} />}
       {toast && <div className="snack">{toast}</div>}
       <p className="attrib">Imagery: NASA Blue Marble · Borders: Natural Earth</p>
