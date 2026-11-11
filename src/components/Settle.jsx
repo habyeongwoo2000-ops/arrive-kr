@@ -14,6 +14,7 @@ import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
 import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
+import useEsc from '../lib/useEsc.js';
 import HomePicker, { hs } from './HomePicker.jsx';
 import { distances, distText, reverse, roadPath } from '../lib/route.js';
 
@@ -161,6 +162,8 @@ export default function Settle({ lang, visa: visa0, name, onBack, tab, setTab, c
     };
   };
   const cancelPick = () => { pickRef.current = null; setPicking(false); };
+  useEsc(cancelPick, picking);
+  useEsc(() => setMoreOpen(false), moreOpen);
   const locate = () => {
     if (!navigator.geolocation) { alert(h.locFail); return; }
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {

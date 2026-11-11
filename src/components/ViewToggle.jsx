@@ -63,6 +63,7 @@ export default function ViewToggle({ lang }) {
       </button>
       {frame && createPortal(
         <div className="phone-back" role="dialog" aria-modal="true" aria-label={t.viewMobile} onClick={(e) => { if (e.target === e.currentTarget) setFrame(false); }}>
+          <button type="button" className="x-close on-dark phone-x" onClick={() => setFrame(false)} aria-label={t.viewPc} title={t.viewPc}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
           <div className="phone">
             <iframe src={location.pathname + '?' + qs} title={t.viewMobile} />
           </div>

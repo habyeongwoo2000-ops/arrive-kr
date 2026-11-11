@@ -785,3 +785,16 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
   .pp-info { flex-wrap: wrap; } .pp-info em { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .pp-cover, .pp-book, .pp-tap { transition: none; animation: none; } }
+
+/* 닫기(X) 버튼 — 모든 창 공통: 오른쪽 위 */
+.x-close { position: absolute; top: 12px; right: 12px; z-index: 3; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
+.x-close:hover { background: var(--hover); color: var(--ink); }
+.x-close.sm { position: static; width: 30px; height: 30px; flex: none; }
+.x-close.on-dark { position: fixed; top: 16px; right: 16px; width: 44px; height: 44px; background: rgba(255,255,255,.14); color: #fff; backdrop-filter: blur(6px); }
+.x-close.on-dark:hover { background: rgba(255,255,255,.26); color: #fff; }
+.dlg { position: relative; }
+.pl-think .x-close { top: 8px; right: 8px; width: 32px; height: 32px; }
+.bp-drop-h { display: flex; align-items: center; gap: 4px; }
+.bp-drop-h input { flex: 1; min-width: 0; }
+.phone-x { z-index: 2; }
+@media (max-width: 760px) { .x-close.on-dark { top: 10px; right: 10px; width: 40px; height: 40px; } }

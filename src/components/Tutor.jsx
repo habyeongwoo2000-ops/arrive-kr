@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { QUIZ } from '../data/korean.js';
 import { ui, fill, tx } from '../i18n/ui.js';
 import Icon from './Icon.jsx';
+import useEsc from '../lib/useEsc.js';
 
 /* 정답이 늘 첫 번째에 있지 않게 문제마다 고정된 순서로 섞습니다. */
 function order(i, n) {
@@ -16,6 +17,7 @@ function order(i, n) {
 
 export default function Tutor({ lang, hintLang, countryLabel, onClose }) {
   const t = ui(lang);
+  useEsc(onClose);
   const [tab, setTab] = useState('quiz');
   const [i, setI] = useState(0);
   const [pick, setPick] = useState(null);

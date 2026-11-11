@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { signIn, signUp } from '../lib/auth.js';
 import { ui } from '../i18n/ui.js';
+import Icon from './Icon.jsx';
+import useEsc from '../lib/useEsc.js';
 
 export default function AuthDialog({ lang, onDone, onClose }) {
   const t = ui(lang);
@@ -12,6 +14,7 @@ export default function AuthDialog({ lang, onDone, onClose }) {
   const [pw2, setPw2] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  useEsc(onClose);
 
   const submit = async (e) => {
     e.preventDefault(); if (busy) return;
@@ -24,7 +27,8 @@ export default function AuthDialog({ lang, onDone, onClose }) {
 
   return (
     <div className="dlg-back" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <form className="dlg" onSubmit={submit} aria-labelledby="dlgT">
+      <form className="dlg" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="dlgT">
+        <button type="button" className="x-close" onClick={onClose} aria-label={t.close} title={t.close}><Icon n="close" size={20} /></button>
         <div className="dlg-logo" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" /><path d="M5 16h22M16 3c4 4 4 22 0 26M16 3c-4 4-4 22 0 26" /></svg></div>
         <h2 id="dlgT">{mode === 'in' ? t.signIn : t.signUp}</h2>
         <p className="dlg-sub">ArriveKR</p>

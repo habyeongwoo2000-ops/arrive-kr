@@ -388,6 +388,7 @@ export default function App() {
           <span className="turb-ic" aria-hidden="true"><Icon n="alert" size={20} /></span>
           <div><small>{t.turb}</small><b>{tx(turb.t, lang)}</b><p>{tx(turb.d, lang)}</p></div>
           <button type="button" className="btn-t" onClick={endTurb}>{t.turbOk}</button>
+          <button type="button" className="icon" aria-label={t.close} title={t.close} onClick={endTurb}><Icon n="close" size={18} /></button>
         </div>
       )}
 

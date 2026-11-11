@@ -9,6 +9,7 @@ import { ui, fill } from '../i18n/ui.js';
 import './plan.css';
 import Icon from './Icon.jsx';
 import { roadPath, distText } from '../lib/route.js';
+import useEsc from '../lib/useEsc.js';
 const ICON = { home: 'life', '🚌': 'bus', '🎓': 'study', '☎': 'call', '🏢': 'culture', '🌾': 'work', '🚍': 'bus', '가': 'ko', '🏥': 'health', '👪': 'family', '🪪': 'stay', '🦺': 'safety', '🎉': 'culture', '✅': 'check' };
 
 /* 이 기능의 문구 — ui.js 를 건드리지 않도록 여기에 둡니다 (없는 언어는 영어) */
@@ -53,6 +54,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   const t = { ...ui(lang), ...words(lang) };
   const K = lang === 'ko' ? 'ko' : 'en';
   const atHome = base === 'home' && !!home;
+  useEsc(onClose);
   const steps = useMemo(() => {
     const list = buildPlan({ visa, needs, family, entry });
     if (!atHome) return list;
@@ -235,6 +237,7 @@ export default function Plan({ map, lang, visa, needs, family, entry, name, coun
   if (phase === 'think') {
     return (
       <div className="pl-think" role="status" aria-live="polite">
+        <button type="button" className="x-close" onClick={onClose} aria-label={t.close} title={t.close}><Icon n="close" size={18} /></button>
         <div className="pl-orb" aria-hidden="true"><i /><i /><i /></div>
         <b>{t.planThinkT}</b>
         <ul>{thinking.map((x, i) => <li key={i} className={i < tick ? 'ok' : i === tick ? 'now' : ''}><span>{i < tick ? '✓' : ''}</span>{x}</li>)}</ul>

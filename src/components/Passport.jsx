@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { VISAS } from '../data/visas.js';
 import { ui, tx } from '../i18n/ui.js';
+import useEsc from '../lib/useEsc.js';
 
 const TILT = [-4, 3, 2, -3, 3, -2, -3, 4];
 
@@ -49,6 +50,7 @@ export default function Passport({ lang, visa, onPick }) {
   const L = lang === 'ko' ? 'ko' : 'en';
   const mobile = useMobile();
   const [open, setOpen] = useState(false);
+  useEsc(() => setOpen(false), open);
   const a = VISAS.slice(0, 4), b = VISAS.slice(4);
   const sel = VISAS.find((v) => v.code === visa) || VISAS[0];
   // 펼친 면: 컴퓨터는 왼쪽(표지 뒷면)=1~4, 오른쪽=5~8 / 휴대폰은 위=1~4, 아래(표지 뒷면)=5~8

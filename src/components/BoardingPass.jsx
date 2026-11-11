@@ -9,6 +9,8 @@ import { byCode, IATA, NUM2A2 } from '../data/visas.js';
 import { byIso } from '../data/countries.js';
 import { ui } from '../i18n/ui.js';
 import Passport from './Passport.jsx';
+import Icon from './Icon.jsx';
+import useEsc from '../lib/useEsc.js';
 
 const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -55,6 +57,15 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   const [qr, setQr] = useState('');
   const [warn, setWarn] = useState('');
   const card = useRef(null);
+  useEsc(onSkip, phase === 'idle');                       // Esc: 탑승권 닫기
+  useEsc(() => { setOpen(false); setQ(''); }, open);        // Esc: 나라 목록만 닫기 (먼저)
+  /* 나라 목록 바깥을 누르면 닫기 */
+  useEffect(() => {
+    if (!open) return undefined;
+    const off = (e) => { if (!e.target.closest('.bp-drop') && !(pickBtn.current && pickBtn.current.contains(e.target))) { setOpen(false); setQ(''); } };
+    document.addEventListener('pointerdown', off);
+    return () => document.removeEventListener('pointerdown', off);
+  }, [open]);
   const lb = (loc, eng) => (lang === 'en' ? eng : loc + ' · ' + eng);
   useEffect(() => { if (init.from && !from) setFrom(init.from); }, [init.from]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -108,7 +119,8 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   };
 
   return (
-    <div className={'bp-back ph-' + phase}>
+    <div className={'bp-back ph-' + phase} role="dialog" aria-modal="true" aria-label={t.bpTitle}>
+      {phase === 'idle' && <button type="button" className="x-close on-dark bp-x" onClick={onSkip} aria-label={t.close} title={t.close}><Icon n="close" size={22} /></button>}
       <div className="bp-stage">
         <div className="bp-tilt" ref={card} onMouseMove={tilt} onMouseLeave={untilt}>
           <article className="bp" aria-label={t.bpTitle}>
@@ -198,7 +210,10 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
 
         {open && pos && (
           <div className="bp-drop" role="listbox" style={{ position: 'fixed', left: pos.left, top: pos.top }}>
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.pickCountry} aria-label={t.pickCountry} />
+            <div className="bp-drop-h">
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.pickCountry} aria-label={t.pickCountry} />
+              <button type="button" className="x-close sm" onClick={() => { setOpen(false); setQ(''); }} aria-label={t.close}><Icon n="close" size={16} /></button>
+            </div>
             <ul>
               {list.map((r) => (
                 <li key={r.f.id}><button type="button" onClick={() => { setFrom(r.f); setOpen(false); setQ(''); setWarn(''); }}>
