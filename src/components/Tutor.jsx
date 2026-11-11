@@ -40,7 +40,11 @@ export default function Tutor({ who = 'guest', lang, hintLang, countryLabel, nam
   const [q, setQ] = useState('');
   const [chat, setChat] = useState(mem.chat || []);
   useEffect(() => { uset(who, 'tutor', { tab, i, score, chat: chat.slice(-30) }); }, [tab, i, score, chat]); // eslint-disable-line react-hooks/exhaustive-deps
-  const examDone = (id, sc) => setRecent((r) => { const n = { ...r, [id]: { total: sc.total, max: sc.max, level: sc.level, at: Date.now() } }; uset(who, 'exams', n); return n; });
+  const examDone = (id, sc) => {
+    const rec = { id, total: sc.total, max: sc.max, level: sc.level, at: Date.now() };
+    setRecent((r) => { const n = { ...r, [id]: rec }; uset(who, 'exams', n); return n; });
+    uset(who, 'examHist', [rec, ...uget(who, 'examHist', [])].slice(0, 20));   // 마이페이지 시험 기록
+  };
   const [busy, setBusy] = useState(false);
   const item = QUIZ[i % QUIZ.length];
   const ord = useMemo(() => order(i, item.c.length), [i, item.c.length]);

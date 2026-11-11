@@ -13,6 +13,7 @@ import BoardingPass, { a2Of } from './components/BoardingPass.jsx';
 import ViewToggle from './components/ViewToggle.jsx';
 import useSheetDrag from './useSheetDrag.js';
 import Settle from './components/Settle.jsx';
+import MyPage from './components/MyPage.jsx';
 import Icon from './components/Icon.jsx';
 import { nav } from './i18n/nav.js';
 import { byCode } from './data/visas.js';
@@ -76,6 +77,7 @@ export default function App() {
   const [openList, setOpenList] = useState(false);
   const [user, setUser] = useState(current);
   const [authOpen, setAuthOpen] = useState(false);
+  const [myOpen, setMyOpen] = useState(false);      // 마이페이지
   const [tutorOpen, setTutorOpen] = useState(false);
   const [activeLeg, setActiveLeg] = useState(-1);
   const [flying, setFlying] = useState(false);
@@ -304,7 +306,7 @@ export default function App() {
             <span>{LANG_NAMES[lang]}</span>
           </label>
           {user ? (
-            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={() => { if (window.confirm(nickOf(user) + ' · ' + t.signOut + '?')) { signOut(); setUser(null); } }}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
+            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={() => setMyOpen(true)}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
           ) : (
             <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="user" size={22} /><span>{n.login}</span></button>
           )}
@@ -435,6 +437,14 @@ export default function App() {
       )}
 
       {tutorOpen && <Tutor key={who} who={who} lang={lang} hintLang={hintLang} countryLabel={sel && !isKorea ? labelOf(sel) : ''} name={pax} onClose={() => setTutorOpen(false)} />}
+      {myOpen && (
+        <MyPage who={who} user={user} lang={lang} visa={visa} entry={entry} pax={pax} countryLabel={sel && !isKorea ? labelOf(sel) : ''}
+                checks={checks} arriveSum={arriveSum} onClose={() => setMyOpen(false)}
+                onLogout={() => { signOut(); setUser(null); setMyOpen(false); }}
+                onSettle={() => { setMyOpen(false); openSettle('find'); }}
+                onPlan={() => { setMyOpen(false); openSettle('find'); setPlanGo((x) => x + 1); }}
+                onTutor={() => { setMyOpen(false); setTutorOpen(true); }} />
+      )}
       {authOpen && <AuthDialog lang={lang} onClose={() => setAuthOpen(false)} onDone={loggedIn} />}
       {toast && <div className="snack">{toast}</div>}
       <p className="attrib">Imagery: NASA Blue Marble · Borders: Natural Earth</p>
