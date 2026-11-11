@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (!aiOn()) return res.status(501).json({ error: 'off' });
-  if (limited(req, 6)) return res.status(429).json({ error: 'rate' });
+  if (limited(req, 30)) return res.status(429).json({ error: 'rate' });
   const b = body(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
   const wrong = (Array.isArray(b.wrong) ? b.wrong : []).slice(0, 20).map((w) => ({
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   ].join(' ');
 
   try {
-    const o = await ask({ system, text: JSON.stringify({ score, wrong, open }), json: true, maxTokens: 2000, temperature: 0.2, timeout: 28000 });
+    const o = await ask({ system, text: JSON.stringify({ score, wrong, open }), json: true, maxTokens: 3000, temperature: 0.2, timeout: 28000 });
     const outOpen = {};
     open.forEach((it) => {
       const x = (o.open || {})[it.n] || (o.open || {})[String(it.n)];

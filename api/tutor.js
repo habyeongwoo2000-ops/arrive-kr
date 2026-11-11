@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (!aiOn()) return res.status(501).json({ error: 'off' });
-  if (limited(req, 10)) return res.status(429).json({ error: 'rate' });
+  if (limited(req, 40)) return res.status(429).json({ error: 'rate' });
   const body = readBody(req);
   const q = String((body && body.q) || '').trim().slice(0, 300);
   const lang = LANG[body && body.lang] ? body.lang : 'en';

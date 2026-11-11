@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (!aiOn()) return res.status(501).json({ error: 'off' });
-  if (limited(req, 10)) return res.status(429).json({ error: 'rate' });
+  if (limited(req, 40)) return res.status(429).json({ error: 'rate' });
   const b = body(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
   const text = clean(b.text, 300);

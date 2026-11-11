@@ -5,11 +5,13 @@
 
 import { ask, aiOn, limited, clean, body as readBody, LANG } from './_ai.js';
 
+export const config = { maxDuration: 30 };
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (!aiOn()) return res.status(501).json({ error: 'off' });
-  if (limited(req, 6)) return res.status(429).json({ error: 'rate' });
+  if (limited(req, 30)) return res.status(429).json({ error: 'rate' });
   const b = readBody(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
   const steps = (Array.isArray(b.steps) ? b.steps : []).slice(0, 16).map((s) => ({ id: clean(s.id, 20), day: Number(s.day) || 0, title: clean(s.t, 120), note: clean(s.n, 300), travel: clean(s.d, 60) }));
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
 
   try {
     let out;
-    try { out = await ask({ system, text: JSON.stringify({ profile, steps }), json: true, maxTokens: 1600, temperature: 0.5, timeout: 20000 }); }
+    try { out = await ask({ system, text: JSON.stringify({ profile, steps }), json: true, maxTokens: 3500, temperature: 0.5, timeout: 28000 }); }
     catch (e) { return res.status(502).json({ error: e.message === 'parse' ? 'parse' : 'upstream' }); }
     const ids = new Set(steps.map((s) => s.id));
     const tips = {};

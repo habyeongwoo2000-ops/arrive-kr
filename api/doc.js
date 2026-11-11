@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   if (!aiOn()) return res.status(501).json({ error: 'off' });
-  if (limited(req, 5)) return res.status(429).json({ error: 'rate' });
+  if (limited(req, 20)) return res.status(429).json({ error: 'rate' });
   const b = body(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
   const mime = /^image\/(jpeg|png|webp)$/.test(b.mime) ? b.mime : 'image/jpeg';
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
   try {
     const out = await ask({ system, text: JSON.stringify({ knownPlaces: places, entryDate: entry }), image: { data: image, mime },
-      json: true, maxTokens: 1800, temperature: 0.1, timeout: 28000, kind: 'doc' });
+      json: true, maxTokens: 2500, temperature: 0.1, timeout: 28000, kind: 'doc' });
     const keys = new Set(places.map((p) => p.key));
     const items = (Array.isArray(out.items) ? out.items : []).slice(0, 4).map((x, i) => ({
       id: 'doc-' + Date.now().toString(36) + i,

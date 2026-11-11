@@ -33,9 +33,17 @@
 /* 아래 일정 패널 — 지도 아래쪽에 붙은 흰 패널 */
 .pl-dock { position: absolute; left: calc(var(--mapL) + 16px); right: 72px; bottom: 26px; z-index: 1050; display: flex; flex-direction: column; min-height: 96px; padding: 0 0 8px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; box-shadow: var(--sh-l); overflow: hidden; animation: up .25s ease-out; }
 /* 위쪽 손잡이 — 끌어서 높이 조절 (지도 서비스의 아래 시트처럼) */
-.pl-grip { flex: none; display: grid; place-items: center; height: 16px; cursor: ns-resize; touch-action: none; }
-.pl-grip i { width: 36px; height: 4px; border-radius: 2px; background: #d5d7da; transition: background .15s, width .15s; }
-.pl-grip:hover i { background: #9a9da1; width: 44px; }
+.pl-grip { flex: none; display: grid; place-content: center; gap: 2px; height: 18px; cursor: move; touch-action: none; }
+.pl-grip i { width: 40px; height: 3px; border-radius: 2px; background: #d5d7da; transition: background .15s, width .15s; }
+.pl-grip:hover i { background: #9a9da1; width: 48px; }
+.pl-grip:active { cursor: grabbing; }
+/* 오른쪽 아래 모서리 — 끌어서 크기 조절 (PC) */
+.pl-corner { position: absolute; right: 0; bottom: 0; z-index: 3; width: 22px; height: 22px; cursor: nwse-resize; touch-action: none;
+  background: linear-gradient(135deg, transparent 0 55%, #c3c6ca 55% 62%, transparent 62% 72%, #c3c6ca 72% 79%, transparent 79%); }
+.pl-corner:hover { background: linear-gradient(135deg, transparent 0 55%, #03c75a 55% 62%, transparent 62% 72%, #03c75a 72% 79%, transparent 79%); }
+.pl-dock.is-float { animation: none; box-shadow: 0 14px 40px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.1); }
+body.is-mv, body.is-mv * { cursor: grabbing !important; user-select: none !important; }
+body.is-rz-d, body.is-rz-d * { cursor: nwse-resize !important; user-select: none !important; }
 body.is-rz-v, body.is-rz-v * { cursor: ns-resize !important; user-select: none !important; }
 .pl-h { flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px 0 16px; }
 .pl-ttl { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; } .pl-ttl b { font-size: 15px; font-weight: 800; white-space: nowrap; }
@@ -80,7 +88,8 @@ body.is-rz-v, body.is-rz-v * { cursor: ns-resize !important; user-select: none !
 @media (max-width: 760px) {
   .settle.is-plan .st-side { display: none; }
   .pl-dock { left: 8px; right: 8px; bottom: 22px; }
-  .pl-grip { height: 20px; }
+  .pl-grip { height: 20px; cursor: ns-resize; }
+  .pl-corner { display: none; }
   /* 휴대폰: 지도 출처 글자를 위로 옮겨 일정 패널과 겹치지 않게 */
   .settle.is-plan .leaflet-bottom.leaflet-right { top: 8px; bottom: auto; }
   .settle.is-plan .leaflet-control-attribution { max-width: 70vw; font-size: 9.5px; }

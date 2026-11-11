@@ -65,8 +65,12 @@ export default function mapStyle() {
         paint: { 'line-color': '#c9c5d8', 'line-width': z(8, .6, 14, 1.4), 'line-dasharray': [3, 2] } },
 
       /* 글자 */
-      { id: 'water-name', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 11,
-        layout: { 'text-field': NAME, 'text-font': [R], 'text-size': 12, 'symbol-placement': ['match', ['geometry-type'], ['LineString', 'MultiLineString'], 'line', 'point'] },
+      /* 물 이름: 강(선)은 선을 따라, 호수(점)는 그 자리에 — 배치 방식은 데이터 식을 못 쓰므로 두 층으로 나눔 */
+      { id: 'water-name-line', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 11, filter: line,
+        layout: { 'text-field': NAME, 'text-font': [R], 'text-size': 12, 'symbol-placement': 'line' },
+        paint: { 'text-color': '#4d8fc9', 'text-halo-color': 'rgba(255,255,255,.9)', 'text-halo-width': 1.4 } },
+      { id: 'water-name-point', type: 'symbol', source: 'omt', 'source-layer': 'water_name', minzoom: 11, filter: ['!', line],
+        layout: { 'text-field': NAME, 'text-font': [R], 'text-size': 12 },
         paint: { 'text-color': '#4d8fc9', 'text-halo-color': 'rgba(255,255,255,.9)', 'text-halo-width': 1.4 } },
       { id: 'road-name', type: 'symbol', source: 'omt', 'source-layer': 'transportation_name', minzoom: 13,
         layout: { 'symbol-placement': 'line', 'text-field': NAME, 'text-font': [R], 'text-size': z(13, 10.5, 18, 13), 'symbol-spacing': 320, 'text-max-angle': 30 },
