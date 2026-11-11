@@ -52,7 +52,7 @@ export default function Passport({ lang, visa, onPick }) {
   const [open, setOpen] = useState(false);
   useEsc(() => setOpen(false), open);
   const a = VISAS.slice(0, 4), b = VISAS.slice(4);
-  const sel = VISAS.find((v) => v.code === visa) || VISAS[0];
+  const sel = VISAS.find((v) => v.code === visa) || null; // 아직 안 골랐으면 null
   // 펼친 면: 컴퓨터는 왼쪽(표지 뒷면)=1~4, 오른쪽=5~8 / 휴대폰은 위=1~4, 아래(표지 뒷면)=5~8
   const back = mobile ? b : a, base = mobile ? a : b;
 
@@ -85,11 +85,16 @@ export default function Passport({ lang, visa, onPick }) {
         </div>
       </div>
 
-      <div className="pp-info" style={{ '--vc': sel.color }}>
-        <b>{sel.code}</b>
-        <div><span>{tx(sel.name, lang)}</span><em>{sel.who[L]}</em><small>{t.stayL} · {sel.stay[L]}{sel.inKorea ? ' · ' + t.inKoreaV : ''}</small></div>
-        {open && <button type="button" className="pp-close" onClick={() => setOpen(false)}>{t.closePassport}</button>}
-      </div>
+      {/* 비자를 고르면 그 비자 설명이 나타남 · 고르기 전에는 안내 줄 없이 (여권이 펼쳐져 있으면 닫기 버튼만) */}
+      {sel ? (
+        <div className="pp-info" style={{ '--vc': sel.color }}>
+          <b>{sel.code}</b>
+          <div><span>{tx(sel.name, lang)}</span><em>{sel.who[L]}</em><small>{t.stayL} · {sel.stay[L]}{sel.inKorea ? ' · ' + t.inKoreaV : ''}</small></div>
+          {open && <button type="button" className="pp-close" onClick={() => setOpen(false)}>{t.closePassport}</button>}
+        </div>
+      ) : open && (
+        <button type="button" className="pp-close pp-close-solo" onClick={() => setOpen(false)}>{t.closePassport}</button>
+      )}
       <p className="pp-note">{t.ppNote}</p>
     </div>
   );

@@ -9,6 +9,7 @@ import { SHOPS, PHONES, FOODS, PLACES, TOWNS, NEEDS, SCOPE, STATS, SOURCES, WONJ
 import { VISAS, byCode } from '../data/visas.js';
 import { LEGS } from '../data/route.js';
 import { CheckItem } from './RoutePanel.jsx';
+import ViewToggle from './ViewToggle.jsx';
 import { ui, fill } from '../i18n/ui.js';
 import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
@@ -53,8 +54,8 @@ function pinIcon(color, label, on, glyph = 'gov') {
 }
 
 /* 도착 후 할 일 → 지도 핀 (원주에서 그 일을 하는 곳) */
-const TODO_PIN = { arc: 'cityhall', bank: 'hana', unlimit: 'hana', remit: 'hana' };
-const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : id.endsWith('-nhis') ? 'nhis' : null);
+const TODO_PIN = { arc: 'cityhall', bank: 'hana', unlimit: 'hana', remit: 'hana', nhis: 'nhis' };
+const pinOf = (id) => TODO_PIN[id] || (id.endsWith('-arc') ? 'cityhall' : id.endsWith('-bank') ? 'hana' : id.endsWith('-nhis') ? 'nhis' : null);
 /* 체크했을 때 걸어갈 곳: 공공기관 핀, 휴대폰 개통은 가까운 선불폰 매장 */
 const spotOf = (id, K) => {
   if (id === 'sim' || id === 'phone2' || id.endsWith('-sim')) { const p = PHONES[0]; return p ? { lat: p.lat, lng: p.lng, name: p[K].t } : null; }
@@ -283,7 +284,7 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
     list.forEach((sh) => {
       const c = sh[K];
       L.marker([sh.lat, sh.lng], { icon: poi(sh.cls, sh.c, sh.g, c.t, false), title: c.t }).addTo(lg)
-        .bindPopup(`<div class="pop"><b class="pop-t">${c.t}</b><span class="pop-c">${c.what}</span><span class="pop-a">${c.addr}</span><span class="pop-btns">${sh.tel ? `<a href="tel:${sh.tel.replace(/[^0-9]/g, '')}">${sh.tel}</a>` : ''}<a href="${sh.url}" target="_blank" rel="noopener noreferrer">${t.kakaoMap}</a></span><small>${sh.unsure ? t.shopUnsure + '<br>' : ''}${sh.note}</small></div>`);
+        .bindPopup(`<div class="pop"><b class="pop-t">${c.t}</b><span class="pop-c">${c.what}</span><span class="pop-a">${c.addr}</span><span class="pop-btns">${sh.tel ? `<a href="tel:${sh.tel.replace(/[^0-9]/g, '')}">${sh.tel}</a>` : ''}<a href="${sh.url}" target="_blank" rel="noopener noreferrer">${sh.gmap ? 'Google Maps' : t.kakaoMap}</a></span><small>${sh.unsure ? t.shopUnsure + '<br>' : ''}${sh.note}</small></div>`);
     });
   }, [shops, phones, foods, country, K]); // eslint-disable-line react-hooks/exhaustive-deps
   const showShops = () => {
@@ -338,6 +339,8 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   return (
     <div className={'settle' + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '')}>
       <div className="lf" ref={host} />
+      {/* PC로 보기 / 모바일로 보기 (지구본 화면과 같은 버튼) */}
+      <div className="st-view mtool-g"><ViewToggle lang={lang} settle={tab} /></div>
 
       <aside ref={sideEl} className={'side st-side' + (low ? ' is-low' : '')} onClick={() => { if (low && !justDragged.current) setLow(false); }}>
         <span className="st-grip" aria-hidden="true" />

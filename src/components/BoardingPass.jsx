@@ -46,7 +46,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   const t = ui(lang);
   const [name, setName] = useState(init.name || '');
   const [from, setFrom] = useState(init.from || null);   // feature
-  const [visa, setVisa] = useState(init.visa || 'E-9');
+  const [visa, setVisa] = useState(init.visa || null);   // 처음엔 아무 비자도 고르지 않은 상태
   const [entry, setEntry] = useState(init.entry);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -69,10 +69,12 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   const lb = (loc, eng) => (lang === 'en' ? eng : loc + ' · ' + eng);
   useEffect(() => { if (init.from && !from) setFrom(init.from); }, [init.from]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const v = byCode[visa];
+  const v = byCode[visa] || null;
+  const vCode = visa || '— —';           // 비자를 고르기 전 표시
+  const vColor = v ? v.color : '#9aa0a6';
   const code = from ? iataOf(from) : '———';
   const city = from ? (labelOf(from) || '').toUpperCase() : t.pickCountry;
-  const h = hash((name || 'GUEST') + code + visa);
+  const h = hash((name || 'GUEST') + code + (visa || ''));
   const flightNo = 'AK ' + String(100 + (h % 900));
   const seat = (12 + (h % 30)) + 'ABCDEFGHJK'[(h >>> 5) % 10];
   const gate = String(1 + ((h >>> 9) % 49));
@@ -85,7 +87,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   /* QR — 실제로 찍으면 같은 조건으로 이 사이트가 열립니다 */
   useEffect(() => {
     const a2 = from ? a2Of(from) : '';
-    const url = `${location.origin}/?visa=${encodeURIComponent(visa)}${a2 ? '&from=' + a2 : ''}&lang=${lang}`;
+    const url = `${location.origin}/?${visa ? 'visa=' + encodeURIComponent(visa) + '&' : ''}${a2 ? 'from=' + a2 + '&' : ''}lang=${lang}`;
     QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#202124', light: '#0000' } })
       .then(setQr).catch(() => setQr(''));
   }, [from, visa, lang]);
@@ -111,7 +113,8 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   const untilt = () => { const el = card.current; if (el) { el.style.setProperty('--ry', '0deg'); el.style.setProperty('--rx', '0deg'); } };
 
   const go = () => {
-    if (!from) { setWarn(t.needFrom); setOpen(true); return; }
+    if (!from) { setWarn(t.needFrom); openPick(); return; }
+    if (!visa) { setWarn(t.needVisa); const pp = document.querySelector('.pp-wrap'); if (pp) pp.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     untilt(); setPhase('stamp');
     setTimeout(() => setPhase('tear'), 900);
     setTimeout(() => setPhase('fly'), 1800);
@@ -133,7 +136,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
                   <b>ArriveKR</b><span>AIR</span>
                 </div>
                 <div className="bp-kind"><b>BOARDING PASS</b>{lang !== 'en' && <span>{t.bpTitle}</span>}</div>
-                <div className="bp-class-tag" style={{ background: v.color }}>{visa}</div>
+                <div className="bp-class-tag" style={{ background: vColor }}>{vCode}</div>
               </header>
 
               <div className="bp-body">
@@ -179,11 +182,11 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
                   <div className="bp-f"><small>{lb(t.boarding, 'BOARDING')}</small><b>{board}</b></div>
                   <div className="bp-f"><small>{lb(t.gate, 'GATE')}</small><b>{gate}</b></div>
                   <div className="bp-f"><small>{lb(t.seat, 'SEAT')}</small><b>{seat}</b></div>
-                  <div className="bp-f bp-cls"><small>{lb(t.klass, 'CLASS')}</small><b style={{ color: v.color }}>{visa}</b></div>
+                  <div className="bp-f bp-cls"><small>{lb(t.klass, 'CLASS')}</small><b style={{ color: vColor }}>{vCode}</b></div>
                 </div>
 
                 <div className="bp-foot">
-                  <Bars seed={pax + code + visa + flightNo} />
+                  <Bars seed={pax + code + (visa || '') + flightNo} />
                   <div className="bp-tk"><span>E-TKT {tkt}</span><span>PNR {pnr}</span><span>SEQ {String(1 + (h % 280)).padStart(3, '0')}</span></div>
                 </div>
               </div>
@@ -196,7 +199,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
 
             {/* ───── 보관용 쪽지 ───── */}
             <aside className="bp-stub">
-              <div className="bp-stub-h"><b>ArriveKR</b><span>{visa}</span></div>
+              <div className="bp-stub-h"><b>ArriveKR</b><span>{vCode}</span></div>
               <div className="bp-f"><small>NAME</small><b className="sm">{pax}</b></div>
               <div className="bp-stub-r"><b>{code}</b><span>✈</span><b>ICN</b></div>
               <div className="bp-stub-g">
@@ -226,7 +229,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
         )}
 
         {/* ───── 비자 고르기: 여권 ───── */}
-        <Passport lang={lang} visa={visa} onPick={setVisa} />
+        <Passport lang={lang} visa={visa} onPick={(c) => { setVisa(c); if (warn === t.needVisa) setWarn(''); }} />
 
         <div className="bp-act">
           {warn && <p className="bp-warn" role="alert">{warn}</p>}

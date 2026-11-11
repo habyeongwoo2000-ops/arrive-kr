@@ -212,7 +212,7 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .zoom button + button { border-top: 1px solid var(--line); }
 .zoom button:hover { background: var(--hover); }
 .view-settle .mtools, .view-settle .zoom { display: none; }
-.phone-back { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; background: rgba(0,0,0,.72); animation: fadein .25s ease-out; }
+.phone-back { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; background: rgba(0,0,0,.72); animation: fadein .25s ease-out; }
 .phone { --s: min(1, calc((100vh - 110px) / 844px)); width: calc(390px * var(--s) + 24px); height: calc(844px * var(--s) + 24px); padding: 12px; border-radius: 44px; background: #111; box-shadow: 0 0 0 2px #3c4043, 0 30px 80px rgba(0,0,0,.6); overflow: hidden; }
 .phone iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 32px; background: #000; transform: scale(var(--s)); transform-origin: 0 0; }
 .phone-close { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px 0 14px; border: 0; border-radius: 6px; background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; }
@@ -670,6 +670,9 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
   .bp-route { grid-template-columns: auto 1fr auto; gap: 8px; }
   .bp-final { grid-column: 1 / -1; justify-self: start; display: flex; align-items: baseline; gap: 8px; transform: none; padding: 4px 10px; }
   .bp-code { font-size: 40px; }
+  /* 칸 라벨("탑승 시각 · BOARDING" 등)이 … 으로 잘리지 않게 두 줄까지 허용 · 값은 한 줄로 나란히 */
+  .bp-grid { align-items: end; }
+  .bp-grid .bp-f small { white-space: normal; overflow: visible; line-height: 1.3; overflow-wrap: anywhere; }
   /* 출발 국가 상자가 좁아지고(글자는 … 처리), 도착 ICN · SEOUL / INCHEON 은 끝까지 보이게 */
   .bp-route { grid-template-columns: minmax(0, 1fr) auto auto; }
   .bp-from { min-width: 0; grid-template-columns: minmax(0, 1fr); }
@@ -763,6 +766,10 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .pp-info span { font-weight: 500; font-size: 15px; } .pp-info em { font-style: normal; font-size: 12.5px; color: #bdc1c6; } .pp-info small { font-size: 11.5px; color: #9aa0a6; }
 .pp-close { flex: none; height: 34px; padding: 0 14px; border: 1px solid rgba(255,255,255,.25); border-radius: 17px; background: none; color: #e8eaed; font-size: 13px; }
 .pp-close:hover { background: rgba(255,255,255,.08); }
+.pp-close-solo { margin-top: 14px; }
+.pp-info { animation: up .25s ease-out; }
+/* 정착 지원 지도: PC로 보기 / 모바일로 보기 — 지구본 화면의 지도 도구(.mtools)와 같은 모양·자리 */
+.st-view { position: absolute; top: 16px; right: 16px; z-index: 600; }
 .pp-note { margin: 6px 0 0; font-size: 11px; color: #9aa0a6; }
 
 /* 휴대폰 — 위로 넘기는 수첩처럼 */

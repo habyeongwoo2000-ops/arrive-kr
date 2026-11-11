@@ -84,8 +84,8 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
-  const [view, setView] = useState('globe');      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원)
-  const [settleTab, setSettleTabS] = useState(() => uget(current(), 'settleTab', 'todo')); // todo | find
+  const [view, setView] = useState(() => (QS.get('settle') ? 'settle' : 'globe'));      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원 · ?settle=todo|find 는 모바일 미리보기용)
+  const [settleTab, setSettleTabS] = useState(() => (QS.get('settle') ? (QS.get('settle') === 'find' ? 'find' : 'todo') : uget(current(), 'settleTab', 'todo'))); // todo | find
   const [landed, setLanded] = useState(false);
   const api = useRef(null);
   const flight = useRef(null);
@@ -114,6 +114,8 @@ export default function App() {
   const [visa, setVisaS] = useState(() => { const q = QS.get('visa'); return byCode[q] ? q : get('u.' + who + '.visa', 'E-9'); });
   const [pax, setPax] = useState(() => get('u.' + who + '.name', ''));
   const [ticket, setTicket] = useState(() => !QS.get('skip') && !uget(current(), 'boarded', false));
+  // 처음 탑승권은 비자를 고르지 않은 상태 · 탑승한 뒤 다시 열면 그 비자 그대로
+  const [ticketVisa, setTicketVisa] = useState(() => (uget(current(), 'boarded', false) ? visa : null));
   const setVisa = (v) => { setVisaS(v); set('u.' + who + '.visa', v); };
   const setMode = (m) => { setModeS(m); uset(who, 'mode', m); };
   const setSettleTab = (x) => { setSettleTabS(x); uset(who, 'settleTab', x); };
@@ -283,6 +285,7 @@ export default function App() {
 
   /* 탑승권 → 비행 */
   function onBoard({ name, from, visa: v, entry: en }) {
+    setTicketVisa(v);
     setTicket(false); boarded(); setPax(name); set('u.' + who + '.name', name);
     setVisa(v); setEntry(en);
     choose(from);
@@ -460,7 +463,7 @@ export default function App() {
               <button type="button" className="btn-o sm" onClick={() => setTicket(true)}><Icon n="ticket" size={16} />{t.ticket}</button>
             </div>
             <RoutePanel lang={lang} country={eps ? country : null} fromLabel={labelOf(sel)} legs={legs} extra={extra}
-                        info={!eps ? (vObj.inKorea ? t.inKorea : '') : !country ? t.notE9 : country.newly ? t.newCountry : ''}
+                        info={!eps ? (vObj.note ? tx(vObj.note, lang) : vObj.inKorea ? t.inKorea : '') : !country ? t.notE9 : country.newly ? t.newCountry : ''}
                         entry={entry} setEntry={setEntry} checks={checks} toggle={toggle}
                         activeLeg={activeLeg} onLeg={(i) => { setActiveLeg(i); const l = legs[i]; const p = route.at(l.at); setFocus({ lat: p.lat, lng: p.lng, altitude: 1.2 }); }}
                         flying={flying} onFly={fly} flightOn={flightOn} flightPct={flightPct}
@@ -516,7 +519,7 @@ export default function App() {
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}
                       top={<MySummary lang={lang} me={meData} dark onContinue={() => setTicket(false)} onMore={openMe} />}
-                      init={{ name: pax, from: sel && !isKorea ? sel : null, visa, entry }}
+                      init={{ name: pax, from: sel && !isKorea ? sel : null, visa: ticketVisa, entry }}
                       onBoard={onBoard} onSkip={() => { setTicket(false); boarded(); }} />
       )}
 

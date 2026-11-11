@@ -26,7 +26,7 @@ export function applySavedView() {
 const IcPc = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4zM2 4v12a1 1 0 0 0 1 1h7v2H7v2h10v-2h-3v-2h7a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1" /></svg>;
 const IcPhone = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 3v13h8V5zm4 14.2a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8" /></svg>;
 
-export default function ViewToggle({ lang }) {
+export default function ViewToggle({ lang, settle }) {
   const t = ui(lang);
   const [pc, setPc] = useState(() => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } });
   const [frame, setFrame] = useState(false);
@@ -55,7 +55,8 @@ export default function ViewToggle({ lang }) {
   }
 
   /* PC: 휴대폰 틀 미리보기 */
-  const qs = new URLSearchParams(location.search); qs.set('frame', '1'); qs.set('lang', lang); qs.set('skip', '1'); // 지금 보고 있는 지구본 화면부터
+  const qs = new URLSearchParams(location.search); qs.set('frame', '1'); qs.set('lang', lang); qs.set('skip', '1'); // 지금 보고 있는 화면부터
+  if (settle) qs.set('settle', settle); else qs.delete('settle');
   return (
     <>
       <button type="button" className="view-fab" onClick={() => setFrame(true)} aria-label={t.viewMobile} title={t.viewMobile}>
