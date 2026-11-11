@@ -21,11 +21,14 @@ export default async function handler(req, res) {
     `Answer in ${LANG[lang]}${country ? `, for a learner from ${country}` : ''}. Keep it under 120 words.`,
     'Give the Korean word or sentence, its pronunciation in Latin letters, the meaning, and one short example from workplace or daily life (safety, factory, farm, hospital, bank).',
     'Only help with Korean language learning and the EPS-TOPIK test. For visa, legal or payment questions, tell them to check their sending agency or call 1345 instead of answering.',
-    'Never promise test results or jobs. Warn that brokers asking for money are a scam if the topic comes up.'
+    'Never promise test results or jobs. Warn that brokers asking for money are a scam if the topic comes up.',
+    'Write plain text for a chat bubble: no markdown, no #, no ** or * symbols. Use short lines.'
   ].join(' ');
 
   try {
-    const answer = await ask({ system, text: q, maxTokens: 400, temperature: 0.4, timeout: 15000 });
+    const raw = await ask({ system, text: q, maxTokens: 400, temperature: 0.4, timeout: 15000 });
+    /* 혹시 붙은 마크다운 기호 지우기 (말풍선은 글자 그대로 보여 줌) */
+    const answer = raw.replace(/^#{1,6}\s*/gm, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/^\s*[-*]\s+/gm, '• ').replace(/\n{3,}/g, '\n\n').trim();
     return res.status(200).json({ answer });
   } catch (e) {
     return res.status(502).json({ error: 'upstream' });
