@@ -511,7 +511,7 @@ export default function App() {
       {view === 'me' && (
         <MyPage lang={lang} setLang={setLang} me={meData} arriveItems={arriveLeg ? arriveLeg.items : []} checks={checks} setEntry={setEntry}
                 onGo={goFromMe} onClose={closeMe} onLogin={() => setAuthOpen(true)}
-                onLogout={() => { if (window.confirm(t.signOut + '?')) { signOut(); setUser(null); } }} onClear={clearMine} />
+                onLogout={() => { if (window.confirm(t.signOut + '?')) { signOut(); location.replace(location.pathname); } }} onClear={clearMine} />
       )}
       {ticket && (
         <BoardingPass lang={lang} features={FEATURES} labelOf={labelOf}

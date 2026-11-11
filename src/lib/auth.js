@@ -2,7 +2,7 @@
    비밀번호는 그대로 저장하지 않고 PBKDF2(SHA-256, 120,000회) + 무작위 소금으로 바꿔 저장합니다.
    실제 운영에서는 Supabase Auth 같은 서버 로그인으로 바꾸세요(README 참고). */
 
-import { get, set, del } from './store.js';
+import { get, set, del, stashGuest } from './store.js';
 
 const ID_RE = /^[A-Za-z0-9_]{4,20}$/;
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -66,7 +66,7 @@ export async function startKakao() {
   const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
   try { sessionStorage.setItem('arrive.kakaoState', state); } catch (e) { /* 무시 */ }
   const r = await post({ action: 'kakaoUrl', redirectUri: location.origin + '/', state });
-  if (r.url) location.href = r.url;
+  if (r.url) { stashGuest(); location.href = r.url; }   // 로그인 전 작업을 잠깐 맡겨 둠
   return r;
 }
 export async function finishKakao(code, state) {

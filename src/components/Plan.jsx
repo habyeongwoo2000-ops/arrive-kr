@@ -38,11 +38,13 @@ const KIND = { move: '#202124', duty: '#e37400', call: '#9334e6', visit: '#1a73e
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* 아래 일정 패널 높이 — 위쪽 손잡이를 끌어서 바꾸고, 이 기기에 기억합니다 */
-const DOCK_KEY = 'ui.dockH2';
+const DOCK_KEY = 'ui.dockH3';   // 기본 크기를 줄이면서 새 이름 (예전에 기억한 큰 값은 쓰지 않음)
 const BOX_KEY = 'ui.dockBox';
 const dockMax = () => Math.round(innerHeight * (innerWidth > 760 ? 0.72 : 0.8));
 const DOCK_MIN = 96;
-const loadDock = () => { try { const v = +localStorage.getItem(DOCK_KEY); return v ? Math.min(dockMax(), Math.max(DOCK_MIN, v)) : (innerWidth > 760 ? 340 : 300); } catch (e) { return 340; } };
+const DOCK_W_MIN = 300;                                        // PC에서 줄일 수 있는 가장 좁은 폭
+const dockDef = () => (innerWidth > 760 ? 300 : 260);          // 처음 높이
+const loadDock = () => { try { const v = +localStorage.getItem(DOCK_KEY); return v ? Math.min(dockMax(), Math.max(DOCK_MIN, v)) : dockDef(); } catch (e) { return dockDef(); } };
 
 /* 집에서 목표 시각(기본 9시)에 도착하려면 몇 시에 나서야 하나 — 교통수단별 어림, 5분 단위로 내림 */
 const hhmm = (m) => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
@@ -121,7 +123,7 @@ export default function Plan({ who = 'guest', map, lang, visa, needs, family, en
   const clampBox = (b) => {
     const pr = parentRect();
     const lf = dockEl.current.parentElement.querySelector('.lf'); const x0 = (lf ? lf.offsetLeft : 0) + 8;   // 지도 영역 안에서만
-    const w = Math.min(Math.max(360, b.w), pr.width - x0 - 8);
+    const w = Math.min(Math.max(DOCK_W_MIN, b.w), pr.width - x0 - 8);
     return { w, x: Math.min(Math.max(x0, b.x), pr.width - 160), y: Math.min(Math.max(8, b.y), pr.height - 70) };
   };
   const saveUI = (b, h) => { try { b ? localStorage.setItem(BOX_KEY, JSON.stringify(b)) : localStorage.removeItem(BOX_KEY); if (h) localStorage.setItem(DOCK_KEY, String(Math.round(h))); } catch (e) { /* 무시 */ } };
@@ -137,28 +139,41 @@ export default function Plan({ who = 'guest', map, lang, visa, needs, family, en
     }
     e.currentTarget.setPointerCapture(e.pointerId);
   };
-  const onCorner = (e) => {
+  /* 네 변 · 네 모서리 어디를 잡아도 크기 조절 (PC) — dir: n s e w ne nw se sw */
+  const onEdge = (e, dir) => {
     e.preventDefault(); e.stopPropagation();
     const r = dockEl.current.getBoundingClientRect(), pr = parentRect();
-    drag.current = { mode: 'size', x: e.clientX, y: e.clientY, b: box || { x: r.left - pr.left, y: r.top - pr.top, w: r.width }, h: dockH };
+    drag.current = { mode: 'size', dir, x: e.clientX, y: e.clientY, b: box || { x: r.left - pr.left, y: r.top - pr.top, w: r.width }, h: dockH };
     e.currentTarget.setPointerCapture(e.pointerId);
-    document.body.classList.add('is-rz-d');
+    document.body.style.setProperty('--rz', getComputedStyle(e.currentTarget).cursor);
+    document.body.classList.add('is-rz');
   };
   const onGripMove = (e) => {
     const d = drag.current; if (!d) return;
     if (d.mode === 'h') setDockH(Math.min(dockMax(), Math.max(DOCK_MIN, d.h + (d.y - e.clientY))));
     else if (d.mode === 'move') setBox(clampBox({ ...d.b, x: d.b.x + e.clientX - d.x, y: d.b.y + e.clientY - d.y }));
-    else if (d.mode === 'size') { setBox(clampBox({ ...d.b, w: d.b.w + e.clientX - d.x })); setDockH(Math.min(dockMax(), Math.max(DOCK_MIN, d.h + e.clientY - d.y))); }
+    else if (d.mode === 'size') {
+      const dx = e.clientX - d.x, dy = e.clientY - d.y, has = (c) => d.dir.includes(c);
+      let w = d.b.w, h = d.h;
+      if (has('e')) w = d.b.w + dx; if (has('w')) w = d.b.w - dx;
+      if (has('s')) h = d.h + dy;   if (has('n')) h = d.h - dy;
+      const ph = parentRect().height;
+      w = Math.max(DOCK_W_MIN, w);
+      h = Math.max(DOCK_MIN, Math.min(h, has('n') ? d.b.y + d.h - 8 : ph - 8 - d.b.y));   // 화면 밖으로 넘지 않게
+      const x = has('w') ? d.b.x + d.b.w - w : d.b.x;      // 왼쪽 · 위쪽을 잡으면 반대편은 그대로
+      const y = has('n') ? d.b.y + d.h - h : d.b.y;
+      setBox(clampBox({ x, y, w })); setDockH(h);
+    }
   };
   const onGripUp = () => {
     if (!drag.current) return;
-    drag.current = null; document.body.classList.remove('is-rz-v', 'is-mv', 'is-rz-d');
+    drag.current = null; document.body.classList.remove('is-rz-v', 'is-mv', 'is-rz');
     saveUI(uiRef.current.box, uiRef.current.h);
   };
   /* 손잡이를 두 번 누르면: PC는 제자리(아래)로 · 휴대폰은 접기 ↔ 기본 크기 */
   const toggleDock = () => {
-    if (desk()) { setBox(null); setDockH(340); saveUI(null, 340); return; }
-    setDockH((v) => { const n = v > DOCK_MIN + 20 ? DOCK_MIN : 300; saveUI(null, n); return n; });
+    if (desk()) { setBox(null); setDockH(dockDef()); saveUI(null, dockDef()); return; }
+    setDockH((v) => { const n = v > DOCK_MIN + 20 ? DOCK_MIN : dockDef(); saveUI(null, n); return n; });
   };
   /* 창 크기가 바뀌면 일정 창이 화면 밖으로 나가지 않게 */
   useEffect(() => {
@@ -424,8 +439,10 @@ export default function Plan({ who = 'guest', map, lang, visa, needs, family, en
       <div className="pl-grip" role="separator" aria-orientation="horizontal" aria-label="move"
            title={lang === 'ko' ? (innerWidth > 760 ? '끌어서 옮기기 · 두 번 누르면 제자리' : '끌어서 크기 조절 · 두 번 눌러 접기') : (innerWidth > 760 ? 'Drag to move · double-click to dock' : 'Drag to resize · double-click to fold')}
            onPointerDown={onGrip} onPointerMove={onGripMove} onPointerUp={onGripUp} onPointerCancel={onGripUp} onDoubleClick={toggleDock}><i /><i /></div>
-      <div className="pl-corner" aria-hidden="true" title={lang === 'ko' ? '끌어서 크기 조절' : 'Drag to resize'}
-           onPointerDown={onCorner} onPointerMove={onGripMove} onPointerUp={onGripUp} onPointerCancel={onGripUp} />
+      {['n', 's', 'e', 'w', 'ne', 'nw', 'sw', 'se'].map((d) => (
+        <div key={d} className={'pl-rz pl-rz-' + d + (d === 'se' ? ' pl-corner' : '')} aria-hidden="true" title={lang === 'ko' ? '끌어서 크기 조절' : 'Drag to resize'}
+             onPointerDown={(e) => onEdge(e, d)} onPointerMove={onGripMove} onPointerUp={onGripUp} onPointerCancel={onGripUp} />
+      ))}
       <div className="pl-h">
         <div className="pl-ttl">
           <b>{t.planT}</b>
