@@ -1,15 +1,15 @@
 /* POST /api/doc { lang, image(base64), mime, entry:'YYYY-MM-DD', places:[{key,name}] }
    → { docType, summary, items:[{ title, titleKo, what, whatKo, due, kind, place:{key,name,address}, bring[], tel }] }
    한국어 서류 사진을 읽고 "언제까지 · 어디서 · 무엇을 들고" 해야 하는지 뽑아 30일 일정에 넣을 수 있게 돌려줍니다.
-   · 사진은 Gemini에 한 번 보내고 버립니다(저장 안 함). 사진에 없는 날짜·번호는 만들지 않게 합니다. */
-import { gemini, limited, clean, body, LANG } from './_gemini.js';
+   · 사진은 AI(Bedrock 또는 Gemini)에 한 번 보내고 버립니다(저장 안 함). 사진에 없는 날짜·번호는 만들지 않게 합니다. */
+import { ask, aiOn, limited, clean, body, LANG } from './_ai.js';
 
 export const config = { maxDuration: 30 };   // 사진 읽기는 10초를 넘길 수 있어요
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  if (!process.env.GEMINI_API_KEY) return res.status(501).json({ error: 'off' });
+  if (!aiOn()) return res.status(501).json({ error: 'off' });
   if (limited(req, 5)) return res.status(429).json({ error: 'rate' });
   const b = body(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
@@ -32,10 +32,8 @@ export default async function handler(req, res) {
   ].join(' ');
 
   try {
-    const out = await gemini(system, [
-      { inlineData: { mimeType: mime, data: image } },
-      { text: JSON.stringify({ knownPlaces: places, entryDate: entry }) }
-    ], { maxTokens: 1800, temperature: 0.1, timeout: 28000 });
+    const out = await ask({ system, text: JSON.stringify({ knownPlaces: places, entryDate: entry }), image: { data: image, mime },
+      json: true, maxTokens: 1800, temperature: 0.1, timeout: 28000, kind: 'doc' });
     const keys = new Set(places.map((p) => p.key));
     const items = (Array.isArray(out.items) ? out.items : []).slice(0, 4).map((x, i) => ({
       id: 'doc-' + Date.now().toString(36) + i,

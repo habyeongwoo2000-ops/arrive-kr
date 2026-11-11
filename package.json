@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "3.1154.0",
     "@maplibre/maplibre-gl-leaflet": "0.1.4",
     "d3-geo": "3.1.1",
     "globe.gl": "2.46.2",

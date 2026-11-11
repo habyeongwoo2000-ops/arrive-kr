@@ -2,7 +2,7 @@
    → { rules:{ off:[0-6], offDates:['YYYY-MM-DD'], time, move, shift }, reply }
    "화·목은 야간근무예요, 차 없어요" 같은 말을 일정 조건으로 바꿉니다.
    · AI는 조건만 알아듣고, 날짜를 옮기는 건 화면의 규칙(lib/replan.js)이 합니다 — 관공서 휴일·마감을 어기지 않게. */
-import { gemini, limited, clean, body, LANG } from './_gemini.js';
+import { ask, aiOn, limited, clean, body, LANG } from './_ai.js';
 
 const TIME = ['morning', 'afternoon', 'lunch', 'evening'];
 const MOVE = ['bus', 'walk', 'bike', 'car'];
@@ -10,7 +10,7 @@ const MOVE = ['bus', 'walk', 'bike', 'car'];
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
-  if (!process.env.GEMINI_API_KEY) return res.status(501).json({ error: 'off' });
+  if (!aiOn()) return res.status(501).json({ error: 'off' });
   if (limited(req, 10)) return res.status(429).json({ error: 'rate' });
   const b = body(req);
   const lang = LANG[b.lang] ? b.lang : 'en';
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   ].join(' ');
 
   try {
-    const o = await gemini(system, [{ text: JSON.stringify({ entryDate: entry, previous: prev, said: text }) }], { maxTokens: 400, temperature: 0.2, timeout: 15000 });
+    const o = await ask({ system, text: JSON.stringify({ entryDate: entry, previous: prev, said: text }), json: true, maxTokens: 400, temperature: 0.2, timeout: 15000 });
     const rules = {
       off: [...new Set((Array.isArray(o.off) ? o.off : []).map(Number).filter((n) => n >= 0 && n <= 6))],
       offDates: [...new Set((Array.isArray(o.offDates) ? o.offDates : []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))].slice(0, 20),

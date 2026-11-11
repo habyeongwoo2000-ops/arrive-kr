@@ -1,0 +1,19 @@
+[Unit]
+Description=ArriveKR web (Node + Amazon Bedrock)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=__DIR__
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=AI_PROVIDER=bedrock
+Environment=AWS_REGION=__REGION__
+Environment=AI_MODEL=__MODEL__
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
