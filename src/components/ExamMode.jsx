@@ -144,7 +144,7 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose }) {
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { /* 무시 */ }
     setPhase('grading'); setMark(0); setGstep(0);
     if (paper.current) paper.current.scrollTo({ top: 0 });
-    const wrong = mcItems.filter((x) => ans[x.n] !== x.a).map((x) => ({ n: x.n, q: x.q, box: (x.box || '').replace(/<[^>]+>/g, ' '), choices: x.c, picked: ans[x.n] || 0, answer: x.a, script: (x.s || []).join(' / ') }));
+    const wrong = mcItems.filter((x) => ans[x.n] !== x.a).map((x) => ({ n: x.n, q: x.q, box: (x.box || '').replace(/<[^>]+>/g, ' '), choices: x.c, picked: ans[x.n] || 0, answer: x.a, pickedText: ans[x.n] ? x.c[ans[x.n] - 1] : '', answerText: x.c[x.a - 1], script: (x.s || []).join(' / ') }));
     const openReq = openItems.map((x) => ({ n: x.n, q: x.q, box: (x.box || '').replace(/<[^>]+>/g, ' '), max: x.max, rubric: x.rubric, model: x.model, answer: open[x.n] || '' }));
     const pre = scoreExam(ex, ans, {});
     const call = fetch('/api/exam', { method: 'POST', headers: { 'content-type': 'application/json' },

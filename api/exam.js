@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const lang = LANG[b.lang] ? b.lang : 'en';
   const wrong = (Array.isArray(b.wrong) ? b.wrong : []).slice(0, 20).map((w) => ({
     n: Number(w.n) || 0, q: clean(w.q, 160), box: clean(w.box, 300).replace(/&lt;|&gt;/g, ''), choices: (w.choices || []).slice(0, 4).map((c) => clean(c, 80)),
-    picked: Number(w.picked) || 0, answer: Number(w.answer) || 0, script: clean(w.script, 300)
+    picked: Number(w.picked) || 0, answer: Number(w.answer) || 0, pickedText: clean(w.pickedText, 80) || '(no answer)', answerText: clean(w.answerText, 80), script: clean(w.script, 300)
   }));
   const open = (Array.isArray(b.open) ? b.open : []).slice(0, 4).map((o) => ({
     n: Number(o.n) || 0, q: clean(o.q, 200), box: clean(o.box, 300), max: Math.min(30, Math.max(1, Number(o.max) || 10)),
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     `Write every comment, explanation and summary in ${LANG[lang]} (Korean words and example sentences stay in Korean).`,
     'For each open item: give score as an integer 0..max following the rubric (empty or off-topic answer = 0; understandable but with errors = partial; natural and complete = full).',
     'comment: max 140 chars, one strength + one fix. better: a corrected or model Korean answer based on what they wrote (max 120 chars).',
-    'For each wrong multiple-choice item: explain in max 120 chars why the correct choice is right and why theirs is not.',
+    'For each wrong multiple-choice item (picked/answer are 1-based choice numbers; pickedText is what they chose, answerText is correct): explain in max 120 chars why answerText is right and why pickedText is not. Use correct Korean grammar terms (조사, 어미), never "전치사".',
     'summary: 1–2 encouraging sentences (max 180 chars) about the overall result. strong and weak: 1–3 short skill tags each (e.g. listening numbers, particles, workplace safety words). next: one concrete study tip (max 120 chars).',
     'Do not change multiple-choice results. Do not state official pass marks or promise results.',
     'Return JSON only: {"open":{"<n>":{"score":0,"comment":"","better":""}},"explain":{"<n>":""},"summary":"","strong":[],"weak":[],"next":""}.'
