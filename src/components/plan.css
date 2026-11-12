@@ -63,7 +63,7 @@ body.is-rz-v, body.is-rz-v * { cursor: ns-resize !important; user-select: none !
 .pl-ctl button { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 4px; background: #fff; font-size: 13px; color: var(--ink); }
 .pl-ctl button:hover { background: var(--hover); }
 .pl-ctl button.x { width: 30px; padding: 0; justify-content: center; color: var(--ink-3); }
-.pl-intro { flex: none; margin: 4px 16px 0; font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-intro { flex: none; margin: 4px 16px 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); } /* 문장마다 줄바꿈되도록 한 줄 자르기 없앰 */
 .pl-rib { flex: none; position: relative; height: 24px; margin: 6px 32px 2px; }
 .pl-rib-bar { position: absolute; left: 0; right: 0; top: 11px; height: 4px; border-radius: 2px; background: #eceef0; }
 .pl-rib-bar i { display: block; height: 100%; border-radius: 2px; background: var(--green); transition: width .6s ease; }
@@ -93,7 +93,7 @@ body.is-rz-v, body.is-rz-v * { cursor: ns-resize !important; user-select: none !
 .pl-c footer span, .pl-c footer a { display: inline-flex; align-items: center; gap: 3px; }
 .pl-c footer a { color: var(--link); }
 .pl-c footer .pl-c-d { color: var(--green-t); font-weight: 700; }
-.pl-note { flex: none; margin: 2px 16px 0; font-size: 11px; color: var(--ink-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-note { flex: none; margin: 2px 16px 0; font-size: 11px; line-height: 1.5; color: var(--ink-4); }
 
 @media (max-width: 760px) {
   .settle.is-plan .st-side { display: none; }

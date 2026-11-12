@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
-import { geoCentroid, geoInterpolate, geoDistance } from 'd3-geo';
+import { geoCentroid, geoInterpolate, geoDistance, geoBounds } from 'd3-geo';
 import world from 'world-atlas/countries-110m.json';
 import GlobeView from './components/GlobeView.jsx';
 import RoutePanel from './components/RoutePanel.jsx';
@@ -184,11 +184,17 @@ export default function App() {
     markBack('sel'); // 뒤로가기 → 나라 선택 해제
     if (save) set('u.' + who + '.country', f.id);
     if (f.id === KOREA.iso) { setFocus({ lat: KOREA.city[0], lng: KOREA.city[1], altitude: 1.6 }); return; }
-    const c = byIso[f.id];
-    const s = c ? c.city : (([lng, lat]) => [lat, lng])(geoCentroid(f));
-    const mid = geoInterpolate([s[1], s[0]], [KOREA.city[1], KOREA.city[0]])(0.5);
-    const d = geoDistance([s[1], s[0]], [KOREA.city[1], KOREA.city[0]]);
-    setFocus({ lat: mid[1], lng: mid[0], altitude: Math.min(3.2, 0.9 + d * 1.5) });
+    // 고른 나라로 확대: 나라 가운데로 가고, 나라 크기에 맞춰 높이를 정합니다(작은 나라는 가까이, 큰 나라는 멀리)
+    const [[w0, s0], [e0, n0]] = geoBounds(f);
+    const ctr = geoCentroid(f);
+    const dLng = ((e0 - w0) + 360) % 360 || 360;                   // 날짜변경선을 넘는 나라(러시아 등)도 계산
+    const span = Math.max(n0 - s0, dLng * Math.cos((ctr[1] * Math.PI) / 180));
+    const phone = innerWidth <= 760;
+    // 휴대폰은 화면이 좁아 더 멀리서 보고, 아래 패널이 화면 아래쪽을 가리므로 나라가 위쪽에 오게 카메라를 조금 남쪽으로
+    // 작은 나라도 너무 붙지 않게 최소 높이를 넉넉히(주변 나라·바다가 조금 보이도록)
+    const alt = Math.max(phone ? 1.0 : 0.7, Math.min(2.6, (span / 38 + 0.4) * (phone ? 1.6 : 1)));
+    const down = phone ? alt * 11 : 0;
+    setFocus({ lat: Math.max(-80, ctr[1] - down), lng: ctr[0], altitude: alt });
   }
 
   /* ---------- 비행: 체크할 때마다 앞으로 ----------

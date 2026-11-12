@@ -9,6 +9,9 @@ const DAY = 86400000;
 const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
+/* 날짜(2027-11-15)는 줄 끝에서 하이픈 사이로 끊기지 않게 한 덩어리로 */
+const nwDate = (str) => String(str).split(/(\d{4}-\d{2}-\d{2})/).map((x, k) => (k % 2 ? <span key={k} className="nw">{x}</span> : x));
+
 export function fuelOf(item, entry, today) {
   if (item.after !== undefined) return { kind: 'after', date: item.after ? iso(new Date(entry.getTime() + item.after * DAY)) : null };
   const due = new Date(entry.getTime() - item.lead * DAY);
@@ -131,11 +134,11 @@ export function CheckItem({ it, lang, entry, today, checked: ok, toggle, list, c
       {f.kind === 'before' ? (
         <div className={'gauge ' + (ok ? 'ok' : f.st)}>
           <div className="gauge-bar"><i style={{ width: (ok ? 100 : Math.round(f.ratio * 100)) + '%' }} /></div>
-          <span>{ok ? t.done : fill(t.due, { date: f.date }) + (f.left >= 0 ? ' · ' + fill(t.dleft, { n: f.left }) : ' · ' + t.fOut)}</span>
+          <span>{ok ? t.done : nwDate(fill(t.due, { date: f.date }) + (f.left >= 0 ? ' · ' + fill(t.dleft, { n: f.left }) : ' · ' + t.fOut))}</span>
         </div>
       ) : (
         <div className="gauge after">
-          <span>{it.after ? fill(t.after, { n: it.after }) + (f.date ? ' · ' + f.date : '') : t.afterAny}</span>
+          <span>{it.after ? nwDate(fill(t.after, { n: it.after }) + (f.date ? ' · ' + f.date : '')) : t.afterAny}</span>
           {extraBtn}
         </div>
       )}

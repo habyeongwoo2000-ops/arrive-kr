@@ -20,6 +20,15 @@
 .ex-submit:hover { filter: brightness(1.1); }
 .ex-x { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: #fff; }
 .ex-x:hover { background: rgba(255,255,255,.2); }
+/* 화면 안 확인 창 (나가기 · 덜 푼 채로 제출) */
+.ex-ask { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.55); animation: up .15s ease-out; }
+.ex-ask-card { width: min(380px, 100%); padding: 22px 22px 18px; border-radius: 12px; background: #fff; color: #111; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.ex-ask-card p { margin: 0 0 18px; font-size: 16px; font-weight: 700; line-height: 1.5; }
+.ex-ask-card p small { display: block; margin-top: 6px; font-size: 13.5px; font-weight: 500; color: #555; }
+.ex-ask-card div { display: flex; gap: 8px; justify-content: flex-end; }
+.ex-ask-card button { height: 40px; padding: 0 16px; border: 0; border-radius: 8px; font-size: 14.5px; font-weight: 800; }
+.ex-ask-no { background: #eef0f3; color: #333; }
+.ex-ask-yes { background: var(--ec, #1f5fbf); color: #fff; }
 
 /* 책상 */
 .ex-desk { flex: 1; min-height: 0; display: flex; justify-content: center; gap: 22px; padding: 22px 22px 0; overflow: hidden; background: radial-gradient(ellipse at 50% 0%, #4a5056, #2f3337 70%); }
@@ -56,15 +65,19 @@
 .ex-qt b { font-family: var(--f); font-weight: 900; margin-right: 2px; }
 .ex-pic { display: grid; place-items: center; width: 150px; height: 110px; margin: 4px 0 10px 18px; border: 1.5px solid #333; background: #fff; }
 .ex-pic svg { width: 120px; height: 90px; }
+.ex-ch-emo { font-size: 34px; line-height: 1.2; letter-spacing: 4px; }
+.ex-emo { display: grid; place-items: center; min-width: 150px; width: fit-content; height: 100px; padding: 0 16px; margin: 4px 0 10px 18px; border: 1.5px solid #333; background: #fff; font-size: 52px; line-height: 1; letter-spacing: 6px; }
 .ex-box { margin: 4px 0 10px 18px; padding: 10px 14px; border: 1.5px solid #333; background: #fff; font-size: 15px; line-height: 1.75; }
 .ex-box u { text-underline-offset: 4px; text-decoration-thickness: 2px; }
 .ex-ch { margin: 0 0 0 18px; padding: 0; list-style: none; display: grid; gap: 2px; }
 .ex-ch button { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 4px 6px; border: 0; border-radius: 4px; background: none; text-align: start; font: 400 15.5px/1.5 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', 'Noto Serif KR', serif; color: #111; cursor: pointer; }
 .ex-ch button:not(:disabled):hover { background: #f3efe2; }
 .ex-ch button:disabled { cursor: default; }
-.ex-ch i { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-style: normal; font-size: 17px; line-height: 1; }
-.ex-ch .is-pick i { background: #111; color: #fff; font-size: 0; }
-.ex-ch .is-pick i::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+.ex-ch i { flex: none; display: grid; place-items: center; width: 26px; height: 22px; border-radius: 50%; font-style: normal; font-size: 17px; line-height: 1; }
+/* 고른 답: 답안지(OMR)에 칠한 칸과 똑같은 컴퓨터용 사인펜 검은 타원 */
+.ex-ch i { transition: background .12s, color .12s; }
+.ex-ch .is-pick i { width: 26px; height: 18px; margin-top: 2px; border-radius: 9px; background: #111; color: transparent; }
+.ex-bub { transition: background .12s, border-color .12s; }
 .ex-ch .is-right span { color: #0b57d0; font-weight: 800; text-decoration: underline wavy #0b57d0 1px; text-underline-offset: 4px; }
 .ex-ch .is-wrong span { color: #c62828; text-decoration: line-through 2px #c62828; }
 

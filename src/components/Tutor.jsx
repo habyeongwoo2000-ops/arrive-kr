@@ -97,7 +97,7 @@ export default function Tutor({ who = 'guest', lang, hintLang, countryLabel, nam
           })}
         </div>
       )}
-      {exam && <ExamMode id={exam} lang={lang} hintLang={hintLang} name0={name} onResult={(sc) => examDone(exam, sc)} onClose={() => setExam(null)} />}
+      {exam && <ExamMode id={exam} who={who} lang={lang} hintLang={hintLang} name0={name} onResult={(sc) => examDone(exam, sc)} onClose={() => setExam(null)} />}
 
       {tab === 'quiz' && (
         <div className="tu-body">

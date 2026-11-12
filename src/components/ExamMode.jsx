@@ -5,23 +5,24 @@ import { createPortal } from 'react-dom';
 import { EXAMS, scoreExam } from '../data/exams.js';
 import Icon from './Icon.jsx';
 import useEsc from '../lib/useEsc.js';
+import { uget, uset } from '../lib/store.js';
 import './exam.css';
 
 const W = {
   ko: { practice: '연습용', notReal: '실제 시험이 아닌 연습용 모의시험입니다 · 문제는 ArriveKR 자체 제작', start: '시험 시작', no: '수험번호', name: '성명', namePh: '이름을 쓰세요', time: '시험 시간', count: '문항 수', minutes: '{n}분', items: '{n}문항',
-    rules: ['문항 번호와 지시문은 실제 시험의 번호·유형을 따릅니다 (유형별 대표 문항만 수록).', '시작 버튼을 누르면 남은 시간이 줄어듭니다. 시간이 끝나면 자동으로 제출됩니다.', '답은 시험지에서 고르거나 오른쪽 답안지(OMR)에 칠하면 됩니다.', '듣기 문제는 ▶ 버튼을 눌러 들으세요. 두 번까지 들을 수 있습니다.', '서술·말하기 문제는 글로 쓰거나 🎤 버튼으로 말하면 됩니다. AI가 채점합니다.'],
+    rules: ['문항 수·번호·지시문·시험 시간을 실제 시험과 같게 맞췄습니다 (문제는 새로 만든 연습 문제).', '시작 버튼을 누르면 남은 시간이 줄어듭니다. 시간이 끝나면 자동으로 제출됩니다.', '답은 시험지에서 고르거나 오른쪽 답안지(OMR)에 칠하면 됩니다.', '듣기 문제는 ▶ 버튼을 눌러 들으세요. 두 번까지 들을 수 있습니다.', '서술·말하기 문제는 글로 쓰거나 🎤 버튼으로 말하면 됩니다. AI가 채점합니다.'],
     left: '남은 시간', submit: '답안 제출', sure: '아직 {n}문항을 풀지 않았어요. 제출할까요?', omr: '답안지', openNote: '서술형 — 시험지에 작성', answered: '{a}/{t} 답함',
     listen: '듣기', again: '다시 듣기', played: '들은 횟수 {n}/2', noVoice: '이 브라우저는 한국어 음성이 없어요. 대본을 보여 드려요.', script: '대본', write: '여기에 답을 쓰세요', speak: '말로 답하기', stop: '그만 말하기',
-    grading: 'AI가 채점하고 있어요', g1: '객관식 답안 확인', g2: '서술·말하기 답 채점', g3: '틀린 문제 풀이 쓰기', score: '점수', of: '{m}점 만점', level: '예상 결과', kiipLv: '예상 시작 단계 {l}단계', topikLv: '{l} 예상', topikNo: '급수 미달 (80점부터 1급)', epsNote: '합격선은 나라·회차마다 달라요',
+    grading: 'AI가 채점하고 있어요', g1: '객관식 답안 확인', g2: '서술·말하기 답 채점', g3: '틀린 문제 풀이 쓰기', score: '점수', of: '{m}점 만점', level: '예상 결과', kiipLv: '예상 시작 단계 {l}단계', topikLv: '{l} 예상', topikNo: '급수 미달 (80점부터 1급)', epsNote: '최소 기준: 제조업 60점 · 그 외 업종 45점 (상대평가라 실제 합격선은 회차마다 달라요)',
     aiBy: 'Claude AI 채점', basic: '기본 채점 · AI 미연결', summary: 'AI 총평', strong: '잘한 점', weak: '더 연습할 점', next: '다음 공부', wrongT: '틀린 문제 풀이', openT: '서술·말하기 채점', yours: '내 답', better: '이렇게 쓰면 더 좋아요', none: '(답 없음)', allRight: '모두 맞혔어요!',
-    review: '채점된 시험지 보기', retry: '다시 풀기', close: '나가기', extra: '점수에 넣지 않는 맛보기', right: '정답', mine: '내가 고른 답', basicOpen: 'AI 없이 글자 수로만 간단히 채점했어요', full: '전체 화면', official: '공식 누리집', moreReal: '공식 기출문제로 더 연습하기', moreRealSub: '실제 기출과 시험 안내는 시행기관 누리집에서 볼 수 있어요 (공개 범위는 기관마다 달라요)' },
+    review: '채점된 시험지 보기', retry: '다시 풀기', close: '나가기', keepGoing: '계속 풀기', pause: '중단하고 나가기', quitSure: '시험을 중단하고 나갈까요?', quitInfo: '지금까지 푼 답과 남은 시간은 저장돼요. 다시 열면 이어서 풀 수 있어요.', resumeQ: '중단한 시험이 있어요. 이어서 풀까요?', resumeInfo: '{a}/{t}문항 답함 · 남은 시간 {m}', resume: '이어서 풀기', fresh: '처음부터', extra: '점수에 넣지 않는 맛보기', right: '정답', mine: '내가 고른 답', basicOpen: 'AI 없이 글자 수로만 간단히 채점했어요', full: '전체 화면', official: '공식 누리집', moreReal: '공식 기출문제로 더 연습하기', moreRealSub: '실제 기출과 시험 안내는 시행기관 누리집에서 볼 수 있어요 (공개 범위는 기관마다 달라요)' },
   en: { practice: 'Practice', notReal: 'A practice mock test, not the real exam · questions written by ArriveKR', start: 'Start test', no: 'Candidate no.', name: 'Name', namePh: 'Write your name', time: 'Time', count: 'Questions', minutes: '{n} min', items: '{n} items',
-    rules: ['Question numbers and instructions follow the real test (one sample per type).', 'The timer starts when you press Start. It submits automatically when time runs out.', 'Pick answers on the paper or fill the answer sheet (OMR) on the right.', 'Press ▶ to hear listening questions. You can listen twice.', 'For writing/speaking items, type or press 🎤 and speak. AI grades them.'],
+    rules: ['Number of questions, numbering, instructions and time match the real test (questions are newly written for practice).', 'The timer starts when you press Start. It submits automatically when time runs out.', 'Pick answers on the paper or fill the answer sheet (OMR) on the right.', 'Press ▶ to hear listening questions. You can listen twice.', 'For writing/speaking items, type or press 🎤 and speak. AI grades them.'],
     left: 'Time left', submit: 'Submit', sure: '{n} questions are unanswered. Submit anyway?', omr: 'Answer sheet', openNote: 'Written — answer on the paper', answered: '{a}/{t} answered',
     listen: 'Listen', again: 'Listen again', played: 'Played {n}/2', noVoice: 'No Korean voice in this browser — showing the script.', script: 'Script', write: 'Write your answer here', speak: 'Answer by voice', stop: 'Stop',
-    grading: 'AI is grading your test', g1: 'Checking multiple choice', g2: 'Grading writing & speaking', g3: 'Writing explanations', score: 'Score', of: 'out of {m}', level: 'Estimate', kiipLv: 'Estimated starting level {l}', topikLv: '{l} expected', topikNo: 'Below Level 1 (80 needed)', epsNote: 'Pass marks differ by country and round',
+    grading: 'AI is grading your test', g1: 'Checking multiple choice', g2: 'Grading writing & speaking', g3: 'Writing explanations', score: 'Score', of: 'out of {m}', level: 'Estimate', kiipLv: 'Estimated starting level {l}', topikLv: '{l} expected', topikNo: 'Below Level 1 (80 needed)', epsNote: 'Minimum: 60 for manufacturing · 45 for other sectors (relative grading, so real cut-offs vary)',
     aiBy: 'Graded by Claude AI', basic: 'Basic grading · AI offline', summary: 'AI summary', strong: 'Strengths', weak: 'Practice more', next: 'Next step', wrongT: 'Explanations for wrong answers', openT: 'Writing & speaking', yours: 'Your answer', better: 'A better answer', none: '(no answer)', allRight: 'All correct!',
-    review: 'See graded paper', retry: 'Try again', close: 'Exit', extra: 'Taste only — not in the score', right: 'Answer', mine: 'Your pick', basicOpen: 'Scored roughly by length without AI', full: 'Full screen', official: 'Official sites', moreReal: 'Practice with official past papers', moreRealSub: 'Past papers and test info are on the official sites (what is published differs by agency)' }
+    review: 'See graded paper', retry: 'Try again', close: 'Exit', keepGoing: 'Keep going', pause: 'Pause and leave', quitSure: 'Pause the test and leave?', quitInfo: 'Your answers and remaining time are saved. Open it again to continue.', resumeQ: 'You have a paused test. Continue where you left off?', resumeInfo: '{a}/{t} answered · {m} left', resume: 'Continue', fresh: 'Start over', extra: 'Taste only — not in the score', right: 'Answer', mine: 'Your pick', basicOpen: 'Scored roughly by length without AI', full: 'Full screen', official: 'Official sites', moreReal: 'Practice with official past papers', moreRealSub: 'Past papers and test info are on the official sites (what is published differs by agency)' }
 };
 const NUM = ['①', '②', '③', '④'];
 const fill = (s, v) => String(s).replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m));
@@ -94,13 +95,17 @@ function OpenAnswer({ value, onChange, t, disabled }) {
   );
 }
 
-export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onResult }) {
+export default function ExamMode({ id, who, lang, hintLang, name0 = '', onClose, onResult }) {
   const ex = EXAMS[id];
   const t = lang === 'ko' ? W.ko : W.en;
   const L = lang === 'ko' ? 'ko' : 'en';
   const all = useMemo(() => ex.sections.flatMap((s) => s.items.map((it) => ({ ...it, sec: s }))), [ex]);
   const mcItems = all.filter((x) => !x.sec.open);
   const openItems = all.filter((x) => x.sec.open);
+  // 중단하고 나간 시험: 답·서술 답·남은 시간을 저장해 두었다가 다시 열면 이어서 풀지 물어봄
+  const DK = 'examDraft.' + id;
+  const [draft, setDraft] = useState(() => { const d = uget(who, DK, null); return d && d.left > 0 ? d : null; });
+  const [ask, setAsk] = useState(() => (draft ? 'resume' : null)); // 화면 안 확인 창: null | 'quit' | 'submit' | 'resume' (브라우저 confirm 은 막힌 곳이 있어서 쓰지 않음)
   const [phase, setPhase] = useState('cover');      // cover → test → grading → result → review
   const [name, setName] = useState(name0);
   const [ans, setAns] = useState({});
@@ -135,11 +140,15 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onRe
   const answered = mcItems.filter((x) => ans[x.n]).length + openItems.filter((x) => (open[x.n] || '').trim()).length;
   const submit = () => {
     const miss = all.length - answered;
-    if (miss > 0 && !window.confirm(fill(t.sure, { n: miss }))) return;
+    if (miss > 0) { setAsk('submit'); return; }
     grade();
   };
 
+  const saveDraft = () => uset(who, DK, { ans, open, left: leftRef.current, name, at: Date.now() });
+  const dropDraft = () => { uset(who, DK, null); setDraft(null); };
+  const resume = () => { setAns(draft.ans || {}); setOpen(draft.open || {}); setLeft(draft.left); if (draft.name) setName(draft.name); setDraft(null); start(); };
   async function grade() {
+    dropDraft();
     if (phase === 'grading' || phase === 'result') return;
     try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { /* 무시 */ }
     setPhase('grading'); setMark(0); setGstep(0);
@@ -183,7 +192,25 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onRe
         {phase === 'test' && <div className={'ex-timer' + (left <= 60 ? ' is-low' : '')}><small>{t.left}</small><b>{mmss(left)}</b></div>}
         {phase === 'test' && <button type="button" className="ex-submit" onClick={submit}>{t.submit}</button>}
       </>}
-      {phase !== 'test' && phase !== 'grading' && <button type="button" className="ex-x" onClick={close} aria-label={t.close} title={t.close}><Icon n="close" size={22} /></button>}
+      {phase !== 'grading' && <button type="button" className="ex-x" onClick={() => (phase === 'test' ? setAsk('quit') : close())} aria-label={t.close} title={t.close}><Icon n="close" size={22} /></button>}
+      {ask && (
+        <div className="ex-ask" role="dialog" aria-modal="true" onClick={() => ask !== 'resume' && setAsk(null)}>
+          <div className="ex-ask-card" onClick={(e) => e.stopPropagation()}>
+            {ask === 'resume' ? (
+              <p>{t.resumeQ}<small>{fill(t.resumeInfo, { a: Object.keys(draft.ans || {}).length + Object.values(draft.open || {}).filter((v) => (v || '').trim()).length, t: all.length, m: mmss(draft.left) })}</small></p>
+            ) : <p>{ask === 'quit' ? t.quitSure : fill(t.sure, { n: all.length - answered })}{ask === 'quit' && <small>{t.quitInfo}</small>}</p>}
+            <div>
+              {ask === 'resume' ? <>
+                <button type="button" className="ex-ask-no" onClick={() => { dropDraft(); setAsk(null); }}>{t.fresh}</button>
+                <button type="button" className="ex-ask-yes" onClick={() => { setAsk(null); resume(); }} autoFocus>{t.resume}</button>
+              </> : <>
+                <button type="button" className="ex-ask-no" onClick={() => setAsk(null)} autoFocus>{t.keepGoing}</button>
+                <button type="button" className="ex-ask-yes" onClick={() => { const a = ask; setAsk(null); if (a === 'quit') { saveDraft(); close(); } else grade(); }}>{ask === 'quit' ? t.pause : t.submit}</button>
+              </>}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 
@@ -235,6 +262,7 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onRe
                       {it.g && <p className="ex-g">※ {it.g}</p>}
                       <p className="ex-qt"><b>{it.n}.</b> {ex.grouped && !/㉠/.test(it.q) ? '' : it.q}</p>
                       {it.pic && <div className="ex-pic">{PIC[it.pic]}</div>}
+                      {it.emoji && <div className="ex-emo" aria-hidden="true">{it.emoji}</div>}
                       {it.s && phase === 'test' && <Listen lines={it.s} t={t} />}
                       {it.s && phase !== 'test' && <p className="ex-script rev"><b>{t.script}</b>{it.s.map((l, i) => <span key={i}>{l}</span>)}</p>}
                       {it.box && <div className="ex-box" dangerouslySetInnerHTML={{ __html: it.box }} />}
@@ -243,7 +271,7 @@ export default function ExamMode({ id, lang, hintLang, name0 = '', onClose, onRe
                           {it.c.map((c, k) => {
                             const v = k + 1; const picked = ans[it.n] === v;
                             const cls = (picked ? ' is-pick' : '') + (graded && mk && v === it.a ? ' is-right' : '') + (graded && mk && picked && v !== it.a ? ' is-wrong' : '');
-                            return <li key={k}><button type="button" className={cls} disabled={phase !== 'test'} onClick={() => setAns((a) => ({ ...a, [it.n]: v }))}><i>{NUM[k]}</i><span>{c}</span></button></li>;
+                            return <li key={k}><button type="button" className={cls} disabled={phase !== 'test'} onClick={() => setAns((a) => ({ ...a, [it.n]: v }))}><i>{NUM[k]}</i><span className={/[가-힣A-Za-z0-9]/.test(c) ? undefined : 'ex-ch-emo'}>{c}</span></button></li>;
                           })}
                         </ol>
                       )}

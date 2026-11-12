@@ -17,6 +17,17 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body { font-family: var(--f); color: var(--ink); background: #000005; overflow: hidden; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
+/* 줄바꿈: 한국어는 글자 중간이 아니라 낱말(띄어쓰기) 단위로 넘기고, 너무 긴 낱말·주소만 잘라서 넘김
+   · 크메르어는 띄어쓰기가 없어 브라우저 사전식 줄바꿈을 그대로 둠
+   · 문단은 마지막 줄에 한 낱말만 남지 않게(pretty), 제목은 줄 길이를 고르게(balance) */
+html:not([lang="km"]) body, .ex { word-break: keep-all; }
+body { overflow-wrap: break-word; }
+.nw { white-space: nowrap; }
+/* 문장마다 줄바꿈 (lib/sentenceBreak.js 가 문장 끝에 줄바꿈을 넣고 data-sb 를 닮) */
+[data-sb] { white-space: pre-line; }
+:where([data-sb] > *) { white-space: normal; }
+p, li, dd, dt, blockquote, figcaption, small, em, label, td, th { text-wrap: pretty; }
+h1, h2, h3, h4, h5, h6, b, strong, button, summary, caption { text-wrap: balance; }
 button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
 button { cursor: pointer; }
 a { color: var(--link); text-decoration: none; }
