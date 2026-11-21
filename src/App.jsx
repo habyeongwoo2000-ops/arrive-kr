@@ -60,6 +60,9 @@ const bearing = (p, q) => {
   return (Math.atan2(y, x) / r + 360) % 360;
 };
 
+const SHAKE_MS = 1000;   // 난기류 화면 흔들림
+const TURB_MS = 3000;    // 난기류 알림 창이 떠 있는 시간
+
 export default function App() {
   const [lang, setLangS] = useState(pickLang);
   const t = ui(lang);
@@ -100,6 +103,13 @@ export default function App() {
     setTurb(null); setShake(false);
     if (flight.current) flight.current.pauseUntil = 0;
   }
+
+  /* 난기류 알림 창은 3초 뒤 저절로 닫힘 (그 전에 "알겠어요"로 바로 닫을 수도) */
+  useEffect(() => {
+    if (!turb) return undefined;
+    const id = setTimeout(() => setTurb(null), TURB_MS);
+    return () => clearTimeout(id);
+  }, [turb]);
 
   const setLang = (l) => { setLangS(l); set('lang', l); };
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
@@ -270,10 +280,10 @@ export default function App() {
       setActiveLeg(li);
       const tb = passing[k];
       if (tb && st.t >= tb.at) {
-        k++; st.pauseUntil = now + 2600 + tb.sev * 300;
+        k++; st.pauseUntil = now + SHAKE_MS;   // 흔들림·멈춤 약 1초
         setTurb(tb); setShake(true);
         clearTimeout(shakeTimer.current);
-        shakeTimer.current = setTimeout(() => setShake(false), 2600 + tb.sev * 300);
+        shakeTimer.current = setTimeout(() => setShake(false), SHAKE_MS);
       }
       if (r < 1) { st.raf = requestAnimationFrame(step); return; }
       setFlying(false);
@@ -537,7 +547,8 @@ export default function App() {
 
       {/* 난기류 알림 */}
       {turb && (
-        <div className={'turb-card sev' + turb.sev} role="alert">
+        <div key={turb.at + ':' + tx(turb.t, lang)} className={'turb-card sev' + turb.sev} role="alert" style={{ '--turb-ms': TURB_MS + 'ms' }}>
+          <i className="turb-bar" aria-hidden="true" />
           <span className="turb-ic" aria-hidden="true"><Icon n="alert" size={20} /></span>
           <div><small>{t.turb}</small><b>{tx(turb.t, lang)}</b><p>{tx(turb.d, lang)}</p></div>
           <button type="button" className="btn-t" onClick={endTurb}>{t.turbOk}</button>

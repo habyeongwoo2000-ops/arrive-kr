@@ -852,3 +852,10 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .sso-or span { position: relative; padding: 0 10px; background: #fff; }
 .avatar.kakao { background: #FEE500; color: #3c1e1e; } .avatar.google { background: #4285f4; }
 .tu-ex-t .tu-ex-last { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 3px; background: #fff1ee; color: #c62828; font-weight: 800; }
+
+/* 난기류 알림 — 3초 뒤 저절로 닫힘을 알려 주는 줄어드는 막대 */
+.turb-card { overflow: hidden; }
+.turb-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #f5a300; opacity: .7; transform-origin: left; animation: turbbar var(--turb-ms, 3000ms) linear forwards; }
+.turb-card.sev3 .turb-bar { background: var(--red); }
+@keyframes turbbar { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .turb-bar { animation: none; display: none; } }
