@@ -418,7 +418,7 @@ export default function App() {
         <button type="button" className={'rail-i' + (railOn === 'todo' ? ' is-on' : '')} onClick={() => openSettle('todo')}><Icon n="todo" size={22} /><span>{n.todo}</span>{arriveSum && <em>{arriveSum.done}/{arriveSum.total}</em>}</button>
         <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
         <button type="button" className="rail-i" onClick={openPlan}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
-        <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => setTutorOpen((o) => !o)}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
+        <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => (view === 'hub' ? leaveHub(() => setTutorOpen(true)) : setTutorOpen((o) => !o))}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
         <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
         <div className="rail-foot">

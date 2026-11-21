@@ -97,3 +97,10 @@
   font-family: var(--f); color: var(--ink); font-size: 16px; line-height: normal; letter-spacing: -.01em; -webkit-font-smoothing: antialiased; }
 .hub .hub-map .settle { position: absolute; inset: 0; z-index: 1; animation: none; }
 @media (max-width: 760px) { .hub .hub-map { --panel: 100%; height: calc(100svh - var(--hh)); } }
+
+/* 왼쪽 세로 메뉴(휴대폰은 아래 탭 메뉴)는 정착 지원 홈에서도 그대로 보이게 — 그 옆(위)만 덮습니다 */
+.hub { left: var(--rail); bottom: var(--tabbar); }
+.hub.is-home .topbar { left: var(--rail); }
+.hub-menu { left: var(--rail); bottom: var(--tabbar); }
+.hub .to-top { bottom: calc(24px + var(--tabbar)); }
+@media (max-width: 600px) { .hub .to-top { bottom: calc(14px + var(--tabbar)); } }

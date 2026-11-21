@@ -334,7 +334,7 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .st-tabs button { flex: 1 0 auto; white-space: nowrap; padding: 0 10px; font-size: 14.5px; }
 .st-tabs .st-tab-hub { color: #0b2d5c; font-weight: 600; }
 .st-tabs .st-tab-hub::after { content: ""; width: 6px; height: 6px; margin-left: 2px; border-right: 1.5px solid currentColor; border-top: 1.5px solid currentColor; transform: rotate(45deg); opacity: .6; }
-.hub-wait { position: fixed; inset: 0; z-index: 55; background: #0a1730; }
+.hub-wait { position: fixed; top: 0; right: 0; left: var(--rail); bottom: var(--tabbar); z-index: 55; background: #0a1730; }
 .st-tabs button span { color: var(--green-t); font-size: 13px; font-weight: 700; }
 .st-todo { padding: 16px 20px 0; }
 .st-todo-intro { margin: 0 0 10px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
