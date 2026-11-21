@@ -97,7 +97,7 @@ const thinkOk = new Map();          // 모델 → THINK 몇 번째가 통했나
 const modelRest = new Map();        // 모델 → 이 시각까지 건너뛰기 (없는 모델)
 let lastGeminiError = null;
 export const geminiLastError = () => lastGeminiError;
-const geminiModels = () => [...new Set([env('AI_MODEL'), 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite'].filter(Boolean))];
+const geminiModels = () => [...new Set([env('AI_MODEL'), ...String(process.env.GEMINI_MODELS || '').split(','), 'gemini-flash-latest', 'gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'].map((x) => String(x || '').trim()).filter(Boolean))];
 
 async function gemini({ system, text, image, maxTokens, temperature, timeout, kind, json }) {
   const deadline = Date.now() + Math.min(timeout, 26000);
@@ -142,16 +142,18 @@ async function gemini({ system, text, image, maxTokens, temperature, timeout, ki
         lastStatus = r.status;
         lastGeminiError = { model, key: n, status: r.status, msg: msg.replace(/\s+/g, ' ').slice(0, 300) };
         console.error('gemini', model, 'key#' + n, r.status, msg.slice(0, 200));
-        if (r.status === 400 && /think/i.test(msg) && ti < THINK.length - 1) { ti++; continue; }          // 생각 단계 설정을 거부 → 다음 설정
+        const badKey = r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg);
+        // 400 "invalid argument" — 새 모델은 생각 단계 설정을 이유 없이 거부하기도 해서, 다음 설정(마지막은 설정 없이)으로 다시
+        if (r.status === 400 && !badKey && ti < THINK.length - 1) { ti++; continue; }
         if (r.status === 404) { modelRest.set(model, Date.now() + 3600e3); nextModel = true; break; }      // 없는 모델
         if (r.status === 429) {
           if (/limit: 0\b/.test(msg)) keyRest.set(model + '|' + key, Date.now() + 3600e3);              // 이 키로는 이 모델을 못 씀
           else keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));           // 하루/분당 한도
           break;
         }
-        if (r.status === 401 || r.status === 403 || (r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg))) { keyRest.set(key, Date.now() + 3600e3); break; }
+        if (r.status === 401 || r.status === 403 || badKey) { keyRest.set(key, Date.now() + 3600e3); break; }
         if (r.status >= 500) break;                                                                         // 구글이 바쁨 → 다음 키
-        nextModel = true; break;                                                                            // 그 밖의 400 → 다음 모델
+        break;                                                                                              // 그 밖의 400 → 다음 키, 키를 다 써 보면 다음 모델
       }
       if (nextModel) break;
     }
@@ -194,4 +196,28 @@ async function bedrock({ system, text, image, maxTokens, temperature, timeout, k
     console.error('bedrock', modelId, e.name, String(e.message).slice(0, 300));
     throw fail(502, 'upstream');
   } finally { clearTimeout(timer); }
+}
+
+/* /api/health?all=1 — 모델 × 키 × 생각 설정을 하나씩 짧게 시도해 무엇이 되는지 표로 (키 값은 보여 주지 않음) */
+export async function geminiProbe(budgetMs = 24000) {
+  const end = Date.now() + budgetMs;
+  const keys = geminiKeys();
+  const rows = [];
+  for (const model of geminiModels()) {
+    for (let k = 0; k < keys.length; k++) {
+      for (let ti = 0; ti < THINK.length; ti++) {
+        if (Date.now() > end - 1500) { rows.push({ model, key: k + 1, skipped: 'time' }); return rows; }
+        const think = THINK[ti];
+        const payload = { contents: [{ role: 'user', parts: [{ text: 'Say hi in Korean, 3 words.' }] }], generationConfig: { maxOutputTokens: 2200, temperature: 0.2, ...(think ? { thinkingConfig: think } : {}) } };
+        let r, msg = '';
+        try { r = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { 'x-goog-api-key': keys[k] }, payload, Math.min(8000, end - Date.now())); }
+        catch (e) { rows.push({ model, key: k + 1, think: think ? JSON.stringify(think) : 'none', status: 'timeout' }); continue; }
+        if (r.ok) { const d = await r.json(); msg = (((d.candidates || [])[0] || {}).content || {}).parts ? 'OK: ' + d.candidates[0].content.parts.map((x) => x.text || '').join('').slice(0, 40) : 'OK(empty)'; }
+        else msg = (await r.text()).replace(/\s+/g, ' ').slice(0, 160);
+        rows.push({ model, key: k + 1, think: think ? JSON.stringify(think) : 'none', status: r.status, msg });
+        if (r.ok || r.status === 404 || r.status === 429 || r.status === 403) break;   // 이 키는 결과가 나왔음 → 다음 키
+      }
+    }
+  }
+  return rows;
 }
