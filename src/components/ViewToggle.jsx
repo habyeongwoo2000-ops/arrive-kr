@@ -26,6 +26,37 @@ export function applySavedView() {
 const IcPc = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4zM2 4v12a1 1 0 0 0 1 1h7v2H7v2h10v-2h-3v-2h7a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1" /></svg>;
 const IcPhone = () => <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m0 3v13h8V5zm4 14.2a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8" /></svg>;
 
+/* 정착 지원 홈 바닥글용 — E9-Bridge 처럼 "PC로 보기 | 모바일로 보기" 글자 단추 */
+export function ViewLinks({ lang, hub, pc: pcL, mobile: mobileL }) {
+  const t = ui(lang);
+  const [pc, setPc] = useState(() => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } });
+  const [frame, setFrame] = useState(false);
+  if (IN_FRAME) return null;
+  const isPc = IS_PHONE ? pc : !frame;
+  const pick = (wantPc) => {
+    if (IS_PHONE) {
+      setPc(wantPc); setViewport(wantPc);
+      try { localStorage.setItem(KEY, wantPc ? '1' : '0'); } catch (e) { /* 저장소 없음 */ }
+    } else setFrame(!wantPc);
+  };
+  const qs = new URLSearchParams(location.search); qs.set('frame', '1'); qs.set('lang', lang); qs.set('skip', '1'); qs.set('hub', hub || 'home'); qs.delete('settle');
+  return (
+    <div className="view-switch in-foot">
+      <button type="button" className={isPc ? 'is-on' : ''} onClick={() => pick(true)}>{pcL || t.viewPc}</button>
+      <span className="view-switch-sep" aria-hidden="true">|</span>
+      <button type="button" className={!isPc ? 'is-on' : ''} onClick={() => pick(false)}>{mobileL || t.viewMobile}</button>
+      {frame && createPortal(
+        <div className="phone-back" role="dialog" aria-modal="true" aria-label={t.viewMobile} onClick={(e) => { if (e.target === e.currentTarget) setFrame(false); }}>
+          <button type="button" className="x-close on-dark phone-x" onClick={() => setFrame(false)} aria-label={t.viewPc} title={t.viewPc}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+          <div className="phone"><iframe src={location.pathname + '?' + qs} title={t.viewMobile} /></div>
+          <button type="button" className="phone-close" onClick={() => setFrame(false)}><IcPc />{t.viewPc}</button>
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+}
+
 export default function ViewToggle({ lang, settle }) {
   const t = ui(lang);
   const [pc, setPc] = useState(() => { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } });

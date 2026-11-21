@@ -1,0 +1,82 @@
+/* 정착 지원 홈 — ArriveKR 화면 위에 덮는 한 장짜리 화면 (e9base.css 는 E9-Bridge 디자인 그대로) */
+
+.hub { position: fixed; inset: 0; z-index: 55; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; animation: fadein .3s ease-out; }
+.hub button { font-family: inherit; }
+
+/* 단추로 바꾼 자리(원본은 링크) — 링크처럼 보이게 */
+.hub .brand, .hub .svc-list button, .hub .more, .hub .crumb-home { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; }
+.hub .brand { text-align: left; }
+.hub .svc-list button { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 4px; color: var(--ink); text-align: center; }
+.hub .svc-list button:hover .svc-ic { background: var(--blue-l); transform: translateY(-4px); }
+.hub .svc-list button:hover .svc-name { color: var(--blue); }
+.hub .more { padding-bottom: 2px; border-bottom: 1px solid currentColor; color: var(--blue); }
+.hub .crumb-home { display: inline-flex; align-items: center; color: #fff; }
+.hub .auth-btn { font-family: var(--f); max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+
+/* 머리말: 하위 쪽은 스크롤 안에서 위에 붙어 있고, 첫 화면은 사진 위에 떠 있습니다 */
+.hub.is-sub .topbar { position: sticky; top: 0; }
+.hub.is-home .topbar { position: fixed; left: 0; right: 0; top: 0; }
+.hub .menu-btn { display: inline-flex; }
+.hub.menu-open .menu-ic::before { transform: translateY(7px) rotate(45deg); }
+.hub.menu-open .menu-ic i { opacity: 0; }
+.hub.menu-open .menu-ic::after { transform: translateY(-7px) rotate(-45deg); }
+.hub.menu-open { overflow: hidden; }
+
+/* 전체 메뉴 — 남색 덮개 */
+.hub-menu { position: fixed; left: 0; right: 0; top: var(--hh); bottom: 0; z-index: 58; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--navy-d); color: #fff; opacity: 0; visibility: hidden; transform: translateY(-8px);
+  transition: opacity .25s ease, transform .25s ease, visibility 0s linear .25s; }
+.hub-menu.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .25s ease, transform .25s ease; }
+.hub-menu-in { max-width: var(--wrap); margin: 0 auto; padding: 18px 40px 8px; display: flex; flex-direction: column; }
+.hub-menu-in button { display: flex; align-items: center; padding: 18px 4px; border: 0; border-bottom: 1px solid rgba(255,255,255,.12); background: none;
+  color: #fff; font-size: 22px; font-weight: 700; text-align: left; cursor: pointer; }
+.hub-menu-in button:hover { color: #8fb7ff; }
+.hub-menu-in button.is-on { color: #8fb7ff; }
+.hub-menu-in button.is-on::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #8fb7ff; margin-right: 12px; }
+.hub .hub-menu-util { display: grid; gap: 10px; max-width: var(--wrap); margin: 0 auto; padding: 22px 40px 40px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.hub .hub-menu-util a { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.18); border-radius: var(--r-sm); color: #fff; text-decoration: none; }
+.hub .hub-menu-util b { font-size: 22px; font-weight: 800; color: #8fb7ff; font-variant-numeric: tabular-nums; }
+.hub .hub-menu-util span { font-size: 14px; color: rgba(255,255,255,.8); line-height: 1.45; }
+.hub.menu-open .topbar { background: #fff !important; border-bottom-color: var(--line-2); }
+.hub.menu-open .topbar .brand { color: var(--navy) !important; }
+.hub.menu-open .topbar .brand-text em { color: var(--ink-3) !important; }
+.hub.menu-open .topbar .brand-mark-c { display: block !important; }
+.hub.menu-open .topbar .brand-mark-w { display: none !important; }
+.hub.menu-open .topbar .lang-select, .hub.menu-open .topbar .auth-btn { background-color: #fff !important; border-color: var(--line) !important; color: var(--ink) !important; }
+.hub.menu-open .topbar .menu-btn { color: var(--navy) !important; }
+.hub.menu-open .topbar .menu-ic::before, .hub.menu-open .topbar .menu-ic::after, .hub.menu-open .topbar .menu-ic i { background: var(--blue) !important; }
+@media (max-width: 900px) { .hub-menu-in, .hub .hub-menu-util { padding-left: 24px; padding-right: 24px; } }
+
+/* 언어 이름표 대신 지구본 그림만 */
+.hub .lang-label { font-size: 0; }
+
+/* 첫 화면 — 일하면서 챙길 두 계산 (두 칸 같은 폭) */
+.hub .hub-two { grid-template-columns: 1fr 1fr; }
+.hub .hub-two .calc-card { display: flex; flex-direction: column; }
+.hub .hub-two .calc-card .sec-lead { margin-bottom: 20px; font-size: 16px; }
+.hub .hub-two .btn { margin-top: auto; align-self: flex-start; }
+.hub .hub-rules { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 10px; }
+.hub .hub-rules li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--bg-2); font-size: 15px; font-weight: 600; color: var(--ink-2); line-height: 1.45; }
+.hub .hub-rules b { flex: none; min-width: 46px; font-size: 22px; font-weight: 800; color: var(--blue); text-align: center; font-variant-numeric: tabular-nums; }
+.hub .hub-calc .sec-head .sec-lead { margin-left: auto; margin-right: auto; }
+@media (max-width: 1000px) { .hub .hub-two { grid-template-columns: 1fr; } }
+#hub-svc { padding-bottom: 72px; }
+
+/* 하위 쪽 */
+.hub .hub-gap { margin-top: 24px; }
+.hub .hub-note { margin-top: 24px; font-size: 14px; color: var(--ink-2); }
+.hub .form-inline { margin: 0; max-width: 460px; }
+.hub .src { margin-top: 22px !important; }
+.hub .calc-card > .sec-lead { margin-top: -10px; }
+
+/* 바닥글의 PC/모바일 보기 */
+.hub .official-foot .view-switch { display: flex; gap: 6px 10px; align-items: center; }
+.hub .official-foot .view-switch button { background: none; border: 0; padding: 6px 4px; font: inherit; font-size: 13px; cursor: pointer; }
+
+/* 맨 위로 단추는 화면(.hub) 안에서 */
+.hub .to-top { position: fixed; }
+.hub .phone-back { z-index: 2000; }
+
+/* ArriveKR 의 .band(8px 구분 띠)와 이름이 같아 되돌립니다 */
+.hub .band { height: auto; flex: initial; border: 0; background: transparent; }
+.hub .band.band-sky { background: var(--bg-2); border-top: 1px solid var(--line-2); }

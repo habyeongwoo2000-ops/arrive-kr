@@ -15,6 +15,7 @@ import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
 import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
+import { hubTabs } from '../i18n/hubTabs.js';
 import useEsc from '../lib/useEsc.js';
 import { uget, uset } from '../lib/store.js';
 import HomePicker, { hs } from './HomePicker.jsx';
@@ -64,9 +65,10 @@ const spotOf = (id, K) => {
 };
 
 
-export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
+export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, onHub = () => {}, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
   const t = ui(lang);
   const n = nav(lang);
+  const H = hubTabs(lang);
   const [moreOpen, setMoreOpen] = useState(false);
   const K = lang === 'ko' ? 'ko' : 'en';
   /* 지원 찾기 조건 — 계정별로 기억 (다른 화면에 다녀오거나 새로고침해도 그대로) */
@@ -346,7 +348,7 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
         <span className="st-grip" aria-hidden="true" />
         <div className="card st-card" ref={card}>
           <div className="st-top">
-            <button type="button" className="icon" onClick={onBack} aria-label={t.toGlobe} title={t.toGlobe}><Icon n="back" size={20} /></button>
+            <button type="button" className="icon" onClick={onBack} aria-label={H.tabHome} title={H.tabHome}><Icon n="back" size={20} /></button>
             <div><b>{t.settleT}</b><small>{t.settleSub}</small></div>
           </div>
           {name && <p className="st-hello">✈ {name.toUpperCase()} · {visa}</p>}
@@ -354,6 +356,10 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
           <div className="st-tabs" role="tablist">
             <button type="button" role="tab" aria-selected={tab === 'todo'} onClick={() => setTab('todo')}>{t.tabTodo}<span>{todoDone}/{todoItems.length}</span></button>
             <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>{t.tabFind}</button>
+            {/* E9-Bridge 에서 가져온 계산 — 누르면 정착 지원 홈의 그 쪽이 열립니다 */}
+            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('deadline')}>{H.tabDl}</button>
+            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('ins')}>{H.tabIns}</button>
+            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('itv')}>{H.tabItv}</button>
           </div>
 
           {tab === 'todo' && (

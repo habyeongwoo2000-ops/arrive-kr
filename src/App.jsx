@@ -1,7 +1,7 @@
 /* ArriveKR — 지구본에서 나라를 누르면 한국까지 경로가 그려지고,
    경로 위 구간마다 준비할 서류·기한(연료)을, 위험한 곳은 난기류로 보여 줍니다. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
 import { geoCentroid, geoInterpolate, geoDistance, geoBounds } from 'd3-geo';
 import world from 'world-atlas/countries-110m.json';
@@ -15,6 +15,9 @@ import useSheetDrag from './useSheetDrag.js';
 import Settle from './components/Settle.jsx';
 import Icon from './components/Icon.jsx';
 import MyPage, { MySummary } from './components/MyPage.jsx';
+/* 정착 지원 홈(E9-Bridge 디자인) — 처음 열 때 따로 받습니다 */
+const Hub = lazy(() => import('./components/hub/Hub.jsx'));
+const HUB_PAGES = ['home', 'deadline', 'ins', 'itv'];
 import { nav } from './i18n/nav.js';
 import { byCode } from './data/visas.js';
 import { WONJU } from './data/wonju.js';
@@ -84,9 +87,10 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
-  const [view, setView] = useState(() => (QS.get('settle') ? 'settle' : 'globe'));      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원 · ?settle=todo|find 는 모바일 미리보기용)
+  const [view, setView] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? 'hub' : QS.get('settle') ? 'settle' : 'globe'));      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원 · ?settle=todo|find 는 모바일 미리보기용)
   const [settleTab, setSettleTabS] = useState(() => (QS.get('settle') ? (QS.get('settle') === 'find' ? 'find' : 'todo') : uget(current(), 'settleTab', 'todo'))); // todo | find
   const [landed, setLanded] = useState(false);
+  const [hubPage, setHubPageS] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? QS.get('hub') : uget(current(), 'hubPage', 'home')));
   const api = useRef(null);
   const flight = useRef(null);
   const shakeTimer = useRef(0);
@@ -108,7 +112,7 @@ export default function App() {
     setChecks(get('u.' + who + '.checks', {}));
     const v = get('u.' + who + '.entry'); if (v) setEntryS(new Date(v + 'T00:00:00'));
     setVisaS(get('u.' + who + '.visa', 'E-9')); setPax(get('u.' + who + '.name', ''));
-    setModeS(uget(who, 'mode', 'sat')); setSettleTabS(uget(who, 'settleTab', 'todo'));
+    setModeS(uget(who, 'mode', 'sat')); setSettleTabS(uget(who, 'settleTab', 'todo')); if (!QS.get('hub')) setHubPageS(uget(who, 'hubPage', 'home'));
     const c = get('u.' + who + '.country'); if (c) { const f = FEATURES.find((x) => x.id === c); if (f) choose(f, false); }
   }, [who]); // eslint-disable-line react-hooks/exhaustive-deps
   const [visa, setVisaS] = useState(() => { const q = QS.get('visa'); return byCode[q] ? q : get('u.' + who + '.visa', 'E-9'); });
@@ -122,8 +126,19 @@ export default function App() {
   const boarded = () => uset(who, 'boarded', true);
   /* 지금 화면(지구본/정착)을 기억 → 새로고침·다른 앱에 다녀와도 그 화면으로 */
   const lastView = useRef(uget(current(), 'view', 'globe'));   // 지난번 화면 (저장하기 전에 읽어 둠)
-  useEffect(() => { if (lastView.current === 'settle' && !QS.get('from')) setTimeout(() => openSettle(uget(who, 'settleTab', 'todo')), 300); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (QS.get('from') || QS.get('hub') || QS.get('settle')) return;
+    if (lastView.current === 'settle') setTimeout(() => openSettle(uget(who, 'settleTab', 'todo')), 300);
+    if (lastView.current === 'hub') setTimeout(() => openHub(uget(who, 'hubPage', 'home')), 300);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { uset(who, 'view', view); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* 정착 지원 홈이 화면을 다 덮는 동안 지구본은 쉬게 합니다 (주소로 바로 열었을 때는 지구본이 준비된 뒤에) */
+  useEffect(() => {
+    if (view !== 'hub') return undefined;
+    const stop = () => api.current && api.current.pause();
+    stop(); const tm = setTimeout(stop, 1500); const tm2 = setTimeout(stop, 4000);
+    return () => { clearTimeout(tm); clearTimeout(tm2); };
+  }, [view]);
   const toggle = (id) => setChecks((c) => { const n = { ...c, [id]: !c[id] }; set('u.' + who + '.checks', n); return n; });
   const setEntry = (d) => { setEntryS(d); set('u.' + who + '.entry', d.toISOString().slice(0, 10)); };
 
@@ -299,6 +314,23 @@ export default function App() {
   }
   function openSettle(tab = 'todo') { setFold(false); stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
   function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
+  /* 정착 지원 홈 (사진 슬라이드 · 기한 계산 · 출국만기보험 · 인터뷰) */
+  function setHubPage(p) {
+    const pg = HUB_PAGES.includes(p) ? p : 'home';
+    setHubPageS(pg); uset(who, 'hubPage', pg);
+    if (!(history.state && history.state.ak === 'hub' && history.state.p === pg)) history.pushState({ ak: 'hub', p: pg }, '');   // 뒤로가기 → 앞 쪽(홈)으로
+  }
+  function openHub(p = 'home') {
+    setFold(false); stopFlight(); setLanded(false); setTicket(false);
+    const pg = HUB_PAGES.includes(p) ? p : 'home';
+    setHubPageS(pg); uset(who, 'hubPage', pg); setView('hub');
+    if (!history.state || history.state.ak !== 'hub') history.pushState({ ak: 'hub', p: pg }, '');
+    api.current && api.current.pause();
+  }
+  function leaveHub(next) {   // 정착 지원 홈 → 지구본 화면(필요하면 이어서 할 일)
+    setView('globe'); api.current && api.current.resume();
+    if (next) setTimeout(next, 0);
+  }
   /* 내 정보 화면 */
   function openMe() { setFold(false); setTicket(false); setView('me'); markBack('me'); }
   function closeMe() { if (history.state && history.state.ak === 'me') history.back(); else setView('globe'); }
@@ -328,6 +360,8 @@ export default function App() {
   useEffect(() => {
     const onPop = (e) => {
       const ak = e.state && e.state.ak;
+      if (ak === 'hub') { setHubPageS(HUB_PAGES.includes(e.state.p) ? e.state.p : 'home'); setView('hub'); api.current && api.current.pause(); return; }
+      if (viewRef.current === 'hub') { setView('globe'); api.current && api.current.resume(); }
       if (viewRef.current === 'settle' && ak !== 'settle') doCloseSettle();
       if (viewRef.current === 'me' && ak !== 'me') setView('globe');
       if (selRef.current && !ak) clearSel();
@@ -367,8 +401,8 @@ export default function App() {
   /* 첫 화면 목록: 송출국 (지도에 있는 나라만) */
   const epsList = useMemo(() => COUNTRIES.map((c) => ({ c, f: FEATURES.find((x) => x.id === c.iso) })).filter((r) => r.f)
     .sort((a, b) => labelOf(a.f).localeCompare(labelOf(b.f))), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
-  const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); };
-  const railOn = view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : view === 'me' ? 'me' : 'route';
+  const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); if (view === 'hub') leaveHub(); };
+  const railOn = view === 'hub' ? 'settle' : view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : view === 'me' ? 'me' : 'route';
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
@@ -378,7 +412,7 @@ export default function App() {
         <button type="button" className="rail-logo" onClick={goRoute} aria-label="ArriveKR"><Icon n="globe" size={22} /><b>ArriveKR</b></button>
         <button type="button" className={'rail-i' + (railOn === 'route' ? ' is-on' : '')} onClick={goRoute}><Icon n="route" size={22} /><span>{n.route}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'todo' ? ' is-on' : '')} onClick={() => openSettle('todo')}><Icon n="todo" size={22} /><span>{n.todo}</span>{arriveSum && <em>{arriveSum.done}/{arriveSum.total}</em>}</button>
-        <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openSettle('find')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
+        <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
         <button type="button" className="rail-i" onClick={() => { openSettle('find'); setPlanGo((x) => x + 1); }}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
         <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => setTutorOpen((o) => !o)}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
         <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
@@ -509,12 +543,20 @@ export default function App() {
         <div className="land-card" role="status">
           <span className="land-ic" aria-hidden="true"><Icon n="land" size={24} /></span>
           <div><b>{t.landed}</b><p>ICN → WJU · {t.toWonjuMove}</p></div>
-          <button type="button" className="btn-p" onClick={() => openSettle('todo')}>{t.startSettle} →</button>
+          <button type="button" className="btn-p" onClick={() => openHub('home')}>{t.startSettle} →</button>
           <button type="button" className="icon" aria-label={t.close} onClick={() => setLanded(false)}><Icon n="close" size={18} /></button>
         </div>
       )}
 
-      {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab}
+      {view === 'hub' && (
+        <Suspense fallback={<div className="hub-wait" />}>
+          <Hub lang={lang} setLang={setLang} who={who} userName={user ? nickOf(user) : ''} page={hubPage} setPage={setHubPage}
+               onLogin={() => setAuthOpen(true)} onMe={openMe}
+               onSettle={(tab) => openSettle(tab)} onPlan={() => { openSettle('find'); setPlanGo((x) => x + 1); }}
+               onTutor={() => leaveHub(() => setTutorOpen(true))} onRoute={() => leaveHub()} />
+        </Suspense>
+      )}
+      {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={() => openHub('home')} onHub={openHub} tab={settleTab} setTab={setSettleTab}
                                         checks={checks} toggle={toggle} entry={entry}
                                         country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} planGo={planGo} />}
       {view === 'me' && (

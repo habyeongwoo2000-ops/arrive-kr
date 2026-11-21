@@ -11,6 +11,8 @@
 
 | 기능 | 설명 |
 |---|---|
+| 🏠 정착 지원 홈 | E9-Bridge(eum-six.vercel.app) 첫 화면 디자인 그대로: 인터뷰 사진 슬라이드 · 주요 서비스 8개 · 기한/보험 바로가기 · 인터뷰 · 숫자로 보는 사업장 변경 · 커뮤니티(인스타그램·페이스북) · 공식 창구 바닥글 |
+| 사업장 변경 기한 · 출국만기보험 | E9-Bridge 계산 규칙 그대로. 퇴사일 → 변경 신청 마감(1개월)·새 직장 마감(3개월), 월 통상임금·입사일 → 쌓인 보험료(8.3%)·법정 퇴직금·차액, 출국 예정일 → 출국예정신고·보험금 신청 기한, 떠나기 전 다섯 가지 |
 | 🎫 탑승권 시작 화면 | 종이 질감·기요셰 무늬·절취선·반원 홈·홀로그램·바코드·**실제로 찍히는 QR**(같은 비자·나라로 사이트가 열림). 이름·출발국(IATA 코드)·입국 예정일·비자를 고르면 편명·좌석·게이트가 만들어지고, "탑승하기" → BOARDED 도장 → 쪽지가 찢겨 나가며 비행 시작. 최종 목적지 **WJU 원주** |
 | 비자 8종 | E-9 고용허가제 · E-8 계절근로 · H-2 방문취업 · E-7-4 숙련기능 · E-7 전문인력 · D-2 강원 광역형 유학 · D-10 구직 · F-6 결혼이민. 비자마다 경로 구간이 달라짐(E-9 외에는 "확인 필요" 표시) |
 | 📍 원주 정착 지원 | 인천 도착 후 원주로 이동 → 실제 거리 지도(OpenStreetMap/CARTO)에 기관 핀. 비자·사는 곳·필요한 것(체류, 일자리, 병원, 한국어, 가족, 보육, 생활, 안전, 문화, 유학)·가족 동반을 고르면 **원주 → 강원 → 인근 시군 → 전국** 순서로 맞춤 사업과 **추천 이유(✓)**, 전화·누리집·출처를 보여 줌. 2026 신규 사업은 "신규" 표시 |
@@ -20,7 +22,7 @@
 | 체크리스트 | 구간마다 할 일과 설명, 그 나라 송출기관이 더 요구하는 서류(사진 용량·신분증 등) |
 | ⛽ 연료 | 입국 예정일을 넣으면 항목마다 "언제까지 · D-몇"과 남은 준비 기간 게이지(여유 / 빠듯함 / 늦음) |
 | ✈ 비행 · 난기류 | "비행 시작"을 누르면 비행기가 경로를 따라가고, 위험 구간(여권 이름 불일치, 브로커, 사진 규격, 건강검진, 위조 서류, 도착 후 기한)에서 화면과 비행기가 흔들리며 경고 카드가 뜸 |
-| 가 한국어 시험 도우미 | EPS-TOPIK 연습 문제 12개(직장·안전 어휘). 힌트는 고른 나라의 언어로. "AI에게 묻기"는 Claude(Amazon Bedrock)로 답함 |
+| 가 한국어 시험 도우미 | EPS-TOPIK 연습 문제 12개(직장·안전 어휘). 힌트는 고른 나라의 언어로. "AI에게 묻기"는 AI(Gemini 또는 Claude)로 답함 |
 | 로그인 | 아이디·비밀번호로 계정을 만들면 체크 기록·입국 예정일·나라가 계정별로 저장 |
 
 ## 데이터 (확인일 2026-11-08 · 원주 2026-11-09)
@@ -48,7 +50,20 @@ npm run dev        # http://localhost:5173
 npm run build
 ```
 
-### 대회 서버(AWS)에 올리기 — AI는 Amazon Bedrock (Claude)
+### Vercel 에 올리기 (지금 운영: https://arrive-kr.vercel.app) — 대회 AWS 서버는 2026-11 종료
+
+GitHub 에 올리면 Vercel 이 알아서 빌드·배포합니다(`vercel.json`). AI 주소(`/api/*`)는 `api/` 폴더가 그대로 Vercel 함수가 됩니다.
+AI 와 간편 로그인은 **Vercel → Project → Settings → Environment Variables** 에 키를 넣어야 켜집니다(코드·GitHub 에 넣지 마세요).
+
+| 환경변수 (Vercel) | 용도 |
+|---|---|
+| `GEMINI_API_KEY` | AI 켜기 (Google AI Studio 무료 키 · E9-Bridge 와 같은 키 가능). 없으면 AI 없이 기본 설명·규칙 계산으로 동작 |
+| `ANTHROPIC_API_KEY` | (선택) Gemini 대신 Claude 를 쓸 때 |
+| `AI_MODEL` · `AI_MODEL_DOC` | (선택) 모델 이름. 기본 Gemini `gemini-flash-latest` · Claude `claude-haiku-4-5` |
+| `GOOGLE_CLIENT_ID` | 구글 로그인 (구글 콘솔에 `https://arrive-kr.vercel.app` 을 승인된 출처로) |
+| `KAKAO_REST_KEY` · `KAKAO_CLIENT_SECRET` | 카카오 로그인 (카카오 개발자에 Redirect URI `https://arrive-kr.vercel.app/` 등록) |
+
+### (예전) 대회 서버(AWS)에 올리기 — AI는 Amazon Bedrock (Claude)
 
 서버에 붙은 권한으로 Bedrock 을 부르므로 **API 키가 없습니다.** 키·.pem 파일은 GitHub 에 올리지 마세요.
 
@@ -60,7 +75,7 @@ bash deploy/update.sh     # 이후 GitHub 에 올린 코드를 반영할 때
 ```
 
 - `server.mjs` — 화면(dist/)과 AI 주소(/api/plan·tutor·doc·replan)를 함께 여는 Node 서버 (127.0.0.1:3000, 바깥은 Caddy 가 https 로)
-- `api/_ai.js` — Bedrock Converse 호출 공통
+- `api/_ai.js` — AI 호출 공통 (Gemini · Claude · Bedrock 중 키가 있는 것을 자동 선택)
 
 | 환경변수 (deploy/arrive.service) | 용도 |
 |---|---|

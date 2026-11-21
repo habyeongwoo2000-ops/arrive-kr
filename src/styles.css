@@ -330,6 +330,11 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .st-tabs { position: sticky; top: 64px; z-index: 3; display: flex; margin: 4px 0 0; padding: 0; background: #fff; border-bottom: 1px solid var(--line-2); }
 .st-tabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; height: 48px; padding: 0 6px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; font-size: 15px; font-weight: 600; color: var(--ink-3); }
 .st-tabs button[aria-selected="true"] { color: var(--ink); font-weight: 800; border-bottom-color: var(--ink); }
+.st-tabs { overflow-x: auto; scrollbar-width: none; } .st-tabs::-webkit-scrollbar { display: none; }
+.st-tabs button { flex: 1 0 auto; white-space: nowrap; padding: 0 10px; font-size: 14.5px; }
+.st-tabs .st-tab-hub { color: #0b2d5c; font-weight: 600; }
+.st-tabs .st-tab-hub::after { content: ""; width: 6px; height: 6px; margin-left: 2px; border-right: 1.5px solid currentColor; border-top: 1.5px solid currentColor; transform: rotate(45deg); opacity: .6; }
+.hub-wait { position: fixed; inset: 0; z-index: 55; background: #0a1730; }
 .st-tabs button span { color: var(--green-t); font-size: 13px; font-weight: 700; }
 .st-todo { padding: 16px 20px 0; }
 .st-todo-intro { margin: 0 0 10px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
