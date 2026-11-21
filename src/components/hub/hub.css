@@ -78,5 +78,22 @@
 .hub .phone-back { z-index: 2000; }
 
 /* ArriveKR 의 .band(8px 구분 띠)와 이름이 같아 되돌립니다 */
-.hub .band { height: auto; flex: initial; border: 0; background: transparent; }
-.hub .band.band-sky { background: var(--bg-2); border-top: 1px solid var(--line-2); }
+.hub .band:where(:not(.hub-map *)) { height: auto; flex: initial; border: 0; background: transparent; }
+.hub .band.band-sky:where(:not(.hub-map *)) { background: var(--bg-2); border-top: 1px solid var(--line-2); }
+
+/* ArriveKR 탑승권 로고 */
+.hub .hub-logo { display: block; height: 44px; width: auto; }
+.hub .hub-brand .brand-text em { margin-top: 0; font-size: 13px; }
+.hub.is-home .topbar:not(.is-solid) .hub-brand .brand-text em { color: rgba(255,255,255,.85); }
+.hub .ft-brand .hub-logo { height: 40px; box-shadow: none; }
+@media (max-width: 600px) { .hub .hub-logo { height: 34px; } }
+
+/* 주요 서비스 아래 지도 — 예전 정착 화면을 이 칸 안에 그대로 */
+.hub .hub-map { position: relative; isolation: isolate; height: calc(100vh - var(--hh)); height: calc(100svh - var(--hh)); min-height: 560px;
+  --rail: 0px; --tabbar: 0px; --panel: 380px; --mapL: var(--panel); border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2);
+  /* E9 색·글꼴 변수 대신 ArriveKR(토스 색감) 값으로 되돌림 */
+  --blue: #3182f6; --ink: #191f28; --ink-2: #4e5968; --ink-3: #8b95a1; --line: #f2f4f6; --line-2: #e5e8eb; --bg: #fff; --bg-2: #f2f4f6;
+  --f: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Noto Sans Khmer', 'Noto Sans Devanagari', 'Segoe UI', sans-serif;
+  font-family: var(--f); color: var(--ink); font-size: 16px; line-height: normal; letter-spacing: -.01em; -webkit-font-smoothing: antialiased; }
+.hub .hub-map .settle { position: absolute; inset: 0; z-index: 1; animation: none; }
+@media (max-width: 760px) { .hub .hub-map { --panel: 100%; height: calc(100svh - var(--hh)); } }

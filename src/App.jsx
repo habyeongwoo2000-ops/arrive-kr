@@ -312,7 +312,11 @@ export default function App() {
     choose(from);
     setTimeout(() => fly(), 2100);   // 출발 자리에 비행기를 띄우고, 이후는 체크할 때마다 앞으로
   }
-  function openSettle(tab = 'todo') { setFold(false); stopFlight(); setLanded(false); setSettleTab(tab); setView('settle'); markBack('settle'); api.current && api.current.pause(); }
+  /* 정착 지도(도착 후 할 일 · 지원 찾기)는 이제 정착 지원 홈의 주요 서비스 아래에 있습니다 → 홈을 열고 지도까지 내려 줍니다 */
+  const [hubMapGo, setHubMapGo] = useState(0);
+  const [planReq, setPlanReq] = useState(0);
+  function openSettle(tab = 'todo') { setSettleTab(tab); openHub('home'); setHubMapGo((x) => x + 1); }
+  function openPlan() { setPlanReq(Date.now()); openSettle('find'); }
   function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
   /* 정착 지원 홈 (사진 슬라이드 · 기한 계산 · 출국만기보험 · 인터뷰) */
   function setHubPage(p) {
@@ -338,7 +342,7 @@ export default function App() {
     if (a === 'ticket') { setTicket(true); return; }
     if (a === 'tutor') { setTutorOpen(true); return; }
     if (a === 'todo' || a === 'find') { openSettle(a); return; }
-    if (a === 'plan') { openSettle('find'); setPlanGo((x) => x + 1); return; }
+    if (a === 'plan') { openPlan(); return; }
     setView('globe');                                   // route
     if (!sel) { const c = get('u.' + who + '.country'); const f = c && FEATURES.find((x) => x.id === c); if (f) choose(f, false); }
   }
@@ -413,7 +417,7 @@ export default function App() {
         <button type="button" className={'rail-i' + (railOn === 'route' ? ' is-on' : '')} onClick={goRoute}><Icon n="route" size={22} /><span>{n.route}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'todo' ? ' is-on' : '')} onClick={() => openSettle('todo')}><Icon n="todo" size={22} /><span>{n.todo}</span>{arriveSum && <em>{arriveSum.done}/{arriveSum.total}</em>}</button>
         <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
-        <button type="button" className="rail-i" onClick={() => { openSettle('find'); setPlanGo((x) => x + 1); }}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
+        <button type="button" className="rail-i" onClick={openPlan}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
         <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => setTutorOpen((o) => !o)}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
         <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
@@ -551,8 +555,11 @@ export default function App() {
       {view === 'hub' && (
         <Suspense fallback={<div className="hub-wait" />}>
           <Hub lang={lang} setLang={setLang} who={who} userName={user ? nickOf(user) : ''} page={hubPage} setPage={setHubPage}
-               onLogin={() => setAuthOpen(true)} onMe={openMe}
-               onSettle={(tab) => openSettle(tab)} onPlan={() => { openSettle('find'); setPlanGo((x) => x + 1); }}
+               onLogin={() => setAuthOpen(true)} onMe={openMe} mapGo={hubMapGo}
+               mapEl={<Settle key={who} who={who} lang={lang} visa={visa} name={pax} embedded onHub={setHubPage} planReq={planReq}
+                              tab={settleTab} setTab={setSettleTab} checks={checks} toggle={toggle} entry={entry}
+                              country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} />}
+               onSettle={(tab) => openSettle(tab)} onPlan={openPlan}
                onTutor={() => leaveHub(() => setTutorOpen(true))} onRoute={() => leaveHub()} />
         </Suspense>
       )}

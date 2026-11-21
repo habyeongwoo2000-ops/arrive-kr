@@ -57,7 +57,7 @@ function TelText({ text }) {
   return <>{parts.map((p, i) => (/^(\d{4}-\d{4}|1\d{3})$/.test(p) ? <a key={i} className="pay-tel" href={'tel:' + p.replace(/-/g, '')}>{p}</a> : p))}</>;
 }
 
-export default function Hub({ lang, setLang, who = 'guest', userName = '', page = 'home', setPage, onLogin, onMe, onSettle, onPlan, onTutor, onRoute }) {
+export default function Hub({ lang, setLang, who = 'guest', userName = '', page = 'home', setPage, onLogin, onMe, onSettle, onPlan, onTutor, onRoute, mapEl = null, mapGo = 0 }) {
   const T = hub(lang);
   const box = useRef(null);
   const [solid, setSolid] = useState(page !== 'home');
@@ -65,6 +65,15 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
   const [topOn, setTopOn] = useState(false);
   const isHome = page === 'home';
   useEffect(loadFonts, []);
+  /* 도착 후 할 일 · 지원 찾기 · 30일 일정 → 주요 서비스 아래 지도까지 내려 줍니다 */
+  useEffect(() => {
+    if (!mapGo) return undefined;
+    const tm = setTimeout(() => {
+      const el = document.getElementById('hub-map');
+      if (el && box.current) box.current.scrollTo({ top: el.offsetTop - (parseInt(getComputedStyle(box.current).getPropertyValue('--hh'), 10) || 84), behavior: 'smooth' });
+    }, 120);
+    return () => clearTimeout(tm);
+  }, [mapGo]);
 
   useEffect(() => { if (box.current) box.current.scrollTop = 0; setMenu(false); setSolid(page !== 'home'); setTopOn(false); }, [page]);
   const onScroll = () => {
@@ -97,10 +106,10 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
       {/* ▼ 머리말 — 첫 화면에서는 사진 위에 투명하게, 내리면 흰 바탕 */}
       <header className={'topbar' + (solid || menu ? ' is-solid' : '')}>
         <div className="wrap topbar-in">
-          <button type="button" className="brand" onClick={() => go('home')}>
-            <img className="brand-mark brand-mark-c" src="/e9/logo-mark.svg" alt="" width="42" height="42" />
-            <img className="brand-mark brand-mark-w" src="/e9/logo-mark-white.svg" alt="" aria-hidden="true" width="42" height="42" />
-            <span className="brand-text"><strong>ArriveKR</strong><em>{T.brandSub}</em></span>
+          {/* ArriveKR 탑승권 로고 — 누르면 지구본 첫 화면으로 */}
+          <button type="button" className="brand hub-brand" onClick={onRoute} aria-label="ArriveKR" title={T.svcRoute}>
+            <img className="hub-logo" src="/arrivekr-logo.png" alt="ArriveKR" width="147" height="44" />
+            <span className="brand-text"><em>{T.brandSub}</em></span>
           </button>
           <div className="util">
             <div className="lang">
@@ -133,7 +142,7 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
       </nav>
 
       <main id="hub-main">
-        {page === 'home' && <Home T={T} lang={lang} setPage={go} onSettle={onSettle} onPlan={onPlan} onTutor={onTutor} onRoute={onRoute} scroller={box} />}
+        {page === 'home' && <Home T={T} lang={lang} setPage={go} onSettle={onSettle} onPlan={onPlan} onTutor={onTutor} onRoute={onRoute} scroller={box} mapEl={mapEl} />}
         {page === 'deadline' && <Deadline T={T} lang={lang} who={who} setPage={go} />}
         {page === 'ins' && <Insurance T={T} lang={lang} who={who} setPage={go} />}
         {page === 'itv' && <Interviews T={T} lang={lang} setPage={go} />}
@@ -147,7 +156,7 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
 }
 
 /* ───────── 첫 화면 ───────── */
-function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller }) {
+function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, mapEl }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } });
   const [run, setRun] = useState(0);            // 진행 막대를 처음부터 다시 그리기
@@ -217,29 +226,8 @@ function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller }
         </div>
       </section>
 
-      <section className="band band-sky hub-calc">
-        <div className="wrap">
-          <div className="sec-head">
-            <p className="sec-eyebrow" aria-hidden="true">Work &amp; Leave</p>
-            <h2 className="sec-title">{T.calcTitle}</h2>
-            <p className="sec-lead">{T.calcLead}</p>
-          </div>
-          <div className="card-row hub-two">
-            <div className="calc-card">
-              <h3>{T.svcDeadline}</h3>
-              <p className="sec-lead">{T.dlLead}</p>
-              <ul className="hub-rules"><li><b>1</b>{T.st1T} · {T.st1S}</li><li><b>3</b>{T.st2T} · {T.st2S}</li></ul>
-              <button type="button" className="btn btn-go" onClick={() => setPage('deadline')}>{T.goDeadline}</button>
-            </div>
-            <div className="calc-card">
-              <h3>{T.svcIns}</h3>
-              <p className="sec-lead">{T.insLead}</p>
-              <ul className="hub-rules"><li><b>8.3%</b>{T.insSaved}</li><li><b>1</b>{T.insEligRule}</li></ul>
-              <button type="button" className="btn btn-go" onClick={() => setPage('ins')}>{T.goIns}</button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ▼ 지도 — 예전 정착 화면(도착 후 할 일 · 지원 찾기 · 30일 일정) 그대로 */}
+      {mapEl && <section className="hub-map" id="hub-map" aria-label={T.svcFind}>{mapEl}</section>}
 
       <section className="feat" aria-labelledby="hub-feat-t">
         <div className="feat-photo"><img src={it.photo} alt={(lang !== 'ko' && it.photoAltL && it.photoAltL[lang]) || it.photoAlt || ''} /></div>
@@ -546,8 +534,8 @@ function Footer({ T, lang, page }) {
     <footer className="band-ink">
       <div className="wrap">
         <div className="ft-brand">
-          <img src="/e9/logo-mark-white.svg" alt="" width="40" height="40" />
-          <div><strong>ArriveKR</strong><em>{T.brandSub}</em></div>
+          <img className="hub-logo" src="/arrivekr-logo.png" alt="ArriveKR" width="134" height="40" />
+          <div><em>{T.brandSub}</em></div>
         </div>
         <h2>{T.ofTitle}</h2>
         <p className="sec-lead">{T.ofLead}</p>

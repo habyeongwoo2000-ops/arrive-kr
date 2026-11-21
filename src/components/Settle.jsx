@@ -65,7 +65,7 @@ const spotOf = (id, K) => {
 };
 
 
-export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, onHub = () => {}, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
+export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, onHub = () => {}, embedded = false, planReq = 0, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
   const t = ui(lang);
   const n = nav(lang);
   const H = hubTabs(lang);
@@ -322,10 +322,12 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   useEffect(() => { uset(who, 'settle', { visa, town, needs, family, near, planBase }); }, [visa, town, needs, family, near, planBase]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { uset(who, 'planOpen', plan > 0); }, [plan]); // eslint-disable-line react-hooks/exhaustive-deps
   /* 일정을 보던 중이었으면 다시 열어 둡니다 (AI 결과는 저장해 둔 것을 바로 보여 줌) */
-  useEffect(() => { if (wasOpen.current && !planGo) { const tm = setTimeout(() => { if (map.current) { setLow(true); setPlan(1); } }, 400); return () => clearTimeout(tm); } return undefined; }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (wasOpen.current && !planGo && !(planReq && Date.now() - planReq < 4000)) { const tm = setTimeout(() => { if (map.current) { setLow(true); setPlan(1); } }, 400); return () => clearTimeout(tm); } return undefined; }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* 왼쪽 메뉴의 '30일 일정' → 바로 AI 일정 시작 */
   useEffect(() => { if (planGo > 0 && map.current) { setLow(true); setPlan((x) => x + 1); } }, [planGo]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* 정착 지원 홈 안의 지도: 방금(4초 안) 누른 '30일 일정'만 엽니다 — 다른 쪽에 갔다 와서 다시 그려질 때 또 열리지 않게 */
+  useEffect(() => { if (planReq && Date.now() - planReq < 4000 && map.current) { setLow(true); setPlan((x) => x + 1); } }, [planReq]); // eslint-disable-line react-hooks/exhaustive-deps
   const tog = (n) => setNeeds((a) => (a.includes(n) ? a.filter((x) => x !== n) : [...a, n]));
 
   const whyLabel = (w) => {
@@ -339,16 +341,16 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   };
 
   return (
-    <div className={'settle' + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '')}>
+    <div className={'settle' + (embedded ? ' is-embed' : '') + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '')}>
       <div className="lf" ref={host} />
       {/* PC로 보기 / 모바일로 보기 (지구본 화면과 같은 버튼) */}
-      <div className="st-view mtool-g"><ViewToggle lang={lang} settle={tab} /></div>
+      {!embedded && <div className="st-view mtool-g"><ViewToggle lang={lang} settle={tab} /></div>}
 
       <aside ref={sideEl} className={'side st-side' + (low ? ' is-low' : '')} onClick={() => { if (low && !justDragged.current) setLow(false); }}>
         <span className="st-grip" aria-hidden="true" />
         <div className="card st-card" ref={card}>
           <div className="st-top">
-            <button type="button" className="icon" onClick={onBack} aria-label={H.tabHome} title={H.tabHome}><Icon n="back" size={20} /></button>
+            {!embedded && <button type="button" className="icon" onClick={onBack} aria-label={H.tabHome} title={H.tabHome}><Icon n="back" size={20} /></button>}
             <div><b>{t.settleT}</b><small>{t.settleSub}</small></div>
           </div>
           {name && <p className="st-hello">✈ {name.toUpperCase()} · {visa}</p>}

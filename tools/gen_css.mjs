@@ -7,6 +7,13 @@ const R = [[11,80],[85,205],[271,288],[290,310],[312,357],[359,456],[458,530],[5
 let css = R.map(([a,b]) => src.slice(a-1,b).join('\n')).join('\n');
 css = css.replace(/#langSelect/g, '.lang-select').replace(/html\[data-lang-pending\][^\n]*\n/, '');
 const root = postcss.parse(css);
+/* 정착 지도(.hub-map) 안은 ArriveKR 원래 디자인 그대로 — 그 안에는 이 규칙들이 닿지 않게 (:where 라 우선순위는 그대로) */
+const NOT_MAP = ':where(:not(.hub-map *))';
+const skipMap = (s) => {
+  if (s === '.hub' || /^\.hub(\.[a-z-]+)*$/.test(s) || /^html\[lang="(km|ne)"\] \.hub$/.test(s)) return s;
+  const i = s.lastIndexOf('::');
+  return i > 0 ? s.slice(0, i) + NOT_MAP + s.slice(i) : s + NOT_MAP;
+};
 const pre = (s) => {
   s = s.trim();
   if (s === ':root' || s === 'html' || s === 'body') return '.hub';
@@ -21,7 +28,7 @@ const pre = (s) => {
 };
 root.walkRules((r) => {
   if (r.parent && r.parent.type === 'atrule' && /keyframes/.test(r.parent.name)) return;
-  r.selectors = r.selectors.map(pre);
+  r.selectors = r.selectors.map(pre).map(skipMap);
 });
 let out = root.toString();
 fs.writeFileSync('src/components/hub/e9base.css', '/* E9-Bridge(eum-six) style.css 에서 가져온 디자인 — .hub 안에서만 적용되도록 앞에 .hub 를 붙였습니다 (tools/gen_css.mjs). */\n' + out + '\n');
