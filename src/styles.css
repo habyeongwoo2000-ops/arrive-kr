@@ -67,6 +67,7 @@ body.is-rz .lf, body.is-rz .globe-wrap { pointer-events: none; }
 .rail-i.is-on::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 2px 2px 0; background: var(--green); }
 .rail-i em { position: absolute; top: 4px; right: 4px; min-width: 18px; padding: 0 4px; border-radius: 8px; background: var(--green); color: #fff; font: 700 9.5px/15px var(--f); font-style: normal; }
 .rail-ai { position: absolute; top: 6px; right: 9px; padding: 0 3px; border: 1px solid var(--green); border-radius: 3px; background: #fff; color: var(--green-t); font: 800 8.5px/12px var(--f); font-style: normal; }
+.rail-myinfo-m { display: none; }
 .rail-foot { margin-top: auto; display: flex; flex-direction: column; align-items: stretch; border-top: 1px solid var(--line); padding-top: 4px; }
 .rail-lang { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 2px 8px; color: #444; font-size: 11px; cursor: pointer; }
 .rail-lang:hover { background: var(--hover); }
@@ -488,6 +489,8 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
   .rail-ai { right: 50%; margin-right: -22px; top: 4px; }
   .rail-foot { position: fixed; top: 70px; left: 10px; z-index: 41; margin: 0; flex-direction: row; gap: 6px; border: 0; padding: 0; }
   .view-settle .rail-foot { display: none; }
+  .rail-myinfo-m { display: flex; }
+  .rail-foot .rail-myinfo { display: none; }
   .rail-foot > * { flex-direction: row; height: 36px; padding: 0 12px; border-radius: 18px; background: #fff; box-shadow: var(--chip-sh); font-size: 12.5px; font-weight: 600; }
   .rail-foot .rail-i { width: auto; }
   .rail-foot .ic { width: 18px; height: 18px; }

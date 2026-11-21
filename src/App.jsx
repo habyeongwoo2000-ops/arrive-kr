@@ -406,7 +406,7 @@ export default function App() {
   const epsList = useMemo(() => COUNTRIES.map((c) => ({ c, f: FEATURES.find((x) => x.id === c.iso) })).filter((r) => r.f)
     .sort((a, b) => labelOf(a.f).localeCompare(labelOf(b.f))), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); if (view === 'hub') leaveHub(); };
-  const railOn = view === 'hub' ? 'settle' : view === 'settle' ? (settleTab === 'todo' ? 'todo' : 'settle') : view === 'me' ? 'me' : 'route';
+  const railOn = view === 'hub' ? 'settle' : view === 'settle' ? 'settle' : view === 'me' ? 'me' : 'route';
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
@@ -414,13 +414,13 @@ export default function App() {
       {/* 맨 왼쪽 메뉴 (네이버 지도식 세로 메뉴) */}
       <nav className="rail" aria-label="Menu">
         <button type="button" className="rail-logo" onClick={goRoute} aria-label="ArriveKR"><Icon n="globe" size={22} /><b>ArriveKR</b></button>
+        <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'route' ? ' is-on' : '')} onClick={goRoute}><Icon n="route" size={22} /><span>{n.route}</span></button>
-        <button type="button" className={'rail-i' + (railOn === 'todo' ? ' is-on' : '')} onClick={() => openSettle('todo')}><Icon n="todo" size={22} /><span>{n.todo}</span>{arriveSum && <em>{arriveSum.done}/{arriveSum.total}</em>}</button>
         <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
         <button type="button" className="rail-i" onClick={openPlan}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
         <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => (view === 'hub' ? leaveHub(() => setTutorOpen(true)) : setTutorOpen((o) => !o))}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
-        <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
-        <button type="button" className={'rail-i' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
+        {/* 휴대폰 아래 탭 메뉴에서만 보이는 "내 정보" (PC 는 아래 로그인 바로 위) */}
+        <button type="button" className={'rail-i rail-myinfo-m' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
         <div className="rail-foot">
           <label className="rail-lang" title={n.lang}>
             <Icon n="globe" size={20} />
@@ -430,9 +430,12 @@ export default function App() {
             <span>{LANG_NAMES[lang]}</span>
           </label>
           {user ? (
-            <button type="button" className="rail-i rail-me" title={nickOf(user)} onClick={openMe}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
+            <button type="button" className={'rail-i rail-me' + (railOn === 'me' ? ' is-on' : '')} title={nickOf(user)} onClick={openMe}><b className={'avatar' + (/^kakao:/.test(user) ? ' kakao' : /^google:/.test(user) ? ' google' : '')}>{nickOf(user).slice(0, 1).toUpperCase()}</b><span>{n.me}</span></button>
           ) : (
-            <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="user" size={22} /><span>{n.login}</span></button>
+            <>
+              <button type="button" className={'rail-i rail-myinfo' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
+              <button type="button" className="rail-i" onClick={() => setAuthOpen(true)}><Icon n="login" size={22} /><span>{n.login}</span></button>
+            </>
           )}
         </div>
       </nav>
