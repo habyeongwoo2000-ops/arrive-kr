@@ -38,12 +38,12 @@ const KIND = { move: '#202124', duty: '#e37400', call: '#9334e6', visit: '#1a73e
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* 아래 일정 패널 높이 — 위쪽 손잡이를 끌어서 바꾸고, 이 기기에 기억합니다 */
-const DOCK_KEY = 'ui.dockH3';   // 기본 크기를 줄이면서 새 이름 (예전에 기억한 큰 값은 쓰지 않음)
+const DOCK_KEY = 'ui.dockH5';   // 기본 크기를 줄이면서 새 이름 (예전에 기억한 큰 값은 쓰지 않음)
 const BOX_KEY = 'ui.dockBox';
 const dockMax = () => Math.round(innerHeight * (innerWidth > 760 ? 0.72 : 0.8));
 const DOCK_MIN = 96;
 const DOCK_W_MIN = 300;                                        // PC에서 줄일 수 있는 가장 좁은 폭
-const dockDef = () => (innerWidth > 760 ? 300 : 260);          // 처음 높이
+const dockDef = () => (innerWidth > 760 ? 330 : 360);          // 처음 높이
 const loadDock = () => { try { const v = +localStorage.getItem(DOCK_KEY); return v ? Math.min(dockMax(), Math.max(DOCK_MIN, v)) : dockDef(); } catch (e) { return dockDef(); } };
 
 /* 집에서 목표 시각(기본 9시)에 도착하려면 몇 시에 나서야 하나 — 교통수단별 어림, 5분 단위로 내림 */

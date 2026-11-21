@@ -17,7 +17,8 @@ const HUB = {
     ftLine: 'ArriveKR · 탑승부터 원주 정착까지 · 팀 E9-Bridge (3조)', github: '소스코드 (MIT 오픈소스)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: '지도', backHome: '정착 지원 홈으로', pcView: 'PC로 보기', mobileView: '모바일로 보기', top: 'TOP',
-    payHero: '떠나기 전에 확인할 다섯 가지'
+    payHero: '떠나기 전에 확인할 다섯 가지',
+    mapOpen: '지도를 누르면 크게 열려요', mapClose: '지도 작게'
   },
   en: {
     brandSub: 'Settle in Wonju', eyebrow: 'ArriveKR',
@@ -33,7 +34,8 @@ const HUB = {
     ftLine: 'ArriveKR · From boarding to settling in Wonju · Team E9-Bridge (Team 3)', github: 'Source code (MIT open source)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: 'Map', backHome: 'Back to Settle home', pcView: 'PC view', mobileView: 'Mobile view', top: 'TOP',
-    payHero: 'Five things to check before you leave'
+    payHero: 'Five things to check before you leave',
+    mapOpen: 'Tap the map to open it full screen', mapClose: 'Close map'
   },
   vi: {
     brandSub: 'Định cư tại Wonju', eyebrow: 'ArriveKR',
@@ -49,7 +51,8 @@ const HUB = {
     ftLine: 'ArriveKR · Từ lúc lên máy bay đến khi định cư ở Wonju · Nhóm E9-Bridge (nhóm 3)', github: 'Mã nguồn (mã nguồn mở MIT)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: 'Bản đồ', backHome: 'Về trang định cư', pcView: 'Xem bản PC', mobileView: 'Xem bản di động', top: 'TOP',
-    payHero: 'Năm điều cần kiểm tra trước khi về nước'
+    payHero: 'Năm điều cần kiểm tra trước khi về nước',
+    mapOpen: 'Chạm vào bản đồ để mở toàn màn hình', mapClose: 'Thu nhỏ bản đồ'
   },
   id: {
     brandSub: 'Menetap di Wonju', eyebrow: 'ArriveKR',
@@ -65,7 +68,8 @@ const HUB = {
     ftLine: 'ArriveKR · Dari naik pesawat sampai menetap di Wonju · Tim E9-Bridge (Tim 3)', github: 'Kode sumber (open source MIT)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: 'Peta', backHome: 'Kembali ke beranda', pcView: 'Tampilan PC', mobileView: 'Tampilan ponsel', top: 'TOP',
-    payHero: 'Lima hal yang dicek sebelum pulang'
+    payHero: 'Lima hal yang dicek sebelum pulang',
+    mapOpen: 'Ketuk peta untuk membukanya layar penuh', mapClose: 'Perkecil peta'
   },
   km: {
     brandSub: 'តាំងលំនៅនៅ Wonju', eyebrow: 'ArriveKR',
@@ -81,7 +85,8 @@ const HUB = {
     ftLine: 'ArriveKR · ពីពេលឡើងយន្តហោះ ដល់តាំងលំនៅនៅ Wonju · ក្រុម E9-Bridge (ក្រុមទី ៣)', github: 'កូដប្រភព (MIT open source)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: 'ផែនទី', backHome: 'ត្រឡប់ទៅទំព័រតាំងលំនៅ', pcView: 'មើលជា PC', mobileView: 'មើលជាទូរស័ព្ទ', top: 'TOP',
-    payHero: 'រឿងប្រាំដែលត្រូវពិនិត្យមុនចាកចេញ'
+    payHero: 'រឿងប្រាំដែលត្រូវពិនិត្យមុនចាកចេញ',
+    mapOpen: 'ចុចលើផែនទី ដើម្បីបើកពេញអេក្រង់', mapClose: 'បង្រួមផែនទី'
   },
   ne: {
     brandSub: 'वोन्जुमा बसोबास', eyebrow: 'ArriveKR',
@@ -97,7 +102,8 @@ const HUB = {
     ftLine: 'ArriveKR · उडानदेखि वोन्जुमा बसोबाससम्म · टोली E9-Bridge (टोली ३)', github: 'स्रोत कोड (MIT खुला स्रोत)',
     enDeadline: 'Job Change', enIns: 'Departure Insurance', enItv: 'Interview',
     toMap: 'नक्सा', backHome: 'बसोबास गृहपृष्ठमा फर्कनुहोस्', pcView: 'PC मा हेर्नुहोस्', mobileView: 'मोबाइलमा हेर्नुहोस्', top: 'TOP',
-    payHero: 'जानुअघि जाँच्ने पाँच कुरा'
+    payHero: 'जानुअघि जाँच्ने पाँच कुरा',
+    mapOpen: 'नक्सा थिच्नुहोस्, पूरा स्क्रिनमा खुल्छ', mapClose: 'नक्सा सानो'
   }
 };
 

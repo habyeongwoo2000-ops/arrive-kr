@@ -99,8 +99,22 @@
 @media (max-width: 760px) { .hub .hub-map { --panel: 100%; height: calc(100svh - var(--hh)); } }
 
 /* 왼쪽 세로 메뉴(휴대폰은 아래 탭 메뉴)는 정착 지원 홈에서도 그대로 보이게 — 그 옆(위)만 덮습니다 */
-.hub { left: var(--rail); bottom: var(--tabbar); }
+.hub { left: var(--rail); bottom: var(--tabbar); --hub-rail: var(--rail); --hub-tab: var(--tabbar); }
 .hub.is-home .topbar { left: var(--rail); }
 .hub-menu { left: var(--rail); bottom: var(--tabbar); }
 .hub .to-top { bottom: calc(24px + var(--tabbar)); }
 @media (max-width: 600px) { .hub .to-top { bottom: calc(14px + var(--tabbar)); } }
+
+/* 지도 — 평소: 페이지 안에 그림처럼(밖으로 넘치는 것은 자르고, 누르기 전엔 지도 조작 없음) / 누르면: 화면 가득 */
+.hub .hub-map { overflow: hidden; }
+.hub .hub-map-cover { position: absolute; inset: 0; z-index: 3000; display: flex; align-items: flex-end; justify-content: center; padding: 0 0 28px;
+  border: 0; background: linear-gradient(180deg, rgba(6,29,63,0) 55%, rgba(6,29,63,.28)); cursor: zoom-in; }
+.hub .hub-map-cover span { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 999px; background: #0b2d5c; color: #fff;
+  font: 700 15px var(--f); box-shadow: 0 8px 22px rgba(6,29,63,.3); transition: transform .2s; }
+.hub .hub-map-cover:hover span { transform: translateY(-2px); background: #1b5fe0; }
+.hub.map-full { overflow: hidden; }
+.hub .hub-map.is-full { position: fixed; top: 0; left: var(--hub-rail); right: 0; bottom: var(--hub-tab); height: auto; min-height: 0; z-index: 80; border: 0; animation: fadein .2s ease-out; }
+.hub .hub-map-close { position: absolute; right: 16px; top: 16px; z-index: 3000; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px;
+  border: 0; border-radius: 999px; background: rgba(11,45,92,.92); color: #fff; font: 700 14px var(--f); box-shadow: 0 6px 18px rgba(6,29,63,.3); cursor: pointer; }
+.hub .hub-map-close:hover { background: #1b5fe0; }
+@media (max-width: 760px) { .hub .hub-map-close { right: 10px; top: 64px; } }

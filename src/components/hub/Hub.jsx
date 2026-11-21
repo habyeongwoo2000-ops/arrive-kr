@@ -64,13 +64,22 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
   const [menu, setMenu] = useState(false);
   const [topOn, setTopOn] = useState(false);
   const isHome = page === 'home';
+  /* 지도: 평소에는 페이지 안의 그림처럼(스크롤하면 그냥 지나감), 누르면 화면 가득 열리고 그 안에서 움직일 수 있음 */
+  const [mapFull, setMapFull] = useState(false);
+  useEffect(() => { if (page !== 'home') setMapFull(false); }, [page]);
+  useEffect(() => {
+    if (!mapFull) return undefined;
+    const esc = (e) => { if (e.key === 'Escape' && !document.querySelector('.pl-dock:focus-within')) setMapFull(false); };
+    addEventListener('keydown', esc); return () => removeEventListener('keydown', esc);
+  }, [mapFull]);
   useEffect(loadFonts, []);
   /* 도착 후 할 일 · 지원 찾기 · 30일 일정 → 주요 서비스 아래 지도까지 내려 줍니다 */
   useEffect(() => {
     if (!mapGo) return undefined;
     const tm = setTimeout(() => {
       const el = document.getElementById('hub-map');
-      if (el && box.current) box.current.scrollTo({ top: el.offsetTop - (parseInt(getComputedStyle(box.current).getPropertyValue('--hh'), 10) || 84), behavior: 'smooth' });
+      if (el && box.current) box.current.scrollTo({ top: el.offsetTop - (parseInt(getComputedStyle(box.current).getPropertyValue('--hh'), 10) || 84) });
+      setMapFull(true);
     }, 120);
     return () => clearTimeout(tm);
   }, [mapGo]);
@@ -100,7 +109,7 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
   ];
 
   return (
-    <div className={'hub' + (isHome ? ' is-home' : ' is-sub') + (menu ? ' menu-open' : '')} ref={box} onScroll={onScroll}>
+    <div className={'hub' + (isHome ? ' is-home' : ' is-sub') + (menu ? ' menu-open' : '') + (mapFull && isHome ? ' map-full' : '')} ref={box} onScroll={onScroll}>
       <a className="skip" href="#hub-main">{lang === 'ko' ? '본문으로 건너뛰기' : 'Skip to content'}</a>
 
       {/* ▼ 머리말 — 첫 화면에서는 사진 위에 투명하게, 내리면 흰 바탕 */}
@@ -142,7 +151,7 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
       </nav>
 
       <main id="hub-main">
-        {page === 'home' && <Home T={T} lang={lang} setPage={go} onSettle={onSettle} onPlan={onPlan} onTutor={onTutor} onRoute={onRoute} scroller={box} mapEl={mapEl} />}
+        {page === 'home' && <Home T={T} lang={lang} setPage={go} onSettle={onSettle} onPlan={onPlan} onTutor={onTutor} onRoute={onRoute} scroller={box} mapEl={mapEl} mapFull={mapFull} setMapFull={setMapFull} />}
         {page === 'deadline' && <Deadline T={T} lang={lang} who={who} setPage={go} />}
         {page === 'ins' && <Insurance T={T} lang={lang} who={who} setPage={go} />}
         {page === 'itv' && <Interviews T={T} lang={lang} setPage={go} />}
@@ -156,7 +165,7 @@ export default function Hub({ lang, setLang, who = 'guest', userName = '', page 
 }
 
 /* ───────── 첫 화면 ───────── */
-function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, mapEl }) {
+function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, mapEl, mapFull, setMapFull }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } });
   const [run, setRun] = useState(0);            // 진행 막대를 처음부터 다시 그리기
@@ -227,7 +236,21 @@ function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, 
       </section>
 
       {/* ▼ 지도 — 예전 정착 화면(도착 후 할 일 · 지원 찾기 · 30일 일정) 그대로 */}
-      {mapEl && <section className="hub-map" id="hub-map" aria-label={T.svcFind}>{mapEl}</section>}
+      {mapEl && (
+        <section className={'hub-map' + (mapFull ? ' is-full' : '')} id="hub-map" aria-label={T.svcFind}>
+          {mapEl}
+          {!mapFull && (
+            <button type="button" className="hub-map-cover" onClick={() => setMapFull(true)} aria-label={T.mapOpen}>
+              <span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>{T.mapOpen}</span>
+            </button>
+          )}
+          {mapFull && (
+            <button type="button" className="hub-map-close" onClick={() => setMapFull(false)}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" /></svg>{T.mapClose}
+            </button>
+          )}
+        </section>
+      )}
 
       <section className="feat" aria-labelledby="hub-feat-t">
         <div className="feat-photo"><img src={it.photo} alt={(lang !== 'ko' && it.photoAltL && it.photoAltL[lang]) || it.photoAlt || ''} /></div>
