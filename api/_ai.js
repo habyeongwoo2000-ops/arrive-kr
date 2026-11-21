@@ -99,7 +99,7 @@ const modelRest = new Map();        // 모델 → 이 시각까지 건너뛰기
 let lastGeminiError = null;
 export const geminiLastError = () => lastGeminiError;
 const geminiModels = () => [...new Set([env('AI_MODEL'), ...String(process.env.GEMINI_MODELS || '').split(','),
-  'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite'].map((x) => String(x || '').trim()).filter(Boolean))];
+  'gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-3.6-flash'].map((x) => String(x || '').trim()).filter(Boolean))];
 const thinkFor = (model) => (/2\.5/.test(model) ? { thinkingBudget: 0 } : null);
 const CALL_MS = 12000, HEDGE_MS = 3500, MAX_PAR = 3;
 
@@ -135,7 +135,7 @@ async function geminiOnce({ model, key, keyNo, system, parts, maxTokens, tempera
       if (/limit: 0\b/.test(msg)) keyRest.set(model + '|' + key, Date.now() + 3600e3);
       else keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));
     } else if (r.status === 401 || r.status === 403 || badKey) keyRest.set(key, Date.now() + 3600e3);
-    throw fail(r.status === 429 ? 429 : 502, 'upstream');
+    const e = fail(r.status === 429 ? 429 : 502, 'upstream'); e.busy = r.status === 503 || r.status >= 500; throw e;
   }
   throw fail(502, 'upstream');
 }
@@ -155,15 +155,20 @@ async function gemini({ system, text, image, maxTokens, temperature, timeout, js
   if (!cands.length) cands.push(...first);
   const stop = new AbortController();
   return await new Promise((resolve, reject) => {
-    let idx = 0, running = 0, done = false, lastErr = fail(502, 'upstream');
+    let idx = 0, running = 0, done = false, lastErr = fail(502, 'upstream'), rounds = 0, busy = false;
     const finish = (ok, v) => { if (done) return; done = true; clearInterval(hedge); clearTimeout(end); stop.abort(); ok ? resolve(v) : reject(v); };
     const launch = () => {
       if (done) return;
-      if (idx >= cands.length) { if (!running) finish(false, lastErr); return; }
+      if (idx >= cands.length) {
+        if (running) return;
+        /* 모두 "붐빔(503)·무응답"이었으면 잠깐 쉬었다가 처음부터 한 바퀴 더 (시간이 남는 동안, 최대 3바퀴) */
+        if (busy && rounds < 3 && deadline - Date.now() > 4000) { rounds++; busy = false; idx = 0; setTimeout(launch, 1200); return; }
+        finish(false, lastErr); return;
+      }
       const c = cands[idx++]; running++;
       geminiOnce({ ...c, system, parts, maxTokens, temperature, json, deadline, stop: stop.signal })
         .then((out) => finish(true, out))
-        .catch((e) => { lastErr = e; running--; if (!done) launch(); });
+        .catch((e) => { lastErr = e; if (e.busy || e.message === 'timeout') busy = true; running--; if (!done) launch(); });
     };
     const hedge = setInterval(() => { if (running < MAX_PAR) launch(); }, HEDGE_MS);   // 답이 늦으면 다음 후보도 같이
     const end = setTimeout(() => finish(false, fail(502, 'timeout')), Math.max(1000, deadline - Date.now()));
@@ -175,6 +180,14 @@ async function gemini({ system, text, image, maxTokens, temperature, timeout, js
 export async function geminiProbe() {
   const keys = geminiKeys();
   const jobs = [];
+  /* 이 키로 쓸 수 있는 flash 계열 모델 이름 (AI_MODEL / GEMINI_MODELS 로 고를 때 참고) */
+  jobs.push((async () => {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': keys[0] } });
+      const d = await r.json();
+      return { available: (d.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace('models/', '')).filter((n) => /flash|pro/.test(n)) };
+    } catch (e) { return { available: 'error ' + e.message }; }
+  })());
   geminiModels().forEach((model) => keys.forEach((key, j) => jobs.push((async () => {
     const t0 = Date.now();
     try {

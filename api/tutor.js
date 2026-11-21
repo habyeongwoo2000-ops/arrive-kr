@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   ].join(' ');
 
   try {
-    const raw = await ask({ system, text: q, maxTokens: 400, temperature: 0.4, timeout: 15000 });
+    const raw = await ask({ system, text: q, maxTokens: 400, temperature: 0.4, timeout: 26000 });
     /* 혹시 붙은 마크다운 기호 지우기 (말풍선은 글자 그대로 보여 줌) */
     const answer = raw.replace(/^#{1,6}\s*/gm, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/^\s*[-*]\s+/gm, '• ').replace(/\n{3,}/g, '\n\n').trim();
     return res.status(200).json({ answer });

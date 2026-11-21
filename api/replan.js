@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   ].join(' ');
 
   try {
-    const o = await ask({ system, text: JSON.stringify({ entryDate: entry, previous: prev, said: text }), json: true, maxTokens: 400, temperature: 0.2, timeout: 15000 });
+    const o = await ask({ system, text: JSON.stringify({ entryDate: entry, previous: prev, said: text }), json: true, maxTokens: 400, temperature: 0.2, timeout: 26000 });
     const rules = {
       off: [...new Set((Array.isArray(o.off) ? o.off : []).map(Number).filter((n) => n >= 0 && n <= 6))],
       offDates: [...new Set((Array.isArray(o.offDates) ? o.offDates : []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))].slice(0, 20),
