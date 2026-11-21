@@ -77,88 +77,112 @@ export async function ask({ system, text, image = null, maxTokens = 1200, temper
 
 const modelOf = (kind, def) => (kind === 'doc' && env('AI_MODEL_DOC')) || env('AI_MODEL') || def;
 
-/* 시간 제한이 있는 fetch */
-async function post(url, headers, payload, timeout) {
+/* 시간 제한이 있는 fetch (stop 신호가 오면 바로 멈춤) */
+async function post(url, headers, payload, timeout, stop) {
   const ac = new AbortController(); const timer = setTimeout(() => ac.abort(), timeout);
+  const onStop = () => ac.abort();
+  if (stop) { if (stop.aborted) ac.abort(); else stop.addEventListener('abort', onStop); }
   try {
     return await fetch(url, { method: 'POST', signal: ac.signal, headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(payload) });
   } catch (e) {
     throw fail(502, e.name === 'AbortError' ? 'timeout' : 'upstream');
-  } finally { clearTimeout(timer); }
+  } finally { clearTimeout(timer); if (stop) stop.removeEventListener('abort', onStop); }
 }
 
 /* ── Google Gemini (generateContent) ──
-   · 모델: AI_MODEL → gemini-flash-latest → gemini-2.5-flash → gemini-flash-lite-latest → gemini-2.5-flash-lite 순서로,
-     없는 모델(404)·한도 0 인 모델은 다음 모델로 넘어갑니다.
-   · "생각 단계": 끌 수 있으면 끄고(빠름), 모델이 거부하면 가장 짧게 → 기본값 순서로 다시 시도. 된 설정은 기억해 둡니다.
-   · 전체 시간은 함수 제한(30초) 안에서 끝나도록 남은 시간만 씁니다. */
-const THINK = [{ thinkingBudget: 0 }, { thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, null];
-const thinkOk = new Map();          // 모델 → THINK 몇 번째가 통했나
-const modelRest = new Map();        // 모델 → 이 시각까지 건너뛰기 (없는 모델)
+   구글 모델은 때때로 10초 넘게 답이 없습니다(붐빔). 한 모델만 기다리면 함수 제한(30초)에 걸리므로
+   · 첫 요청을 보내고, 3.5초 안에 답이 없으면 다음 모델·다음 키로도 같이 보내 먼저 온 답을 씁니다(최대 3개 동시).
+   · 한 번 요청은 12초까지만 기다리고, 전체는 함수 제한 안에서 끝냅니다.
+   · 2.5 모델은 "생각 단계"를 꺼서 빠르게, 그 밖(3.x·latest)은 설정 없이 보냅니다. 설정을 거부하면(400) 빼고 다시.
+   · 없는 모델(404)·한도(429)·잘못된 키는 잠시 건너뜁니다. */
+const modelRest = new Map();        // 모델 → 이 시각까지 건너뛰기
 let lastGeminiError = null;
 export const geminiLastError = () => lastGeminiError;
-const geminiModels = () => [...new Set([env('AI_MODEL'), ...String(process.env.GEMINI_MODELS || '').split(','), 'gemini-flash-latest', 'gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'].map((x) => String(x || '').trim()).filter(Boolean))];
+const geminiModels = () => [...new Set([env('AI_MODEL'), ...String(process.env.GEMINI_MODELS || '').split(','),
+  'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite'].map((x) => String(x || '').trim()).filter(Boolean))];
+const thinkFor = (model) => (/2\.5/.test(model) ? { thinkingBudget: 0 } : null);
+const CALL_MS = 12000, HEDGE_MS = 3500, MAX_PAR = 3;
 
-async function gemini({ system, text, image, maxTokens, temperature, timeout, kind, json }) {
+/* 한 모델·한 키로 한 번 요청 → 글자 (실패하면 throw) */
+async function geminiOnce({ model, key, keyNo, system, parts, maxTokens, temperature, json, deadline, stop }) {
+  let think = thinkFor(model);
+  for (let round = 0; round < 2; round++) {
+    const left = Math.min(CALL_MS, deadline - Date.now());
+    if (left < 1200) throw fail(502, 'timeout');
+    const payload = {
+      contents: [{ role: 'user', parts }],
+      generationConfig: { maxOutputTokens: Math.max(64, maxTokens) + (think ? 0 : 2048), temperature, ...(json ? { responseMimeType: 'application/json' } : {}), ...(think ? { thinkingConfig: think } : {}) }
+    };
+    if (system) payload.systemInstruction = { parts: [{ text: system }] };
+    let r;
+    try { r = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { 'x-goog-api-key': key }, payload, left, stop); }
+    catch (e) { if (!(stop && stop.aborted)) lastGeminiError = { model, key: keyNo, status: e.message === 'timeout' ? 'no answer in ' + Math.round(left / 1000) + 's' : 'network' }; throw e; }
+    if (r.ok) {
+      const d = await r.json();
+      const c = (d.candidates || [])[0] || {};
+      const out = ((c.content || {}).parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
+      if (out.trim()) return out;
+      lastGeminiError = { model, key: keyNo, status: 200, msg: 'empty · ' + (c.finishReason || (d.promptFeedback && d.promptFeedback.blockReason) || '') };
+      throw fail(502, 'empty');
+    }
+    const msg = (await r.text()).replace(/\s+/g, ' ').slice(0, 400);
+    lastGeminiError = { model, key: keyNo, status: r.status, msg: msg.slice(0, 300) };
+    console.error('gemini', model, 'key#' + keyNo, r.status, msg.slice(0, 200));
+    const badKey = /API_KEY_INVALID|API key not valid|API key expired/i.test(msg);
+    if (r.status === 400 && think && !badKey) { think = null; continue; }                       // 생각 설정 거부 → 빼고 한 번 더
+    if (r.status === 404) modelRest.set(model, Date.now() + 3600e3);
+    else if (r.status === 429) {
+      if (/limit: 0\b/.test(msg)) keyRest.set(model + '|' + key, Date.now() + 3600e3);
+      else keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));
+    } else if (r.status === 401 || r.status === 403 || badKey) keyRest.set(key, Date.now() + 3600e3);
+    throw fail(r.status === 429 ? 429 : 502, 'upstream');
+  }
+  throw fail(502, 'upstream');
+}
+
+async function gemini({ system, text, image, maxTokens, temperature, timeout, json }) {
   const deadline = Date.now() + Math.min(timeout, 26000);
   const parts = [];
   if (image) parts.push({ inlineData: { mimeType: image.mime || 'image/jpeg', data: image.data } });
   parts.push({ text });
-  const all = geminiKeys();
-  const docModel = kind === 'doc' && env('AI_MODEL_DOC');
-  const models = docModel ? [docModel, ...geminiModels()] : geminiModels();
-  let lastStatus = 502;
-  for (const model of models) {
-    if (modelRest.get(model) > Date.now()) continue;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const ready = all.filter((k) => !(keyRest.get(model + '|' + k) > Date.now()) && !(keyRest.get(k) > Date.now()));
-    let nextModel = false;
-    for (const key of (ready.length ? ready : all)) {
-      let ti = thinkOk.has(model) ? thinkOk.get(model) : 0;
-      for (;;) {
-        const left = deadline - Date.now();
-        if (left < 1500) { lastGeminiError = lastGeminiError || { status: 504, msg: 'timeout' }; throw fail(502, 'timeout'); }
-        const think = THINK[ti];
-        const payload = {
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts }],
-          generationConfig: {
-            maxOutputTokens: Math.max(64, maxTokens) + (think && 'thinkingBudget' in think ? 0 : 2048),   // 생각 단계가 켜질 수 있으면 그 몫을 더 줌
-            temperature, ...(json ? { responseMimeType: 'application/json' } : {}), ...(think ? { thinkingConfig: think } : {})
-          }
-        };
-        const r = await post(url, { 'x-goog-api-key': key }, payload, left);
-        const n = all.indexOf(key) + 1;
-        if (r.ok) {
-          const d = await r.json();
-          const c = (d.candidates || [])[0] || {};
-          const out = ((c.content || {}).parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
-          if (out.trim()) { thinkOk.set(model, ti); lastGeminiError = null; return out; }
-          lastGeminiError = { model, key: n, status: 200, msg: 'empty answer · ' + (c.finishReason || (d.promptFeedback && d.promptFeedback.blockReason) || '') };
-          if (c.finishReason === 'MAX_TOKENS' && ti < THINK.length - 1) { ti = THINK.length - 1; continue; }
-          lastStatus = 502; break;
-        }
-        const msg = (await r.text()).slice(0, 500);
-        lastStatus = r.status;
-        lastGeminiError = { model, key: n, status: r.status, msg: msg.replace(/\s+/g, ' ').slice(0, 300) };
-        console.error('gemini', model, 'key#' + n, r.status, msg.slice(0, 200));
-        const badKey = r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg);
-        // 400 "invalid argument" — 새 모델은 생각 단계 설정을 이유 없이 거부하기도 해서, 다음 설정(마지막은 설정 없이)으로 다시
-        if (r.status === 400 && !badKey && ti < THINK.length - 1) { ti++; continue; }
-        if (r.status === 404) { modelRest.set(model, Date.now() + 3600e3); nextModel = true; break; }      // 없는 모델
-        if (r.status === 429) {
-          if (/limit: 0\b/.test(msg)) keyRest.set(model + '|' + key, Date.now() + 3600e3);              // 이 키로는 이 모델을 못 씀
-          else keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));           // 하루/분당 한도
-          break;
-        }
-        if (r.status === 401 || r.status === 403 || badKey) { keyRest.set(key, Date.now() + 3600e3); break; }
-        if (r.status >= 500) break;                                                                         // 구글이 바쁨 → 다음 키
-        break;                                                                                              // 그 밖의 400 → 다음 키, 키를 다 써 보면 다음 모델
-      }
-      if (nextModel) break;
-    }
-  }
-  throw fail(lastStatus === 429 ? 429 : 502, 'upstream');
+  const keys = geminiKeys();
+  const now = Date.now();
+  const models = geminiModels().filter((m) => !(modelRest.get(m) > now));
+  /* 후보: 모델마다 키를 번갈아 (모델1·키1, 모델2·키2, 모델3·키1 …) 뒤에 나머지 조합 */
+  const first = [], rest = [];
+  models.forEach((m, i) => keys.forEach((k, j) => ((j === i % keys.length) ? first : rest).push({ model: m, key: k, keyNo: j + 1 })));
+  const cands = [...first, ...rest].filter((c) => !(keyRest.get(c.key) > now) && !(keyRest.get(c.model + '|' + c.key) > now));
+  if (!cands.length) cands.push(...first);
+  const stop = new AbortController();
+  return await new Promise((resolve, reject) => {
+    let idx = 0, running = 0, done = false, lastErr = fail(502, 'upstream');
+    const finish = (ok, v) => { if (done) return; done = true; clearInterval(hedge); clearTimeout(end); stop.abort(); ok ? resolve(v) : reject(v); };
+    const launch = () => {
+      if (done) return;
+      if (idx >= cands.length) { if (!running) finish(false, lastErr); return; }
+      const c = cands[idx++]; running++;
+      geminiOnce({ ...c, system, parts, maxTokens, temperature, json, deadline, stop: stop.signal })
+        .then((out) => finish(true, out))
+        .catch((e) => { lastErr = e; running--; if (!done) launch(); });
+    };
+    const hedge = setInterval(() => { if (running < MAX_PAR) launch(); }, HEDGE_MS);   // 답이 늦으면 다음 후보도 같이
+    const end = setTimeout(() => finish(false, fail(502, 'timeout')), Math.max(1000, deadline - Date.now()));
+    launch();
+  });
+}
+
+/* /api/health?all=1 — 모델 × 키를 한꺼번에 짧게 시도해 무엇이 되는지 표로 (키 값은 보여 주지 않음) */
+export async function geminiProbe() {
+  const keys = geminiKeys();
+  const jobs = [];
+  geminiModels().forEach((model) => keys.forEach((key, j) => jobs.push((async () => {
+    const t0 = Date.now();
+    try {
+      const out = await geminiOnce({ model, key, keyNo: j + 1, system: '', parts: [{ text: 'Say hi in Korean, 3 words.' }], maxTokens: 60, temperature: 0.2, json: false, deadline: Date.now() + 15000 });
+      return { model, key: j + 1, ok: true, ms: Date.now() - t0, say: out.slice(0, 30) };
+    } catch (e) { return { model, key: j + 1, ok: false, ms: Date.now() - t0, last: lastGeminiError && lastGeminiError.model === model ? lastGeminiError : e.message }; }
+  })())));
+  return Promise.all(jobs);
 }
 
 /* ── Anthropic Claude (Messages API) ── */
@@ -198,26 +222,3 @@ async function bedrock({ system, text, image, maxTokens, temperature, timeout, k
   } finally { clearTimeout(timer); }
 }
 
-/* /api/health?all=1 — 모델 × 키 × 생각 설정을 하나씩 짧게 시도해 무엇이 되는지 표로 (키 값은 보여 주지 않음) */
-export async function geminiProbe(budgetMs = 24000) {
-  const end = Date.now() + budgetMs;
-  const keys = geminiKeys();
-  const rows = [];
-  for (const model of geminiModels()) {
-    for (let k = 0; k < keys.length; k++) {
-      for (let ti = 0; ti < THINK.length; ti++) {
-        if (Date.now() > end - 1500) { rows.push({ model, key: k + 1, skipped: 'time' }); return rows; }
-        const think = THINK[ti];
-        const payload = { contents: [{ role: 'user', parts: [{ text: 'Say hi in Korean, 3 words.' }] }], generationConfig: { maxOutputTokens: 2200, temperature: 0.2, ...(think ? { thinkingConfig: think } : {}) } };
-        let r, msg = '';
-        try { r = await post(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { 'x-goog-api-key': keys[k] }, payload, Math.min(8000, end - Date.now())); }
-        catch (e) { rows.push({ model, key: k + 1, think: think ? JSON.stringify(think) : 'none', status: 'timeout' }); continue; }
-        if (r.ok) { const d = await r.json(); msg = (((d.candidates || [])[0] || {}).content || {}).parts ? 'OK: ' + d.candidates[0].content.parts.map((x) => x.text || '').join('').slice(0, 40) : 'OK(empty)'; }
-        else msg = (await r.text()).replace(/\s+/g, ' ').slice(0, 160);
-        rows.push({ model, key: k + 1, think: think ? JSON.stringify(think) : 'none', status: r.status, msg });
-        if (r.ok || r.status === 404 || r.status === 429 || r.status === 403) break;   // 이 키는 결과가 나왔음 → 다음 키
-      }
-    }
-  }
-  return rows;
-}
