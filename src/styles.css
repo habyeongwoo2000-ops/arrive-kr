@@ -776,6 +776,7 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .pp-st em { font-style: normal; font-size: 9.5px; line-height: 1.25; opacity: .9; }
 .pp-st i { font: 700 8px 'Roboto Mono', monospace; font-style: normal; letter-spacing: .1em; margin-top: 2px; }
 .pp-st.is-on .pp-st-in { opacity: 1; background: color-mix(in srgb, var(--vc) 13%, transparent); border-width: 3.5px; }
+.pp-soon { position: absolute; left: -6px; top: -11px; z-index: 2; padding: 2px 9px; border: 1.5px solid #e02424; border-radius: 999px; background: #fff; color: #e02424; font: 800 11.5px/1.35 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif; white-space: nowrap; transform: rotate(calc(var(--tilt) * -1 - 4deg)); box-shadow: 0 1px 3px rgba(224,36,36,.25); }
 .pp-seal { position: absolute; right: -8px; top: -8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--vc); color: #fff; font: 900 14px var(--f); box-shadow: 0 2px 4px rgba(0,0,0,.3); animation: seal .35s cubic-bezier(.3,1.6,.5,1); }
 @keyframes seal { from { transform: scale(2.2); opacity: 0; } }
 /* 선택한 비자 설명 */

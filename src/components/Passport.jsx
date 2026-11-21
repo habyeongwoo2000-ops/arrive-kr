@@ -8,6 +8,9 @@ import { ui, tx } from '../i18n/ui.js';
 import useEsc from '../lib/useEsc.js';
 
 const TILT = [-4, 3, 2, -3, 3, -2, -3, 4];
+/* E-9 외 비자는 아직 준비 중 — 빨간 "오픈 예정" 표시 */
+const OPEN = ['E-9'];
+const SOON = { ko: '오픈 예정', en: 'Coming soon', vi: 'Sắp ra mắt', id: 'Segera hadir', km: 'នឹងបើកឆាប់ៗ', ne: 'छिट्टै खुल्दै' };
 
 function useMobile() {
   const q = '(max-width: 760px)';
@@ -28,6 +31,7 @@ function Stamp({ v, i, on, lang, onPick }) {
         <em>{v.stay[L]}</em>
         <i>✈ ICN · ENTRY</i>
       </span>
+      {!OPEN.includes(v.code) && <strong className="pp-soon">{SOON[lang] || SOON.en}</strong>}
       {on && <span className="pp-seal" aria-hidden="true">✓</span>}
     </button>
   );
