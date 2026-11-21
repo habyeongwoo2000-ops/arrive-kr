@@ -177,13 +177,6 @@ function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, 
   }, [i, paused]);
   const cur = byKey(HERO[i][0]);
 
-  /* 인터뷰 소개 (사진 반, 글 반) */
-  const feats = useMemo(() => INTERVIEWS.filter((it) => it.photo).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))), []);
-  const [f, setF] = useState(0);
-  const it = feats[(f + feats.length) % feats.length];
-  const ib = bodyOf(it, lang);
-  const facts = [it.country && T.itvCountries ? T.itvCountries[it.country] || it.country : '', it.years ? T.itvYears.replace('{y}', it.years) : '', it.field && T.itvFields ? T.itvFields[it.field] || it.field : '', it.date].filter(Boolean);
-
   const SVC = [
     ['todo', T.svcTodo, () => onSettle('todo')], ['find', T.svcFind, () => onSettle('find')], ['plan', T.svcPlan, onPlan],
     ['deadline', T.svcDeadline, () => setPage('deadline')], ['ins', T.svcIns, () => setPage('ins')], ['itv', T.svcItv, () => setPage('itv')],
@@ -251,39 +244,6 @@ function Home({ T, lang, setPage, onSettle, onPlan, onTutor, onRoute, scroller, 
           )}
         </section>
       )}
-
-      <section className="feat" aria-labelledby="hub-feat-t">
-        <div className="feat-photo"><img src={it.photo} alt={(lang !== 'ko' && it.photoAltL && it.photoAltL[lang]) || it.photoAlt || ''} /></div>
-        <div className="feat-body">
-          <p className="sec-eyebrow" aria-hidden="true">Interview</p>
-          <h2 className="sec-title" id="hub-feat-t">{T.navInterview}</h2>
-          <p className="feat-lead">{T.itvLead}</p>
-          <div className="feat-card">
-            <span className="pill">{nameOf(it, lang)}</span>
-            <p className="feat-text">{ib.useQuote || ib.intro || (ib.qa && ib.qa[0] ? ib.qa[0].a : '')}</p>
-            <p className="feat-meta">{facts.join(' · ')}</p>
-          </div>
-          <div className="feat-ctrl">
-            <button type="button" className="circ" aria-label={T.carPrev} onClick={() => setF((x) => x - 1)}><Chev d="l" /></button>
-            <button type="button" className="circ" aria-label={T.carNext} onClick={() => setF((x) => x + 1)}><Chev d="r" /></button>
-            <button type="button" className="more" onClick={() => setPage('itv')}>{T.viewMore}</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="stats" style={{ backgroundImage: "url('/e9/itv-boss.jpg')" }}>
-        <div className="wrap">
-          <div className="sec-head">
-            <p className="sec-eyebrow" aria-hidden="true">Key Numbers</p>
-            <h2 className="sec-title">{T.stTitle}</h2>
-          </div>
-          <ul className="st-list">
-            {[1, 2, 3, 4].map((n) => (
-              <li key={n}><p className="st-t">{T['st' + n + 'T']}</p><p className="st-s">{T['st' + n + 'S']}</p><p className="st-n"><b>{[1, 3, 3, 6][n - 1]}</b><span>{T['st' + n + 'U']}</span></p></li>
-            ))}
-          </ul>
-        </div>
-      </section>
 
       <section className="comm" aria-labelledby="hub-comm-t">
         <div className="wrap">
