@@ -6,6 +6,9 @@ import { ui } from '../i18n/ui.js';
 import Icon from './Icon.jsx';
 import useEsc from '../lib/useEsc.js';
 
+/* 간편 로그인(카카오·구글) 칸 — 지금은 숨김. 다시 쓰려면 true 로 바꾸고 Vercel 에 GOOGLE_CLIENT_ID · KAKAO_REST_KEY 넣기 */
+const SSO_ON = false;
+
 export default function AuthDialog({ lang, onDone, onClose }) {
   const t = ui(lang);
   const [mode, setMode] = useState('in');
@@ -21,7 +24,7 @@ export default function AuthDialog({ lang, onDone, onClose }) {
                : { easy: 'Quick sign-in', or: 'or with an ID', kakao: 'Continue with Kakao', google: 'Continue with Google', off: 'Not set up yet', fail: 'Sign-in failed. Please try again.', wait: 'Signing in…' };
   const [conf, setConf] = useState(null);
   const gBox = useRef(null);
-  useEffect(() => { authConfig().then(setConf); }, []);
+  useEffect(() => { if (SSO_ON) authConfig().then(setConf); }, []);
   useEffect(() => {
     if (!conf || !conf.google || !gBox.current) return;
     const draw = () => {
@@ -58,7 +61,7 @@ export default function AuthDialog({ lang, onDone, onClose }) {
         <div className="dlg-logo" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" /><path d="M5 16h22M16 3c4 4 4 22 0 26M16 3c-4 4-4 22 0 26" /></svg></div>
         <h2 id="dlgT">{mode === 'in' ? t.signIn : t.signUp}</h2>
         <p className="dlg-sub">ArriveKR</p>
-        <div className="sso">
+        {SSO_ON && <div className="sso">
           <small>{S.easy}</small>
           <button type="button" className="sso-kakao" onClick={kakao} disabled={busy || !conf || !conf.kakao}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.3 0 .7.1 1 .1 5 0 9-3.1 9-7s-4-7.3-9-7.3z" /></svg>
@@ -67,7 +70,7 @@ export default function AuthDialog({ lang, onDone, onClose }) {
           {conf && conf.google ? <div className="sso-google" ref={gBox}><button type="button" className="sso-gfake" disabled>{S.google}</button></div> : <button type="button" className="sso-gfake" disabled>{S.google}</button>}
           {conf && (!conf.kakao || !conf.google) && <p className="sso-off">{(!conf.kakao && !conf.google ? 'Kakao · Google' : !conf.kakao ? 'Kakao' : 'Google')} — {S.off}</p>}
           <div className="sso-or"><span>{S.or}</span></div>
-        </div>
+        </div>}
         <label className="fld"><input value={id} onChange={(e) => setId(e.target.value)} autoComplete="username" required placeholder=" " /><span>{t.uid}</span></label>
         <label className="fld"><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} required placeholder=" " /><span>{t.pw}</span></label>
         {mode === 'up' && <label className="fld"><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required placeholder=" " /><span>{t.pw2}</span></label>}
