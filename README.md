@@ -58,6 +58,7 @@ AI 와 간편 로그인은 **Vercel → Project → Settings → Environment Var
 | 환경변수 (Vercel) | 용도 |
 |---|---|
 | `GEMINI_API_KEY` | AI 켜기 (Google AI Studio 무료 키 · E9-Bridge 와 같은 키 가능). 없으면 AI 없이 기본 설명·규칙 계산으로 동작 |
+| `GEMINI_API_KEY_2` · `GEMINI_API_KEY_3` … | (선택) 예비 키. 앞 키의 한도를 다 쓰면(429) 다음 키로 자동으로 넘어감 |
 | `ANTHROPIC_API_KEY` | (선택) Gemini 대신 Claude 를 쓸 때 |
 | `AI_MODEL` · `AI_MODEL_DOC` | (선택) 모델 이름. 기본 Gemini `gemini-flash-latest` · Claude `claude-haiku-4-5` |
 | `GOOGLE_CLIENT_ID` | 구글 로그인 (구글 콘솔에 `https://arrive-kr.vercel.app` 을 승인된 출처로) |

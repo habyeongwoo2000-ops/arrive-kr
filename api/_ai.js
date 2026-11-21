@@ -14,10 +14,22 @@
 
 const env = (k) => String(process.env[k] || '').trim();
 
+/* Gemini 키 여러 개 — GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3 … (또는 GEMINI_API_KEYS=키1,키2)
+   앞 키의 한도를 다 쓰면(429) 다음 키로 넘어갑니다. 다 쓴 키는 잠시 쉬게 해 두고 건너뜁니다. */
+export function geminiKeys() {
+  const out = [];
+  const add = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean).forEach((k) => { if (!out.includes(k)) out.push(k); });
+  add(process.env.GEMINI_API_KEY);
+  for (let i = 2; i <= 20; i++) add(process.env['GEMINI_API_KEY_' + i]);
+  add(process.env.GEMINI_API_KEYS);
+  return out;
+}
+const keyRest = new Map();   // 키 → 이 시각까지 쉬기 (같은 서버 함수가 살아 있는 동안만 기억)
+
 export function provider() {
   const p = env('AI_PROVIDER').toLowerCase();
   if (p) return p;
-  if (env('GEMINI_API_KEY')) return 'gemini';
+  if (geminiKeys().length) return 'gemini';
   if (env('ANTHROPIC_API_KEY')) return 'anthropic';
   if (process.env.VERCEL) return 'off';           // Vercel 에는 AWS 권한이 없습니다
   return 'bedrock';
@@ -87,11 +99,32 @@ async function gemini({ system, text, image, maxTokens, temperature, timeout, ki
     generationConfig: { maxOutputTokens: Math.max(64, maxTokens), temperature, ...(json ? { responseMimeType: 'application/json' } : {}) }
   };
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const headers = { 'x-goog-api-key': env('GEMINI_API_KEY') };
-  // 빠른 답을 위해 "생각 단계"를 끕니다. 그 설정을 모르는 모델이면 빼고 한 번 더.
-  let r = await post(url, headers, { ...base, generationConfig: { ...base.generationConfig, thinkingConfig: { thinkingBudget: 0 } } }, timeout);
-  if (r.status === 400) r = await post(url, headers, base, timeout);
-  if (!r.ok) { console.error('gemini', model, r.status, (await r.text()).slice(0, 300)); throw fail(r.status === 429 ? 429 : 502, 'upstream'); }
+  const fast = { ...base, generationConfig: { ...base.generationConfig, thinkingConfig: { thinkingBudget: 0 } } };
+  const now = Date.now();
+  const all = geminiKeys();
+  const ready = all.filter((k) => !(keyRest.get(k) > now));
+  const order = ready.length ? ready : all;            // 모두 쉬는 중이면 그래도 한 번씩 다시 시도
+  let r = null, lastStatus = 502;
+  for (const key of order) {
+    const headers = { 'x-goog-api-key': key };
+    // 빠른 답을 위해 "생각 단계"를 끕니다. 그 설정을 모르는 모델이면 빼고 한 번 더.
+    r = await post(url, headers, fast, timeout);
+    if (r.status === 400) r = await post(url, headers, base, timeout);
+    if (r.ok) break;
+    lastStatus = r.status;
+    const msg = (await r.text()).slice(0, 400);
+    const n = all.indexOf(key) + 1;
+    console.error('gemini', model, 'key#' + n, r.status, msg.slice(0, 200));
+    if (r.status === 429) {
+      // 하루 한도(PerDay)면 1시간, 분당 한도면 1분 동안 이 키를 건너뜁니다
+      keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));
+      continue;
+    }
+    if (r.status === 401 || r.status === 403 || (r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg))) { keyRest.set(key, Date.now() + 3600e3); continue; }   // 잘못된·막힌 키
+    if (r.status >= 500) continue;                    // 구글 쪽이 바쁨 → 다음 키로 한 번 더
+    break;
+  }
+  if (!r || !r.ok) throw fail(lastStatus === 429 ? 429 : 502, 'upstream');
   const d = await r.json();
   return ((((d.candidates || [])[0] || {}).content || {}).parts || []).map((x) => x.text || '').join('');
 }
