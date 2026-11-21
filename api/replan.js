@@ -7,6 +7,8 @@ import { ask, aiOn, limited, clean, body, LANG } from './_ai.js';
 const TIME = ['morning', 'afternoon', 'lunch', 'evening'];
 const MOVE = ['bus', 'walk', 'bike', 'car'];
 
+export const config = { maxDuration: 30 };
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });

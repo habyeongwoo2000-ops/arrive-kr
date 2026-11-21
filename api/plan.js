@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   try {
     let out;
-    try { out = await ask({ system, text: JSON.stringify({ profile, steps }), json: true, maxTokens: 3500, temperature: 0.5, timeout: 28000 }); }
+    try { out = await ask({ system, text: JSON.stringify({ profile, steps }), json: true, maxTokens: 3500, temperature: 0.5, timeout: 26000 }); }
     catch (e) { return res.status(502).json({ error: e.message === 'parse' ? 'parse' : 'upstream' }); }
     const ids = new Set(steps.map((s) => s.id));
     const tips = {};

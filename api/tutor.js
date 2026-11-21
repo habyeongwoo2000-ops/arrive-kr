@@ -5,6 +5,8 @@
 
 import { ask, aiOn, limited, body as readBody, LANG } from './_ai.js';
 
+export const config = { maxDuration: 30 };
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });

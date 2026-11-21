@@ -87,46 +87,76 @@ async function post(url, headers, payload, timeout) {
   } finally { clearTimeout(timer); }
 }
 
-/* ── Google Gemini (generateContent) ── */
+/* ── Google Gemini (generateContent) ──
+   · 모델: AI_MODEL → gemini-flash-latest → gemini-2.5-flash → gemini-flash-lite-latest → gemini-2.5-flash-lite 순서로,
+     없는 모델(404)·한도 0 인 모델은 다음 모델로 넘어갑니다.
+   · "생각 단계": 끌 수 있으면 끄고(빠름), 모델이 거부하면 가장 짧게 → 기본값 순서로 다시 시도. 된 설정은 기억해 둡니다.
+   · 전체 시간은 함수 제한(30초) 안에서 끝나도록 남은 시간만 씁니다. */
+const THINK = [{ thinkingBudget: 0 }, { thinkingLevel: 'minimal' }, { thinkingLevel: 'low' }, null];
+const thinkOk = new Map();          // 모델 → THINK 몇 번째가 통했나
+const modelRest = new Map();        // 모델 → 이 시각까지 건너뛰기 (없는 모델)
+let lastGeminiError = null;
+export const geminiLastError = () => lastGeminiError;
+const geminiModels = () => [...new Set([env('AI_MODEL'), 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.5-flash-lite'].filter(Boolean))];
+
 async function gemini({ system, text, image, maxTokens, temperature, timeout, kind, json }) {
-  const model = modelOf(kind, 'gemini-flash-latest');
+  const deadline = Date.now() + Math.min(timeout, 26000);
   const parts = [];
   if (image) parts.push({ inlineData: { mimeType: image.mime || 'image/jpeg', data: image.data } });
   parts.push({ text });
-  const base = {
-    systemInstruction: { parts: [{ text: system }] },
-    contents: [{ role: 'user', parts }],
-    generationConfig: { maxOutputTokens: Math.max(64, maxTokens), temperature, ...(json ? { responseMimeType: 'application/json' } : {}) }
-  };
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const fast = { ...base, generationConfig: { ...base.generationConfig, thinkingConfig: { thinkingBudget: 0 } } };
-  const now = Date.now();
   const all = geminiKeys();
-  const ready = all.filter((k) => !(keyRest.get(k) > now));
-  const order = ready.length ? ready : all;            // 모두 쉬는 중이면 그래도 한 번씩 다시 시도
-  let r = null, lastStatus = 502;
-  for (const key of order) {
-    const headers = { 'x-goog-api-key': key };
-    // 빠른 답을 위해 "생각 단계"를 끕니다. 그 설정을 모르는 모델이면 빼고 한 번 더.
-    r = await post(url, headers, fast, timeout);
-    if (r.status === 400) r = await post(url, headers, base, timeout);
-    if (r.ok) break;
-    lastStatus = r.status;
-    const msg = (await r.text()).slice(0, 400);
-    const n = all.indexOf(key) + 1;
-    console.error('gemini', model, 'key#' + n, r.status, msg.slice(0, 200));
-    if (r.status === 429) {
-      // 하루 한도(PerDay)면 1시간, 분당 한도면 1분 동안 이 키를 건너뜁니다
-      keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));
-      continue;
+  const docModel = kind === 'doc' && env('AI_MODEL_DOC');
+  const models = docModel ? [docModel, ...geminiModels()] : geminiModels();
+  let lastStatus = 502;
+  for (const model of models) {
+    if (modelRest.get(model) > Date.now()) continue;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const ready = all.filter((k) => !(keyRest.get(model + '|' + k) > Date.now()) && !(keyRest.get(k) > Date.now()));
+    let nextModel = false;
+    for (const key of (ready.length ? ready : all)) {
+      let ti = thinkOk.has(model) ? thinkOk.get(model) : 0;
+      for (;;) {
+        const left = deadline - Date.now();
+        if (left < 1500) { lastGeminiError = lastGeminiError || { status: 504, msg: 'timeout' }; throw fail(502, 'timeout'); }
+        const think = THINK[ti];
+        const payload = {
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            maxOutputTokens: Math.max(64, maxTokens) + (think && 'thinkingBudget' in think ? 0 : 2048),   // 생각 단계가 켜질 수 있으면 그 몫을 더 줌
+            temperature, ...(json ? { responseMimeType: 'application/json' } : {}), ...(think ? { thinkingConfig: think } : {})
+          }
+        };
+        const r = await post(url, { 'x-goog-api-key': key }, payload, left);
+        const n = all.indexOf(key) + 1;
+        if (r.ok) {
+          const d = await r.json();
+          const c = (d.candidates || [])[0] || {};
+          const out = ((c.content || {}).parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
+          if (out.trim()) { thinkOk.set(model, ti); lastGeminiError = null; return out; }
+          lastGeminiError = { model, key: n, status: 200, msg: 'empty answer · ' + (c.finishReason || (d.promptFeedback && d.promptFeedback.blockReason) || '') };
+          if (c.finishReason === 'MAX_TOKENS' && ti < THINK.length - 1) { ti = THINK.length - 1; continue; }
+          lastStatus = 502; break;
+        }
+        const msg = (await r.text()).slice(0, 500);
+        lastStatus = r.status;
+        lastGeminiError = { model, key: n, status: r.status, msg: msg.replace(/\s+/g, ' ').slice(0, 300) };
+        console.error('gemini', model, 'key#' + n, r.status, msg.slice(0, 200));
+        if (r.status === 400 && /think/i.test(msg) && ti < THINK.length - 1) { ti++; continue; }          // 생각 단계 설정을 거부 → 다음 설정
+        if (r.status === 404) { modelRest.set(model, Date.now() + 3600e3); nextModel = true; break; }      // 없는 모델
+        if (r.status === 429) {
+          if (/limit: 0\b/.test(msg)) keyRest.set(model + '|' + key, Date.now() + 3600e3);              // 이 키로는 이 모델을 못 씀
+          else keyRest.set(key, Date.now() + (/PerDay|per day/i.test(msg) ? 3600e3 : 60e3));           // 하루/분당 한도
+          break;
+        }
+        if (r.status === 401 || r.status === 403 || (r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg))) { keyRest.set(key, Date.now() + 3600e3); break; }
+        if (r.status >= 500) break;                                                                         // 구글이 바쁨 → 다음 키
+        nextModel = true; break;                                                                            // 그 밖의 400 → 다음 모델
+      }
+      if (nextModel) break;
     }
-    if (r.status === 401 || r.status === 403 || (r.status === 400 && /API_KEY_INVALID|API key not valid|API key expired/i.test(msg))) { keyRest.set(key, Date.now() + 3600e3); continue; }   // 잘못된·막힌 키
-    if (r.status >= 500) continue;                    // 구글 쪽이 바쁨 → 다음 키로 한 번 더
-    break;
   }
-  if (!r || !r.ok) throw fail(lastStatus === 429 ? 429 : 502, 'upstream');
-  const d = await r.json();
-  return ((((d.candidates || [])[0] || {}).content || {}).parts || []).map((x) => x.text || '').join('');
+  throw fail(lastStatus === 429 ? 429 : 502, 'upstream');
 }
 
 /* ── Anthropic Claude (Messages API) ── */
