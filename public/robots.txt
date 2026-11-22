@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://arrive-kr.vercel.app/sitemap.xml
