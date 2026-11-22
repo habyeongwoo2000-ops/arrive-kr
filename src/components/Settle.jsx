@@ -1,7 +1,7 @@
 /* 원주 정착 — 지구본에서 내려와 실제 거리 지도(OpenStreetMap) 위에
    원주 → 강원 → 전국 순서로 맞춤 공공지원을 추천합니다. */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import useSheetDrag from '../useSheetDrag.js';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,6 +15,10 @@ import Plan, { PlanButton } from './Plan.jsx';
 import Icon from './Icon.jsx';
 import addBase from '../lib/baseMap.js';
 import { nav } from '../i18n/nav.js';
+import WorkPanel from './WorkPanel.jsx';
+import { recoLabels } from '../i18n/e9reco.js';
+const loadReco = () => import('./RecoPanel.jsx');
+const RecoPanel = lazy(loadReco);   // 맞춤 지원 찾기 (E9-Bridge 틀) — 정착 화면이 열리고 잠시 뒤 미리 받아 둠
 import { hubTabs } from '../i18n/hubTabs.js';
 import useEsc from '../lib/useEsc.js';
 import { uget, uset } from '../lib/store.js';
@@ -65,10 +69,12 @@ const spotOf = (id, K) => {
 };
 
 
-export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, onHub = () => {}, embedded = false, planReq = 0, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0 }) {
+export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack, embedded = false, planReq = 0, tab, setTab, checks, toggle, entry, country, countryLabel, planGo = 0, work = null, setWork = () => {} }) {
   const t = ui(lang);
   const n = nav(lang);
   const H = hubTabs(lang);
+  const R2 = recoLabels(lang);
+  useEffect(() => { const tm = setTimeout(loadReco, 1200); return () => clearTimeout(tm); }, []);
   const [moreOpen, setMoreOpen] = useState(false);
   const K = lang === 'ko' ? 'ko' : 'en';
   /* 지원 찾기 조건 — 계정별로 기억 (다른 화면에 다녀오거나 새로고침해도 그대로) */
@@ -341,7 +347,7 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
   };
 
   return (
-    <div className={'settle' + (embedded ? ' is-embed' : '') + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '')}>
+    <div className={'settle' + (embedded ? ' is-embed' : '') + (low ? ' is-low' : '') + (plan ? ' is-plan' : '') + (picking ? ' is-pick' : '') + (work ? ' is-work' : '') + (work === 'reco' ? ' is-reco' : '')}>
       <div className="lf" ref={host} />
       {/* PC로 보기 / 모바일로 보기 (지구본 화면과 같은 버튼) */}
       {!embedded && <div className="st-view mtool-g"><ViewToggle lang={lang} settle={tab} /></div>}
@@ -350,18 +356,28 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
         <span className="st-grip" aria-hidden="true" />
         <div className="card st-card" ref={card}>
           <div className="st-top">
-            {!embedded && <button type="button" className="icon" onClick={onBack} aria-label={H.tabHome} title={H.tabHome}><Icon n="back" size={20} /></button>}
+            {!embedded && <button type="button" className="icon" onClick={onBack} aria-label={t.back} title={t.back}><Icon n="back" size={20} /></button>}
             <div><b>{t.settleT}</b><small>{t.settleSub}</small></div>
           </div>
           {name && <p className="st-hello">✈ {name.toUpperCase()} · {visa}</p>}
 
           <div className="st-tabs" role="tablist">
             <button type="button" role="tab" aria-selected={tab === 'todo'} onClick={() => setTab('todo')}>{t.tabTodo}<span>{todoDone}/{todoItems.length}</span></button>
-            <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>{t.tabFind}</button>
-            {/* E9-Bridge 에서 가져온 계산 — 누르면 정착 지원 홈의 그 쪽이 열립니다 */}
-            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('deadline')}>{H.tabDl}</button>
-            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('ins')}>{H.tabIns}</button>
-            <button type="button" role="tab" aria-selected={false} className="st-tab-hub" onClick={() => onHub('itv')}>{H.tabItv}</button>
+            <button type="button" role="tab" aria-selected={tab === 'find'} onClick={(e) => { e.stopPropagation(); setTab('find'); setWork('reco'); }}>{t.tabFind}</button>
+          </div>
+          {/* 사업장 변경 기한 · 출국만기보험 — 누르면 이 패널 바로 옆에 서랍이 열립니다 (WorkPanel) */}
+          <div className="st-tools">
+            {/* 맞춤 지원 찾기 — E9-Bridge 화면 틀로 지도 위에 크게 열림 */}
+            <button type="button" className={'st-reco' + (work === 'reco' ? ' is-open' : '')} aria-expanded={work === 'reco'}
+                    onClick={(e) => { e.stopPropagation(); setWork(work === 'reco' ? null : 'reco'); }}>
+              <Icon n="search" size={20} /><span><b>{R2.title}</b><small>{R2.profileTitle} · {R2.mapTitle} · {R2.prepare}</small></span><Icon n="next" size={16} />
+            </button>
+            {[['deadline', 'calendar', H.tabDl], ['ins', 'doc', H.tabIns]].map(([k, ic, label]) => (
+              <button key={k} type="button" className={work === k ? 'is-open' : ''} aria-expanded={work === k}
+                      onClick={(e) => { e.stopPropagation(); setWork(work === k ? null : k); }}>
+                <Icon n={ic} size={16} /><span>{label}</span><Icon n="next" size={14} />
+              </button>
+            ))}
           </div>
 
           {tab === 'todo' && (
@@ -506,6 +522,9 @@ export default function Settle({ who = 'guest', lang, visa: visa0, name, onBack,
               name={name} country={countryLabel || ''} home={home} dist={dist} base={base}
               onBase={(b) => { if (b === 'home' && !home) { setPlan(0); wantHome(); return; } setPlanBase(b); setPlan((n) => n + 1); }} onClose={() => setPlan(0)} />
       )}
+
+      {(work === 'deadline' || work === 'ins') && <WorkPanel key={work} kind={work} lang={lang} who={who} onClose={() => setWork(null)} />}
+      {work === 'reco' && <Suspense fallback={<div className="rk-wait" role="status"><span>{R2.gvLoading}</span></div>}><RecoPanel lang={lang} onClose={() => setWork(null)} /></Suspense>}
 
       {picking && (
         <div className="pick-bar" role="status" onClick={(e) => e.stopPropagation()}>

@@ -1,0 +1,102 @@
+/* E9-Bridge 화면 — ArriveKR 의 다른 화면과 같은 말씨: 회색 바탕 위 흰 카드, 파랑 하나, Pretendard.
+   왼쪽 세로 메뉴(휴대폰은 아래 탭 메뉴)는 그대로 두고 오른쪽 전체를 씁니다. */
+
+.eh { position: absolute; top: 0; right: 0; bottom: var(--tabbar); left: var(--rail); z-index: 45; overflow-y: auto; background: var(--band); animation: fadein .2s ease-out; overscroll-behavior: contain; }
+.eh-in { max-width: 1040px; margin: 0 auto; padding: 32px 32px 56px; }
+
+/* 머리 — 정착 패널 머리와 같은 굵기 */
+.eh-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.eh-top img { flex: none; width: 40px; height: 40px; }
+.eh-top h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.03em; color: var(--ink); }
+.eh-top p { margin: 4px 0 0; font-size: 14px; color: var(--ink-3); }
+.eh-top-sub { align-items: flex-start; }
+.eh-top-sub p { max-width: 62ch; line-height: 1.6; }
+.eh-back { flex: none; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: #fff; color: var(--ink-2); box-shadow: var(--sh); }
+.eh-back:hover { color: var(--ink); }
+
+/* 인터뷰 사진 — 이 화면에서 단 하나의 큰 그림 */
+.eh-hero { position: relative; height: clamp(300px, 46vh, 460px); border-radius: 24px; overflow: hidden; background: #2b3440; isolation: isolate; }
+.eh-slide { position: absolute; inset: 0; background-size: cover; opacity: 0; transform: scale(1.03); transition: opacity .9s ease, transform 6s linear; }
+.eh-slide.is-on { opacity: 1; transform: scale(1); }
+.eh-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(25, 31, 40, 0) 30%, rgba(25, 31, 40, .78) 100%); }
+.eh-copy { position: absolute; left: 32px; right: 32px; bottom: 64px; color: #fff; }
+.eh-copy h2 { margin: 0; max-width: 18ch; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; line-height: 1.22; letter-spacing: -.03em; }
+.eh-copy p { margin: 12px 0 0; max-width: 52ch; font-size: 15.5px; line-height: 1.6; color: rgba(255, 255, 255, .86); }
+.eh-ctrl { position: absolute; left: 32px; right: 20px; bottom: 18px; display: flex; align-items: center; gap: 6px; color: #fff; }
+.eh-cap { flex: 1; min-width: 0; font-size: 13px; color: rgba(255, 255, 255, .78); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eh-ctrl button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .16); color: #fff; backdrop-filter: blur(6px); }
+.eh-ctrl button:hover { background: rgba(255, 255, 255, .28); }
+.eh-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, .18); }
+.eh-bar i { display: block; height: 100%; width: 0; background: #fff; }
+.eh-bar i.is-run { animation: eh-run 6s linear forwards; }
+@keyframes eh-run { to { width: 100%; } }
+
+/* 구역 */
+.eh-sec { margin-top: 36px; }
+.eh-sec h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.eh-sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.eh-more { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.eh-more:hover { color: var(--ink); }
+.eh-lead { margin: 8px 0 0; max-width: 62ch; font-size: 14.5px; line-height: 1.6; color: var(--ink-3); }
+
+/* 주요 서비스 — 정착 패널의 흰 카드와 같은 모양, 앞 세 개는 E9-Bridge 에서 온 일 */
+.eh-svc { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.eh-svc button { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; width: 100%; min-height: 128px; padding: 20px; border: 0; border-radius: 20px; background: #fff; color: var(--ink); text-align: start; position: relative; transition: background .15s; }
+.eh-svc button:hover { background: #fafbfc; }
+.eh-svc button > span { font-size: 16px; font-weight: 700; letter-spacing: -.01em; line-height: 1.35; padding-right: 18px; }
+.eh-svc button > .ic { position: absolute; right: 16px; bottom: 22px; color: var(--ink-4); }
+.eh-ic { width: 40px; height: 40px; fill: none; stroke: var(--ink-2); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.eh-ic .ac { stroke: var(--green); }
+
+/* 인터뷰 미리보기 */
+.eh-peek { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.eh-peek button { display: block; width: 100%; height: 100%; padding: 0 0 20px; border: 0; border-radius: 20px; background: #fff; color: var(--ink); text-align: start; overflow: hidden; }
+.eh-peek img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.eh-peek b { display: block; margin: 16px 20px 0; font-size: 15.5px; font-weight: 700; }
+.eh-peek p { display: -webkit-box; margin: 6px 20px 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 공식 창구 */
+.eh-of { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.eh-of a { display: block; height: 100%; padding: 18px 20px; border-radius: 20px; background: #fff; color: var(--ink); }
+.eh-of a:hover { background: #fafbfc; }
+.eh-of b { display: block; font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--green); }
+.eh-of span { display: block; margin-top: 6px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.eh-not { margin-top: 10px; padding: 20px; border-radius: 20px; background: #fff; }
+.eh-not h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.eh-not ul { margin: 10px 0 0; padding: 0 0 0 18px; display: grid; gap: 6px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.eh-foot { margin-top: 24px; font-size: 12.5px; line-height: 1.6; color: var(--ink-3); }
+.eh-foot p { margin: 0; }
+.eh-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px !important; }
+.eh-links a { color: var(--ink-2); font-weight: 600; }
+.eh-links a:hover { color: var(--ink); }
+
+/* 인터뷰 전체 */
+.eh-itv { display: grid; gap: 12px; }
+.eh-itv article { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; padding: 20px; border-radius: 20px; background: #fff; }
+.eh-itv img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 16px; }
+.eh-itv h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.eh-facts { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-3); }
+.eh-intro { margin: 14px 0 0; max-width: 64ch; font-size: 15px; line-height: 1.7; color: var(--ink-2); }
+.eh-qa { margin-top: 16px; max-width: 64ch; }
+.eh-qa b { display: block; font-size: 15px; font-weight: 700; color: var(--ink); }
+.eh-qa p { margin: 6px 0 0; font-size: 15px; line-height: 1.7; color: var(--ink-2); }
+.eh-itv blockquote { margin: 18px 0 0; padding: 16px 18px; border-radius: 16px; background: var(--green-bg); }
+.eh-itv blockquote span { font-size: 12.5px; font-weight: 700; color: var(--green-t); }
+.eh-itv blockquote p { margin: 6px 0 0; font-size: 15px; line-height: 1.7; color: var(--ink); }
+.eh-date { margin: 14px 0 0; font-size: 12.5px; color: var(--ink-4); }
+
+@media (max-width: 1100px) { .eh-svc, .eh-of { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .eh { left: 0; }
+  .eh-in { padding: 20px 16px 40px; }
+  .eh-top h1 { font-size: 22px; }
+  .eh-hero { height: 380px; border-radius: 20px; }
+  .eh-copy { left: 20px; right: 20px; bottom: 60px; }
+  .eh-ctrl { left: 20px; right: 12px; }
+  .eh-svc button { min-height: 112px; padding: 16px; }
+  .eh-peek { grid-template-columns: 1fr; }
+  .eh-itv article { grid-template-columns: 1fr; }
+  .eh-itv img { aspect-ratio: 4 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { .eh, .eh-slide { animation: none; transition: none; } .eh-bar i.is-run { animation: none; } }
+@media (max-width: 760px) { .view-hub .rail-foot { display: none; } }

@@ -9,6 +9,7 @@ const P = {
   ko: <text x="12" y="16.6" textAnchor="middle" fontSize="13" fontWeight="700" stroke="none" fill="currentColor" fontFamily="'Apple SD Gothic Neo','Malgun Gothic',sans-serif">가</text>,
   ticket: <><path d="M4 7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5V14a2 2 0 0 0 0-4z" /><path d="M14.5 6v12" strokeDasharray="1.6 1.8" /></>,
   user: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
+  bridge: <path d="M2.5 15.5h19M7 6.5v12M17 6.5v12M2.5 10c2.1 0 3.4-1.3 4.5-3.5 1.4 3 3 4.6 5 4.6s3.6-1.6 5-4.6c1.1 2.2 2.4 3.5 4.5 3.5M10 15.5v-3.6M14 15.5v-3.6" />,
   globe: <><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.6 2.4 2.6 14.6 0 17M12 3.5c-2.6 2.4-2.6 14.6 0 17" /></>,
   search: <><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /></>,
   close: <path d="M6 6l12 12M18 6L6 18" />,

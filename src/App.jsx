@@ -16,8 +16,9 @@ import Settle from './components/Settle.jsx';
 import Icon from './components/Icon.jsx';
 import MyPage, { MySummary } from './components/MyPage.jsx';
 /* 정착 지원 홈(E9-Bridge 디자인) — 처음 열 때 따로 받습니다 */
-const Hub = lazy(() => import('./components/hub/Hub.jsx'));
-const HUB_PAGES = ['home', 'deadline', 'ins', 'itv'];
+const E9Home = lazy(() => import('./components/E9Home.jsx'));
+const HUB_PAGES = ['home', 'itv'];          // 왼쪽 메뉴 E9-Bridge 화면
+const WORKS = ['deadline', 'ins', 'reco'];            // 정착 지원 지도 옆 서랍 (?hub=deadline|ins 예전 주소도 여기로)
 import { nav } from './i18n/nav.js';
 import { byCode } from './data/visas.js';
 import { WONJU } from './data/wonju.js';
@@ -90,10 +91,11 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [focus, setFocus] = useState(null);
   const [toast, setToast] = useState('');
-  const [view, setView] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? 'hub' : QS.get('settle') ? 'settle' : 'globe'));      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원 · ?settle=todo|find 는 모바일 미리보기용)
+  const [view, setView] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? 'hub' : (QS.get('settle') || WORKS.includes(QS.get('hub'))) ? 'settle' : 'globe'));      // globe | settle | me  (새로고침해도 마지막 화면으로 — 아래 복원 · ?settle=todo|find 는 모바일 미리보기용)
   const [settleTab, setSettleTabS] = useState(() => (QS.get('settle') ? (QS.get('settle') === 'find' ? 'find' : 'todo') : uget(current(), 'settleTab', 'todo'))); // todo | find
   const [landed, setLanded] = useState(false);
-  const [hubPage, setHubPageS] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? QS.get('hub') : uget(current(), 'hubPage', 'home')));
+  const [hubPage, setHubPageS] = useState(() => (HUB_PAGES.includes(QS.get('hub')) ? QS.get('hub') : HUB_PAGES.includes(uget(current(), 'hubPage', 'home')) ? uget(current(), 'hubPage', 'home') : 'home'));
+  const [work, setWork] = useState(() => (WORKS.includes(QS.get('hub')) ? QS.get('hub') : null));   // 정착 지원 옆 서랍: 'deadline' | 'ins' | null
   const api = useRef(null);
   const flight = useRef(null);
   const shakeTimer = useRef(0);
@@ -122,7 +124,7 @@ export default function App() {
     setChecks(get('u.' + who + '.checks', {}));
     const v = get('u.' + who + '.entry'); if (v) setEntryS(new Date(v + 'T00:00:00'));
     setVisaS(get('u.' + who + '.visa', 'E-9')); setPax(get('u.' + who + '.name', ''));
-    setModeS(uget(who, 'mode', 'sat')); setSettleTabS(uget(who, 'settleTab', 'todo')); if (!QS.get('hub')) setHubPageS(uget(who, 'hubPage', 'home'));
+    setModeS(uget(who, 'mode', 'sat')); setSettleTabS(uget(who, 'settleTab', 'todo')); if (!QS.get('hub')) { const hp = uget(who, 'hubPage', 'home'); setHubPageS(HUB_PAGES.includes(hp) ? hp : 'home'); }
     const c = get('u.' + who + '.country'); if (c) { const f = FEATURES.find((x) => x.id === c); if (f) choose(f, false); }
   }, [who]); // eslint-disable-line react-hooks/exhaustive-deps
   const [visa, setVisaS] = useState(() => { const q = QS.get('visa'); return byCode[q] ? q : get('u.' + who + '.visa', 'E-9'); });
@@ -322,13 +324,17 @@ export default function App() {
     choose(from);
     setTimeout(() => fly(), 2100);   // 출발 자리에 비행기를 띄우고, 이후는 체크할 때마다 앞으로
   }
-  /* 정착 지도(도착 후 할 일 · 지원 찾기)는 이제 정착 지원 홈의 주요 서비스 아래에 있습니다 → 홈을 열고 지도까지 내려 줍니다 */
-  const [hubMapGo, setHubMapGo] = useState(0);
+  /* 정착 지원 = 지도 화면 하나 (도착 후 할 일 · 지원 찾기 · 30일 일정 · 옆 서랍: 변경 기한 · 만기보험) */
   const [planReq, setPlanReq] = useState(0);
-  function openSettle(tab = 'todo') { setSettleTab(tab); openHub('home'); setHubMapGo((x) => x + 1); }
+  function openSettle(tab = 'todo', w = null) {
+    setFold(false); stopFlight(); setLanded(false); setTicket(false);
+    if (tab) setSettleTab(tab);
+    setWork(w); setView('settle'); markBack('settle');
+    api.current && api.current.pause();
+  }
   function openPlan() { setPlanReq(Date.now()); openSettle('find'); }
-  function doCloseSettle() { setView('globe'); api.current && api.current.resume(); }
-  /* 정착 지원 홈 (사진 슬라이드 · 기한 계산 · 출국만기보험 · 인터뷰) */
+  function doCloseSettle() { setWork(null); setView('globe'); api.current && api.current.resume(); }
+  /* 왼쪽 메뉴 E9-Bridge 화면 (인터뷰 사진 · 주요 서비스 · 인터뷰 · 공식 창구) */
   function setHubPage(p) {
     const pg = HUB_PAGES.includes(p) ? p : 'home';
     setHubPageS(pg); uset(who, 'hubPage', pg);
@@ -341,7 +347,7 @@ export default function App() {
     if (!history.state || history.state.ak !== 'hub') history.pushState({ ak: 'hub', p: pg }, '');
     api.current && api.current.pause();
   }
-  function leaveHub(next) {   // 정착 지원 홈 → 지구본 화면(필요하면 이어서 할 일)
+  function leaveHub(next) {   // E9-Bridge 화면 → 지구본 화면(필요하면 이어서 할 일)
     setView('globe'); api.current && api.current.resume();
     if (next) setTimeout(next, 0);
   }
@@ -416,7 +422,7 @@ export default function App() {
   const epsList = useMemo(() => COUNTRIES.map((c) => ({ c, f: FEATURES.find((x) => x.id === c.iso) })).filter((r) => r.f)
     .sort((a, b) => labelOf(a.f).localeCompare(labelOf(b.f))), [lang]); // eslint-disable-line react-hooks/exhaustive-deps
   const goRoute = () => { setFold(false); if (view === 'settle') closeSettle(); if (view === 'hub') leaveHub(); };
-  const railOn = view === 'hub' ? 'settle' : view === 'settle' ? 'settle' : view === 'me' ? 'me' : 'route';
+  const railOn = view === 'hub' ? 'e9' : view === 'settle' ? 'settle' : view === 'me' ? 'me' : 'route';
   const hintLang = country && LANGS.includes(country.lang) ? (lang === 'ko' || lang === 'en' ? country.lang : lang) : lang;
 
   return (
@@ -426,9 +432,11 @@ export default function App() {
         <button type="button" className="rail-logo" onClick={goRoute} aria-label="ArriveKR"><Icon n="globe" size={22} /><b>ArriveKR</b></button>
         <button type="button" className="rail-i" onClick={() => setTicket(true)}><Icon n="ticket" size={22} /><span>{n.ticket}</span></button>
         <button type="button" className={'rail-i' + (railOn === 'route' ? ' is-on' : '')} onClick={goRoute}><Icon n="route" size={22} /><span>{n.route}</span></button>
-        <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
+        <button type="button" className={'rail-i' + (railOn === 'settle' ? ' is-on' : '')} onClick={() => openSettle(settleTab)}><Icon n="pin" size={22} /><span>{n.settle}</span></button>
         <button type="button" className="rail-i" onClick={openPlan}><Icon n="calendar" size={22} /><span>{n.plan}</span><i className="rail-ai">{n.aiBadge}</i></button>
         <button type="button" className={'rail-i' + (tutorOpen ? ' is-on' : '')} onClick={() => (view === 'hub' ? leaveHub(() => setTutorOpen(true)) : setTutorOpen((o) => !o))}><Icon n="ko" size={22} /><span>{n.korean}</span></button>
+        {/* 팀이 처음 만든 E9-Bridge — 주요 서비스를 ArriveKR 기능으로 이어 줍니다 */}
+        <button type="button" className={'rail-i' + (railOn === 'e9' ? ' is-on' : '')} onClick={() => openHub('home')}><Icon n="bridge" size={22} /><span>E9-Bridge</span></button>
         {/* 휴대폰 아래 탭 메뉴에서만 보이는 "내 정보" (PC 는 아래 로그인 바로 위) */}
         <button type="button" className={'rail-i rail-myinfo-m' + (railOn === 'me' ? ' is-on' : '')} onClick={openMe}><Icon n="user" size={22} /><span>{n.myInfo}</span></button>
         <div className="rail-foot">
@@ -561,23 +569,19 @@ export default function App() {
         <div className="land-card" role="status">
           <span className="land-ic" aria-hidden="true"><Icon n="land" size={24} /></span>
           <div><b>{t.landed}</b><p>ICN → WJU · {t.toWonjuMove}</p></div>
-          <button type="button" className="btn-p" onClick={() => openHub('home')}>{t.startSettle} →</button>
+          <button type="button" className="btn-p" onClick={() => openSettle('todo')}>{t.startSettle} →</button>
           <button type="button" className="icon" aria-label={t.close} onClick={() => setLanded(false)}><Icon n="close" size={18} /></button>
         </div>
       )}
 
       {view === 'hub' && (
         <Suspense fallback={<div className="hub-wait" />}>
-          <Hub lang={lang} setLang={setLang} who={who} userName={user ? nickOf(user) : ''} page={hubPage} setPage={setHubPage}
-               onLogin={() => setAuthOpen(true)} onMe={openMe} mapGo={hubMapGo}
-               mapEl={<Settle key={who} who={who} lang={lang} visa={visa} name={pax} embedded onHub={setHubPage} planReq={planReq}
-                              tab={settleTab} setTab={setSettleTab} checks={checks} toggle={toggle} entry={entry}
-                              country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} />}
-               onSettle={(tab) => openSettle(tab)} onPlan={openPlan}
-               onTutor={() => leaveHub(() => setTutorOpen(true))} onRoute={() => leaveHub()} />
+          <E9Home lang={lang} page={hubPage} setPage={setHubPage}
+                  onSettle={(tab) => openSettle(tab)} onWork={(w) => openSettle(null, w)} onPlan={openPlan}
+                  onTutor={() => leaveHub(() => setTutorOpen(true))} onRoute={() => leaveHub()} />
         </Suspense>
       )}
-      {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={() => openHub('home')} onHub={openHub} tab={settleTab} setTab={setSettleTab}
+      {view === 'settle' && <Settle key={who} who={who} lang={lang} visa={visa} name={pax} onBack={closeSettle} tab={settleTab} setTab={setSettleTab} work={work} setWork={setWork} planReq={planReq}
                                         checks={checks} toggle={toggle} entry={entry}
                                         country={country} countryLabel={sel && !isKorea ? labelOf(sel) : ''} planGo={planGo} />}
       {view === 'me' && (

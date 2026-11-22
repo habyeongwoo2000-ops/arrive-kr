@@ -1,0 +1,135 @@
+/* 정착 지원 옆 서랍 (변경 기한 · 만기보험) — ArriveKR 정착 패널과 같은 말씨:
+   회색 바탕(--band) 위 흰 카드(20px), 파랑 하나로 강조, Pretendard. 패널 바로 오른쪽 지도 위에 떠 있습니다. */
+
+.wk { position: absolute; top: 12px; bottom: 12px; left: calc(var(--mapL) + 12px); z-index: 1100;
+  width: min(392px, calc(100% - var(--mapL) - 96px)); display: flex; flex-direction: column;
+  border-radius: 20px; background: var(--band); box-shadow: var(--sh-l); overflow: hidden;
+  animation: wk-in .22s cubic-bezier(.3, .7, .2, 1); }
+@keyframes wk-in { from { opacity: 0; transform: translateX(-14px); } }
+
+.wk-head { flex: none; display: flex; align-items: flex-start; gap: 12px; padding: 20px 14px 16px 22px; background: #fff; }
+.wk-head > div { flex: 1; min-width: 0; }
+.wk-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.wk-head p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-3); }
+.wk-x { flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--band); color: var(--ink-2); }
+.wk-x:hover { background: #e5e8eb; color: var(--ink); }
+
+.wk-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 20px; overscroll-behavior: contain; }
+.wk-card { margin: 12px 12px 0; padding: 20px; border-radius: 20px; background: #fff; }
+.wk-card h3 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+.wk-lead { margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--ink-3); }
+
+/* 입력 — 정착 패널의 지원 찾기 칸과 같은 회색 알약 */
+.wk-f { display: grid; gap: 8px; margin-top: 16px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.wk-card > form > .wk-f:first-child { margin-top: 4px; }
+.wk-card h3 + .wk-lead + form > .wk-f:first-child, .wk-card h3 + form > .wk-f:first-child { margin-top: 16px; }
+.wk-f input { width: 100%; height: 48px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--band); color: var(--ink); font-size: 15px; font-weight: 500; }
+.wk-f input:focus { outline: 2px solid var(--green); outline-offset: 0; background: #fff; }
+.wk-f small { font-size: 12.5px; font-weight: 400; line-height: 1.5; color: var(--ink-3); }
+.wk-opt { font-style: normal; font-weight: 500; color: var(--ink-3); }
+
+.wk-btns { display: flex; gap: 8px; margin-top: 18px; }
+.wk-go { flex: 1; height: 52px; border: 0; border-radius: 14px; background: var(--green); color: #fff; font-size: 16px; font-weight: 700; }
+.wk-go:hover { background: var(--green-d); }
+.wk-ghost { height: 52px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--band); color: var(--ink-2); font-size: 15px; font-weight: 600; }
+.wk-ghost:hover { background: #e5e8eb; }
+
+/* 결과 */
+.wk-res { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.wk-dd { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wk-d { padding: 14px 14px 12px; border-radius: 16px; background: var(--band); }
+.wk-d p { margin: 0; }
+.wk-d-k { font-size: 12.5px; font-weight: 600; line-height: 1.35; color: var(--ink-2); }
+.wk-d-n { margin-top: 8px !important; font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.wk-d-n small { margin-inline-start: 3px; font-size: 13px; font-weight: 700; letter-spacing: 0; }
+.wk-d.is-ok .wk-d-n { color: var(--green); }
+.wk-d.is-warn .wk-d-n { color: var(--orange); }
+.wk-d.is-stop .wk-d-n { color: var(--red); }
+.wk-d-date { margin-top: 6px !important; font-size: 13px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.wk-d-rule { margin-top: 4px !important; font-size: 12px; line-height: 1.45; color: var(--ink-3); }
+
+/* 퇴사일 → 신청 → 구직 마감, 오늘의 자리 */
+.wk-line { margin-top: 22px; }
+.wk-track { position: relative; height: 8px; border-radius: 4px; background: #e5e8eb; }
+.wk-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--green); }
+.wk-track b { position: absolute; top: -26px; transform: translateX(-50%); padding: 2px 8px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.wk-track b::after { content: ''; position: absolute; left: 50%; bottom: -4px; margin-left: -4px; border: 4px solid transparent; border-bottom: 0; border-top-color: var(--ink); }
+.wk-ticks { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.wk-line { padding-top: 22px; margin-top: 4px; }
+
+/* 안내 문장 */
+.wk-note { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--green-bg); color: var(--green-t); font-size: 13.5px; font-weight: 500; line-height: 1.6; }
+.wk-note.is-warn { background: #fff3e6; color: #c25e00; }
+.wk-note.is-stop { background: #ffeef0; color: #d22030; }
+.wk-res.wk-note { padding-top: 12px; border-top: 0; }
+.wk-fine { margin: 14px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--ink-3); }
+.wk-src { margin: 6px 0 0; font-size: 11.5px; color: var(--ink-4); }
+
+/* 보험 — 영수증처럼 왼쪽 항목, 오른쪽 값 */
+.wk-rows { margin: 0; }
+.wk-rows > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.wk-rows > div:first-child { padding-top: 0; }
+.wk-rows dt { font-size: 14px; color: var(--ink-2); }
+.wk-rows dt small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-3); }
+.wk-rows dd { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--ink); text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wk-rows .is-ok dd { color: var(--green); }
+.wk-rows .is-warn dd { color: var(--orange); }
+.wk-money { margin-top: 12px; padding: 4px 16px; border-radius: 16px; background: var(--band); }
+.wk-money > div { border-color: #e5e8eb; }
+.wk-money > div:first-child { padding-top: 12px; }
+.wk-money > div:last-child { border-bottom: 0; }
+.wk-money dd { font-size: 16px; font-weight: 800; }
+.wk-money .is-gap dd { color: var(--red); }
+
+/* 떠나기 전에 확인할 것 */
+.wk-list { margin: 14px 0 0; padding: 0; list-style: none; }
+.wk-list li { padding: 16px 0; border-top: 1px solid var(--line); }
+.wk-list li:first-child { border-top: 0; padding-top: 4px; }
+.wk-list b { display: block; font-size: 15px; font-weight: 700; color: var(--ink); }
+.wk-list p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+.wk-list .wk-where { display: flex; align-items: flex-start; gap: 6px; padding: 8px 12px; border-radius: 12px; background: var(--band); color: var(--ink-2); font-size: 13px; }
+.wk-where .ic { margin-top: 3px; color: var(--ink-3); }
+.wk-where a { color: var(--green-t); font-weight: 700; }
+
+.wk-legal { margin: 16px 22px 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); }
+
+/* 서랍이 열려 있으면 지도 위 칩과 30일 일정 카드를 서랍 오른쪽으로 비켜 줍니다 (맞춤 지원 찾기는 지도를 넓게 덮으므로 제외) */
+.settle.is-work:not(.is-reco) .cats,
+.settle.is-work:not(.is-reco) .pl-dock { left: calc(var(--mapL) + 416px); }
+
+@media (max-width: 760px) {
+  .wk { top: 0; right: 0; bottom: 0; left: 0; width: auto; z-index: 1300; border-radius: 0; animation-name: wk-up; }
+  @keyframes wk-up { from { opacity: 0; transform: translateY(16px); } }
+  .wk-head { padding-top: calc(16px + env(safe-area-inset-top)); }
+  .settle.is-work .cats, .settle.is-work .pl-dock { left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .wk { animation: none; } }
+
+/* 정착 패널 탭 아래 "변경 기한 ›" · "만기보험 ›" — 옆 서랍을 여는 버튼 (열려 있으면 파랑) */
+.st-tools { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px 0; background: var(--band); }
+.st-tools button { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; height: 42px; padding: 0 12px; border: 0; border-radius: 12px; background: #fff; color: var(--ink-2); font-size: 14px; font-weight: 600; }
+.st-tools button span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+.st-tools button .ic:first-child { color: var(--ink-3); }
+.st-tools button .ic:last-child { color: var(--ink-4); transition: transform .2s; }
+.st-tools button:hover { color: var(--ink); }
+.st-tools button.is-open { background: var(--green-bg); color: var(--green-t); font-weight: 700; }
+.st-tools button.is-open .ic { color: var(--green); }
+
+
+/* 정착 패널 위쪽 "맞춤 지원 찾기" 큰 버튼 */
+.st-tools .st-reco { grid-column: 1 / -1; height: auto; min-height: 56px; padding: 10px 14px; gap: 10px; background: var(--green); color: #fff; }
+.st-tools .st-reco:hover { background: var(--green-d); color: #fff; }
+.st-tools .st-reco .ic { color: #fff !important; }
+.st-tools .st-reco span { display: grid; gap: 1px; white-space: normal; }
+.st-tools .st-reco b { font-size: 15px; font-weight: 700; }
+.st-tools .st-reco small { font-size: 12px; font-weight: 500; opacity: .85; }
+.st-tools .st-reco b, .st-tools .st-reco small { color: #fff; }
+.st-tools .st-reco.is-open { background: var(--green-d); }
+
+
+/* 맞춤 지원 찾기 창을 불러오는 동안 (같은 자리 · 같은 모양) */
+.rk-wait { position: absolute; top: 12px; bottom: 12px; left: calc(var(--mapL) + 12px); right: 84px; z-index: 1100; max-width: 1080px;
+  display: grid; place-items: center; border-radius: 20px; background: var(--band); box-shadow: var(--sh-l); color: var(--ink-3); font-size: 14px; font-weight: 600; }
+.rk-wait::before { content: ''; width: 28px; height: 28px; margin-bottom: 40px; border: 3px solid var(--green-bg); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; grid-area: 1 / 1; }
+.rk-wait span { grid-area: 1 / 1; margin-top: 30px; }
+@media (max-width: 760px) { .rk-wait { top: 0; right: 0; bottom: 0; left: 0; z-index: 1300; border-radius: 0; } }

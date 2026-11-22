@@ -335,7 +335,7 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .st-tabs button { flex: 1 0 auto; white-space: nowrap; padding: 0 10px; font-size: 14.5px; }
 .st-tabs .st-tab-hub { color: #0b2d5c; font-weight: 600; }
 .st-tabs .st-tab-hub::after { content: ""; width: 6px; height: 6px; margin-left: 2px; border-right: 1.5px solid currentColor; border-top: 1.5px solid currentColor; transform: rotate(45deg); opacity: .6; }
-.hub-wait { position: fixed; top: 0; right: 0; left: var(--rail); bottom: var(--tabbar); z-index: 55; background: #0a1730; }
+.hub-wait { position: absolute; top: 0; right: 0; left: var(--rail); bottom: var(--tabbar); z-index: 45; background: var(--band); }
 .st-tabs button span { color: var(--green-t); font-size: 13px; font-weight: 700; }
 .st-todo { padding: 16px 20px 0; }
 .st-todo-intro { margin: 0 0 10px; font-size: 13.5px; color: var(--ink-3); line-height: 1.55; }
@@ -776,6 +776,10 @@ i.ok { background: var(--green); } i.low { background: var(--yellow); } i.out { 
 .pp-st em { font-style: normal; font-size: 9.5px; line-height: 1.25; opacity: .9; }
 .pp-st i { font: 700 8px 'Roboto Mono', monospace; font-style: normal; letter-spacing: .1em; margin-top: 2px; }
 .pp-st.is-on .pp-st-in { opacity: 1; background: color-mix(in srgb, var(--vc) 13%, transparent); border-width: 3.5px; }
+/* 오픈 예정 비자 — 눌러도 고를 수 없음 (흐리게, 마우스 모양도 금지) */
+.pp-st.is-soon, .pp-st:disabled { cursor: not-allowed; }
+.pp-st.is-soon .pp-st-in { opacity: .42; filter: grayscale(.85); }
+.pp-st.is-soon:hover, .pp-st.is-soon:active { transform: rotate(var(--tilt)); }
 .pp-soon { position: absolute; left: -6px; top: -11px; z-index: 2; padding: 2px 9px; border: 1.5px solid #e02424; border-radius: 999px; background: #fff; color: #e02424; font: 800 11.5px/1.35 'Pretendard Variable', Pretendard, 'Noto Sans KR', sans-serif; white-space: nowrap; transform: rotate(calc(var(--tilt) * -1 - 4deg)); box-shadow: 0 1px 3px rgba(224,36,36,.25); }
 .pp-seal { position: absolute; right: -8px; top: -8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--vc); color: #fff; font: 900 14px var(--f); box-shadow: 0 2px 4px rgba(0,0,0,.3); animation: seal .35s cubic-bezier(.3,1.6,.5,1); }
 @keyframes seal { from { transform: scale(2.2); opacity: 0; } }

@@ -8,7 +8,7 @@ import QRCode from 'qrcode';
 import { byCode, IATA, NUM2A2 } from '../data/visas.js';
 import { byIso } from '../data/countries.js';
 import { ui } from '../i18n/ui.js';
-import Passport from './Passport.jsx';
+import Passport, { OPEN_VISAS } from './Passport.jsx';
 import Icon from './Icon.jsx';
 import useEsc from '../lib/useEsc.js';
 
@@ -46,7 +46,7 @@ export default function BoardingPass({ lang, features, labelOf, init, onBoard, o
   const t = ui(lang);
   const [name, setName] = useState(init.name || '');
   const [from, setFrom] = useState(init.from || null);   // feature
-  const [visa, setVisa] = useState(init.visa || null);   // 처음엔 아무 비자도 고르지 않은 상태
+  const [visa, setVisa] = useState(OPEN_VISAS.includes(init.visa) ? init.visa : null);   // 처음엔 아무 비자도 고르지 않은 상태
   const [entry, setEntry] = useState(init.entry);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);

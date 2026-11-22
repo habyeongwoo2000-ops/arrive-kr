@@ -1,0 +1,158 @@
+/* 맞춤 지원 찾기 (지도 위 큰 창) — E9-Bridge 화면 틀, ArriveKR 말씨(회색 바탕 위 흰 카드 · 파랑 하나 · Pretendard).
+   정착 패널 오른쪽 지도 위를 넓게 덮고, 오른쪽 위 보기 버튼과 확대 버튼은 가리지 않습니다. */
+
+.rk { position: absolute; top: 12px; bottom: 12px; left: calc(var(--mapL) + 12px); right: 84px; z-index: 1100;
+  max-width: 1080px; display: flex; flex-direction: column; border-radius: 20px; background: var(--band);
+  box-shadow: var(--sh-l); overflow: hidden; animation: wk-in .22s cubic-bezier(.3, .7, .2, 1); }
+
+.rk-head { flex: none; display: flex; align-items: flex-start; gap: 12px; padding: 20px 14px 16px 24px; background: #fff; }
+.rk-head > div { flex: 1; min-width: 0; }
+.rk-head h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.rk-head p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--ink-3); }
+.rk-x { flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--band); color: var(--ink-2); }
+.rk-x:hover { background: #e5e8eb; color: var(--ink); }
+
+.rk-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 12px 24px; overscroll-behavior: contain; }
+
+/* 위: 내 조건 | 지역별 지원 */
+.rk-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.rk-box { padding: 20px; border-radius: 20px; background: #fff; }
+.rk-box-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.rk-box h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); }
+.rk-text { padding: 0; border: 0; background: none; color: var(--ink-3); font-size: 13.5px; font-weight: 600; }
+.rk-text:hover { color: var(--ink); }
+
+.rk-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.rk-selects label { display: grid; gap: 8px; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.rk-selects select { width: 100%; height: 48px; padding: 0 34px 0 14px; border: 0; border-radius: 12px; appearance: none; -webkit-appearance: none;
+  background: var(--band) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px;
+  color: var(--ink); font-size: 15px; font-weight: 500; }
+.rk-selects select:focus { outline: 2px solid var(--green); outline-offset: 0; }
+.rk-selects select:disabled { color: var(--ink-4); }
+
+.rk-field { margin: 18px 0 0; padding: 0; border: 0; min-width: 0; }
+.rk-field legend { padding: 0; margin-bottom: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.rk-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rk-chips .chip { height: 36px; padding: 0 14px; font-size: 14px; }
+
+.rk-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--band); color: var(--ink); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.rk-btn:hover { background: #e5e8eb; }
+.rk-btn .ic { color: var(--ink-3); }
+.rk-btn:disabled { opacity: .6; }
+.rk-fine { margin: 8px 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-3); }
+.rk-fine.is-warn { color: #c25e00; }
+
+/* 시·도 지도 + 순위 */
+.rk-km { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 12px; align-items: start; margin-top: 12px; }
+.rk-km-map { width: 100%; max-height: 330px; }
+.rk-km-a { stroke: #fff; stroke-width: 1.2; cursor: pointer; transition: fill .15s; }
+.rk-km-a:hover { stroke: var(--ink); stroke-width: 1.6; }
+.rk-km-a:focus-visible { outline: 0; stroke: var(--ink); stroke-width: 2.4; }
+.rk-km-a.is-on { stroke: var(--green-d); stroke-width: 2.4; }
+.rk-km-list { max-height: 330px; margin: 0; padding: 0 4px 0 0; list-style: none; overflow-y: auto; scrollbar-width: thin; }
+.rk-km-list button { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-size: 13px; text-align: start; }
+.rk-km-list button:hover { background: var(--band); }
+.rk-km-list button.is-on { background: var(--green-bg); color: var(--green-t); font-weight: 700; }
+.rk-km-list i { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.rk-km-list span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-km-list b { font-variant-numeric: tabular-nums; color: var(--ink); }
+.rk-credit { margin: 6px 0 0; font-size: 11px; color: var(--ink-4); }
+
+.rk-ag { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.rk-ag h4 { margin: 0 0 8px; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.rk-ag ul { margin: 0; padding: 0; list-style: none; }
+.rk-ag li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.rk-ag li:last-child { border-bottom: 0; }
+.rk-ag li a:first-child { color: var(--ink); font-weight: 600; }
+.rk-ag li a:first-child:hover { color: var(--green-t); }
+.rk-tel { flex: none; color: var(--green-t); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 알림 세 칸 */
+.rk-alerts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.rk-al { padding: 16px 18px; border-radius: 20px; background: #fff; min-width: 0; }
+.rk-al p { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; }
+.rk-al p b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.rk-al.is-soon p b { color: var(--orange); }
+.rk-al.is-new p b { color: var(--green); }
+.rk-al p span { font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.rk-al button { display: block; width: 100%; padding: 4px 0; border: 0; background: none; color: var(--ink-2); font-size: 13px; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-al button:hover { color: var(--green-t); }
+
+/* 추천 목록 */
+.rk-res { margin-top: 24px; }
+.rk-res > h3 { margin: 0 8px; font-size: 19px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.rk-res > .rk-fine { margin: 6px 8px 0; }
+.rk-list { display: grid; gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+.rk-card { padding: 20px; border-radius: 20px; background: #fff; }
+.rk-card.is-weak { background: #fbfbfc; }
+.rk-card-top { display: flex; align-items: flex-start; gap: 14px; }
+.rk-rank { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--band); color: var(--ink-2); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rk-card-h { flex: 1; min-width: 0; }
+.rk-where { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.rk-where span { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--band); }
+.rk-where .rk-cat { background: var(--green-bg); color: var(--green-t); font-weight: 600; }
+.rk-card h3 { margin: 8px 0 0; font-size: 17px; font-weight: 700; line-height: 1.4; letter-spacing: -.01em; color: var(--ink); }
+.rk-ko { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.rk-ko b { color: var(--ink-2); font-weight: 600; }
+.rk-score { flex: none; width: 76px; text-align: end; }
+.rk-score b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: var(--green); font-variant-numeric: tabular-nums; }
+.rk-score small { margin-left: 1px; font-size: 13px; }
+.rk-card.is-weak .rk-score b { color: var(--ink-4); }
+.rk-score i { display: block; height: 6px; margin-top: 6px; border-radius: 3px; background: #e5e8eb; overflow: hidden; }
+.rk-score u { display: block; height: 100%; border-radius: 3px; background: var(--green); }
+
+.rk-why { display: grid; gap: 6px; margin: 14px 0 0 44px; padding: 0; list-style: none; }
+.rk-why li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.rk-why .ic { flex: none; margin-top: 3px; padding: 2px; border-radius: 50%; box-sizing: content-box; }
+.rk-why .is-ok .ic { background: var(--green-bg); color: var(--green); }
+.rk-why .is-warn .ic { background: #fff3e6; color: var(--orange); }
+.rk-why .is-no .ic { background: #ffeef0; color: var(--red); }
+.rk-weak { margin: 10px 0 0 44px; font-size: 13px; font-weight: 600; color: var(--red); }
+
+.rk-act { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 16px 0 0 44px; }
+.rk-go { height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--green); color: #fff; font-size: 13.5px; font-weight: 700; }
+.rk-go:hover { background: var(--green-d); }
+.rk-status { display: inline-flex; align-items: center; gap: 6px; margin-inline-start: auto; font-size: 12.5px; color: var(--ink-3); }
+.rk-status select { height: 36px; padding: 0 28px 0 10px; border: 0; border-radius: 10px; appearance: none; -webkit-appearance: none;
+  background: var(--band) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a1' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center / 14px;
+  color: var(--ink); font-size: 13.5px; font-weight: 600; }
+
+.rk-prep { margin: 16px 0 0 44px; padding: 16px; border-radius: 16px; background: var(--band); }
+.rk-points { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.rk-prep-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rk-prep fieldset { margin: 0; padding: 14px; border: 0; border-radius: 14px; background: #fff; min-width: 0; }
+.rk-prep legend { float: left; width: 100%; margin-bottom: 8px; padding: 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.rk-check { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); cursor: pointer; clear: both; }
+.rk-check input { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--green); }
+.rk-check b { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; background: var(--band); font-size: 11px; color: var(--ink-2); }
+.rk-meter { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.rk-meter i { flex: 1; height: 8px; border-radius: 4px; background: #e5e8eb; overflow: hidden; }
+.rk-meter u { display: block; height: 100%; border-radius: 4px; background: var(--green); transition: width .25s; }
+.rk-src { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-4); }
+
+.rk-pages { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 16px 8px 0; }
+.rk-pages p { margin: 0; font-size: 13px; color: var(--ink-3); }
+.rk-pages div { display: flex; gap: 4px; }
+.rk-pages button { display: grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px; border: 0; border-radius: 10px; background: #fff; color: var(--ink-2); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rk-pages button:hover:not(:disabled) { color: var(--ink); }
+.rk-pages button.is-on { background: var(--ink); color: #fff; }
+.rk-pages button:disabled { opacity: .4; }
+.rk-note { margin: 20px 8px 0; font-size: 12px; line-height: 1.6; color: var(--ink-3); }
+
+@media (max-width: 1180px) {
+  .rk-grid { grid-template-columns: 1fr; }
+  .rk-km { grid-template-columns: minmax(0, 1fr) 140px; }
+}
+@media (max-width: 760px) {
+  .rk { top: 0; right: 0; bottom: 0; left: 0; max-width: none; z-index: 1300; border-radius: 0; animation-name: wk-up; }
+  .rk-head { padding-top: calc(16px + env(safe-area-inset-top)); }
+  .rk-body { padding: 10px 10px 20px; }
+  .rk-selects { grid-template-columns: 1fr; }
+  .rk-km { grid-template-columns: 1fr; }
+  .rk-km-list { display: grid; grid-template-columns: 1fr 1fr; max-height: none; }
+  .rk-alerts { grid-template-columns: 1fr; }
+  .rk-why, .rk-act, .rk-prep, .rk-weak { margin-left: 0; }
+  .rk-prep-grid { grid-template-columns: 1fr; }
+  .rk-status { margin-inline-start: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .rk { animation: none; } }
